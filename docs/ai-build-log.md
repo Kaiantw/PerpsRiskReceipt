@@ -137,3 +137,91 @@ Review the heuristic risk score weights before UI work makes them prominent. The
 - `npm audit --audit-level=moderate` still reports the known `postcss` advisory through `next`.
 ### remaining risks:
 Risk score and scenarios are heuristic. Scenario moves apply the same percentage move to every position and do not model exchange-specific cross-margin or exact Hyperliquid liquidation behavior.
+
+### task id: t4
+### codex mode:
+implementation
+### delegated work:
+Replaced the scaffold landing page with a fixture-first dashboard that loads demo accounts, shows account-level risk metrics, displays position-level liquidation/funding exposure, and handles fixture loading, invalid address, live lookup disabled, and empty-position states.
+### output accepted:
+Added `src/app/dashboard-client.tsx` and wired `src/app/page.tsx` to fixture snapshots and deterministic receipt paths. The dashboard shows account value, margin used, margin usage, total notional, minimum liquidation distance, daily funding, 30-day funding, risk score/label, source, freshness, data timestamp, and per-position risk notes.
+### output rejected or changed:
+No Hyperliquid live adapter was added. The address input validates Ethereum-style addresses and then reports that live lookup is not enabled in the fixture build.
+### human review notes:
+Review the risk-score weights before demoing them as the product's main summary signal. The dashboard includes the no-open-positions state in code, but the current fixture set does not include an empty account fixture to visibly exercise it.
+### tests/checks run:
+- `npm test` passed: 14 tests, 14 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed.
+- `git diff --check` passed.
+- Browser verification loaded `http://localhost:3000`, confirmed the dashboard heading, account selector, three demo accounts, account risk state, positions table, scenario simulator, create receipt link, invalid address state, and live lookup disabled state.
+- Browser verification reported zero console errors for the checked dashboard/receipt flow.
+- `npm audit --audit-level=moderate` reported the known `postcss` advisory through `next`.
+### remaining risks:
+Live Hyperliquid lookup remains deferred to `t7`. The fixture dashboard is read-only and does not persist user-entered addresses.
+
+### task id: t5
+### codex mode:
+implementation
+### delegated work:
+Added the dashboard scenario simulator using the tested risk engine scenario function.
+### output accepted:
+The simulator renders six price moves: `-10%`, `-5%`, `-2%`, `+2%`, `+5%`, and `+10%`. Each row shows estimated account value, estimated PnL change, liquidation flags, risk score/label after move, and a plain-English summary.
+### output rejected or changed:
+No chart library or extra dependency was added; scenarios stay table-based for reviewability.
+### human review notes:
+Scenario moves apply the same market percentage change to every position. This is simple and demoable, but not a portfolio stress model.
+### tests/checks run:
+- `npm test` passed: 14 tests, including long and short scenario liquidation cases.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed.
+- Browser verification confirmed all six scenario moves are visible on the dashboard.
+### remaining risks:
+Scenario math remains heuristic and does not model exchange-specific cross-margin, slippage, funding changes, or partial liquidation behavior.
+
+### task id: t6
+### codex mode:
+implementation
+### delegated work:
+Implemented deterministic fixture receipt creation, canonical JSON snapshot hashing, receipt IDs derived from snapshot hashes, receipt detail pages, and hash verification state.
+### output accepted:
+Added `src/lib/receipts/receipt.ts`, `src/lib/receipts/receipt.test.ts`, `src/lib/formatters.ts`, and `src/app/receipt/[id]/page.tsx`. Receipt pages show receipt id, account, protocol, created/data timestamps, snapshot hash, expected/recomputed hash, verification status, risk score, summary metrics, market summary, EAS placeholder fields, and limitations.
+### output rejected or changed:
+No backend persistence, wallet flow, or EAS transaction was added in `t6`. Receipt pages are deterministic fixture routes generated from fixture snapshots.
+### human review notes:
+Review whether the receipt market-summary table should use per-position liquidation distance and daily funding before relying on multi-position receipt rows; the current implementation repeats account aggregate values in those columns.
+### tests/checks run:
+- `npm test` passed: 14 tests, including canonical key sorting, deterministic snapshot hash, receipt id derivation, receipt verification success, and tamper-detection failure.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and generated `/receipt/rr_a4a4f3f7ced8d437`, `/receipt/rr_0bdafb4d9c6616ec`, and `/receipt/rr_65d4187e8a65d6e0`.
+- Browser verification clicked a receipt link and confirmed the receipt page shows snapshot hash, hash verified state, limitations, and attestation placeholders.
+- `curl http://localhost:3000/receipt/rr_a4a4f3f7ced8d437` returned the expected receipt content.
+### remaining risks:
+Fixture receipt URLs are shareable locally but are not persisted for arbitrary live accounts. EAS fields remain placeholders until `t8`.
+
+### task id: t4-t6 review gate
+### codex mode:
+reviewer
+### delegated work:
+Reran relevant checks, inspected the current repo state, verified the fixture demo locally, and updated closeout documentation.
+### output accepted:
+The fixture dashboard, scenario simulator, receipt creation, receipt page, and snapshot hash verification work locally against fixture data.
+### output rejected or changed:
+The known `npm audit` finding was not force-fixed because npm suggests a breaking downgrade path for Next. The receipt market-summary row-level aggregate issue was documented rather than changed after the user asked to keep the implementation as-is.
+### human review notes:
+Human review should focus on the risk-score weights, the receipt market-summary row values, and whether the fixture-only live-address behavior is acceptable for the current demo slice.
+### tests/checks run:
+- `npm test` passed: 14 tests, 14 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed.
+- `git diff --check` passed.
+- `npm audit --audit-level=moderate` reported the known `postcss` advisory through `next`.
+- Local dev server ran on `http://localhost:3000`.
+- Browser verification covered dashboard load, account switching, address error states, receipt navigation, and receipt hash verification.
+- `curl` checks confirmed dashboard and receipt HTML include expected content.
+### remaining risks:
+The app is ready to merge for the fixture t4-t6 slice, but not ready to claim live Hyperliquid support or EAS attestation.
