@@ -1,5 +1,14 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Project Docs
+
+- [Product spec](docs/product-spec.md)
+- [Task board](docs/task-board.md)
+- [AI build log](docs/ai-build-log.md)
+- [Known limitations](docs/known-limitations.md)
+- [Source notes](docs/source-notes.md)
+- [Session handoff](docs/session-handoff.md)
+
 ## Getting Started
 
 First, run the development server:
