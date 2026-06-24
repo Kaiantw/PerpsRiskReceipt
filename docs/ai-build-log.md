@@ -316,3 +316,26 @@ Review the heuristic risk-score weights before treating the score as portfolio-r
 - `curl /receipt/rr_65d4187e8a65d6e0` confirmed mixed-book per-position receipt values: `22.58%`, `40.00%`, `n/a`, `+$9.30`, `-$18.00`, and `+$4.35`.
 ### remaining risks:
 The app is mergeable as a one-day portfolio MVP, but live Hyperliquid receipts are still not persisted/shareable, EAS attestation is still a documented Sepolia fallback rather than a submitted transaction, and the Next/PostCSS audit advisory remains documented.
+
+### task id: post-t9 live receipt ux fix
+### codex mode:
+bug fix
+### delegated work:
+Fixed the confusing live lookup receipt path after a user-tested live account showed `Receipt not persisted for live lookups` instead of letting the reviewer create a receipt.
+### output accepted:
+Live Hyperliquid snapshots can now create browser-local receipts. The dashboard stores the receipt JSON in localStorage, navigates to `/receipt/local/[id]`, and the local receipt page recomputes the snapshot hash, displays hash verification, renders the market summary, and shows the EAS fallback payload. Fixture receipts and fixture receipt URLs still work through the existing `/receipt/[id]` route.
+### output rejected or changed:
+No backend receipt database, account-wide server persistence, wallet flow, private key handling, or trading endpoint was added. Live receipts are intentionally local to the creating browser.
+### human review notes:
+Review whether browser-local persistence is enough for the portfolio demo. A production version should use a backend or signed payload if live receipts need to be shared across devices.
+### tests/checks run:
+- `npm test` passed: 23 tests, 23 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]` as a dynamic route.
+- `git diff --check` passed.
+- Browser verification loaded the dashboard, pasted the user-tested Hyperliquid address, clicked `Lookup`, confirmed `Create local receipt`, clicked it, and landed on `/receipt/local/rr_91e46949fe4afbe2`.
+- Browser verification confirmed `Hash verified`, local-browser storage notice, `EAS fallback payload`, `No open positions.`, and zero console errors.
+- `npm audit --audit-level=moderate` reported the known `postcss` advisory through `next`; no force fix applied.
+### remaining risks:
+Live receipt URLs only work in the browser that created them because the snapshot is stored in localStorage.

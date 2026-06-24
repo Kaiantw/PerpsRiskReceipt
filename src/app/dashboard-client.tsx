@@ -16,6 +16,8 @@ import {
   calculateLiquidationDistanceBps,
   runPriceScenario,
 } from "@/lib/risk/risk-engine.ts";
+import { getLocalReceiptStorageKey } from "@/lib/receipts/local-receipts.ts";
+import { createRiskReceipt } from "@/lib/receipts/receipt.ts";
 
 const scenarioMoves = [-10, -5, -2, 2, 5, 10];
 
@@ -23,6 +25,11 @@ type live_lookup_state =
   | { status: "idle" }
   | { status: "loading" }
   | { status: "loaded"; message: string }
+  | { status: "error"; message: string };
+
+type receipt_creation_state =
+  | { status: "idle" }
+  | { status: "creating" }
   | { status: "error"; message: string };
 
 type DashboardClientProps = {
@@ -79,6 +86,8 @@ export function DashboardClient({
   const [liveLookupState, setLiveLookupState] = useState<live_lookup_state>({
     status: "idle",
   });
+  const [receiptCreationState, setReceiptCreationState] =
+    useState<receipt_creation_state>({ status: "idle" });
   const [loadingAccount, setLoadingAccount] = useState(false);
   const selectedSnapshot = useMemo(
     () => {
@@ -114,6 +123,7 @@ export function DashboardClient({
     setLoadingAccount(true);
     setLiveSnapshot(null);
     setLiveLookupState({ status: "idle" });
+    setReceiptCreationState({ status: "idle" });
     setSelectedAccount(account);
     window.setTimeout(() => setLoadingAccount(false), 200);
   }
@@ -138,6 +148,7 @@ export function DashboardClient({
 
       setLiveSnapshot(payload.snapshot);
       setSelectedAccount(payload.snapshot.account);
+      setReceiptCreationState({ status: "idle" });
       setLiveLookupState({
         status: "loaded",
         message: "Live Hyperliquid snapshot loaded.",
@@ -149,6 +160,31 @@ export function DashboardClient({
           error instanceof Error
             ? error.message
             : "Hyperliquid lookup failed. Fixture accounts are still available.",
+      });
+    }
+  }
+
+  async function createLocalReceipt() {
+    if (!selectedSnapshot) {
+      return;
+    }
+
+    setReceiptCreationState({ status: "creating" });
+
+    try {
+      const receipt = await createRiskReceipt(selectedSnapshot);
+      window.localStorage.setItem(
+        getLocalReceiptStorageKey(receipt.id),
+        JSON.stringify(receipt),
+      );
+      window.location.href = `/receipt/local/${receipt.id}`;
+    } catch (error) {
+      setReceiptCreationState({
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Could not create a local receipt.",
       });
     }
   }
@@ -178,7 +214,7 @@ export function DashboardClient({
               Perp Risk Receipt
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-normal sm:text-4xl">
-              Fixture risk dashboard
+              Risk dashboard
             </h1>
           </div>
           {receiptPath ? (
@@ -188,6 +224,19 @@ export function DashboardClient({
             >
               Create receipt
             </Link>
+          ) : isLiveSnapshotSelected ? (
+            <button
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-400"
+              disabled={receiptCreationState.status === "creating"}
+              onClick={() => {
+                void createLocalReceipt();
+              }}
+              type="button"
+            >
+              {receiptCreationState.status === "creating"
+                ? "Creating receipt"
+                : "Create local receipt"}
+            </button>
           ) : (
             <span className="inline-flex min-h-11 items-center justify-center rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-600">
               Fixture receipts only
@@ -271,6 +320,11 @@ export function DashboardClient({
                 {liveLookupState.message}
               </p>
             ) : null}
+            {receiptCreationState.status === "error" ? (
+              <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
+                {receiptCreationState.message}
+              </p>
+            ) : null}
           </div>
 
           <div className="rounded-lg border border-stone-300 bg-white p-4">
@@ -311,7 +365,7 @@ export function DashboardClient({
               ) : null}
               {!receiptPath ? (
                 <span className="rounded-lg bg-amber-100 px-2.5 py-1 text-amber-950">
-                  Receipt not persisted for live lookups
+                  Receipt stored in this browser
                 </span>
               ) : null}
             </div>

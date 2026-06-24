@@ -43,7 +43,9 @@ Open `http://localhost:3000`.
 8. Optional live lookup.
    - Paste a valid Hyperliquid address.
    - Show loading, live/stale freshness, source, no-open-positions handling if applicable, and graceful API error behavior if the endpoint is unavailable.
-   - Point out that live lookup is dashboard-only in this build: arbitrary live receipts are not persisted or shareable yet.
+   - Click `Create local receipt`.
+   - Show that the live receipt page has a snapshot hash, hash verification, and market summary.
+   - Point out that live receipts are stored only in this browser, not synced to a backend.
 
 9. Close with evidence.
    - Mention `npm test`, `npm run typecheck`, `npm run lint`, and `npm run build`.

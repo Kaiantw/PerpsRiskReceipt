@@ -11,6 +11,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - Position-level risk notes for liquidation distance and funding direction.
 - Six scenario moves: `-10%`, `-5%`, `-2%`, `+2%`, `+5%`, and `+10%`.
 - Deterministic fixture receipt pages with snapshot hash verification.
+- Browser-local receipt pages for live Hyperliquid lookups.
 - Read-only Hyperliquid address lookup through `POST /info`.
 - EAS Sepolia fallback payload and manual attestation steps.
 
@@ -20,6 +21,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/app/dashboard-client.tsx` renders the dashboard, address lookup states, position table, scenario simulator, and fixture receipt link.
 - `src/app/api/hyperliquid/snapshot/route.ts` validates addresses and calls the read-only Hyperliquid adapter.
 - `src/app/receipt/[id]/page.tsx` renders deterministic fixture receipts, recomputes the snapshot hash, and shows the EAS fallback payload.
+- `src/app/receipt/local/[id]/page.tsx` renders browser-local live receipts created from pasted Hyperliquid addresses.
 - `src/lib/perps/types.ts` defines the normalized snapshot, position, scenario, and receipt models.
 - `src/lib/perps/fixtures.ts` contains the demo account snapshots.
 - `src/lib/risk/risk-engine.ts` contains pure risk math.
@@ -78,13 +80,13 @@ Use `docs/demo-script.md` for the reviewer-facing script. The short version:
 4. Create a fixture receipt.
 5. Open the receipt page and show hash verification.
 6. Show the EAS fallback payload and documented manual attestation steps.
-7. Optionally paste a Hyperliquid address to show live read-only lookup and graceful live receipt limitation.
+7. Optionally paste a Hyperliquid address, create a local live receipt, and show that hash verification still works.
 
 ## Known Limitations
 
 See `docs/known-limitations.md` for the current list. The major limitations are:
 
-- Live Hyperliquid receipts are dashboard-only and not persisted/shareable yet.
+- Live Hyperliquid receipts are stored in browser localStorage only and are not synced/shareable across devices.
 - EAS schema registration and attestation transactions are not sent by the app.
 - Scenario results apply the same percentage move to every position.
 - Liquidation distance and risk score are heuristic and not exchange-official.
