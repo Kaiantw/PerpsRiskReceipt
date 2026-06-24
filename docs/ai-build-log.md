@@ -225,3 +225,68 @@ Human review should focus on the risk-score weights, the receipt market-summary 
 - `curl` checks confirmed dashboard and receipt HTML include expected content.
 ### remaining risks:
 The app is ready to merge for the fixture t4-t6 slice, but not ready to claim live Hyperliquid support or EAS attestation.
+
+### task id: t7
+### codex mode:
+implementation
+### delegated work:
+Added a read-only Hyperliquid adapter, API route, tests with mocked response shapes, and dashboard lookup flow while preserving fixture demo behavior.
+### output accepted:
+Added `src/lib/hyperliquid/adapter.ts`, `src/lib/hyperliquid/adapter.test.ts`, and `src/app/api/hyperliquid/snapshot/route.ts`. The adapter uses only Hyperliquid `POST /info` bodies for `clearinghouseState` and `metaAndAssetCtxs`, maps live responses into the normalized snapshot model, marks old responses stale, and keeps invalid/API-error states graceful.
+### output rejected or changed:
+No exchange/trading endpoints, signatures, API wallets, private keys, or order placement code were added. Live lookup does not create shareable receipt pages because there is no persistence layer for arbitrary live snapshots in this build.
+### human review notes:
+Review the funding-direction mapping from Hyperliquid `funding` into user-perspective bps. Current behavior treats positive funding as a long cost and short earning, matching the existing app convention that positive means user pays.
+### tests/checks run:
+- `npm test` passed: 20 tests, including Hyperliquid address validation, fixture response mapping, stale response handling, and read-only info request bodies.
+- `npm run typecheck` passed after `next build` regenerated route types.
+- `npm run lint` passed.
+- `npm run build` passed.
+- Local API checks:
+  - `GET /api/hyperliquid/snapshot?address=0x123` returned invalid address JSON.
+  - `GET /api/hyperliquid/snapshot?address=0x0000000000000000000000000000000000000000` returned a live normalized Hyperliquid snapshot.
+- Browser verification confirmed invalid address state, live lookup loaded state, source/freshness display, no-open-positions state, fixture-receipts-only state, and zero console errors.
+### remaining risks:
+Live lookup depends on Hyperliquid API availability and response-shape stability. Live snapshots are dashboard-only and are not persisted into receipt URLs.
+
+### task id: t8
+### codex mode:
+implementation
+### delegated work:
+Added a dependency-free EAS Sepolia fallback path that generates a schema, static ABI-encoded attestation data, manual transaction steps, and receipt-page display.
+### output accepted:
+Added `src/lib/eas/attestation.ts` and `src/lib/eas/attestation.test.ts`. Receipt pages now include the Sepolia chain, EAS contract, SchemaRegistry contract, schema string, encoded data, and manual steps for registering a schema and calling `EAS.attest`.
+### output rejected or changed:
+No wallet integration, RPC provider, schema registration transaction, or attestation transaction was sent. No EAS SDK dependency was added.
+### human review notes:
+Review whether the EAS schema fields are the right privacy/minimalism tradeoff. The fallback payload hashes account/protocol instead of putting the raw account identifier onchain.
+### tests/checks run:
+- `npm test` passed: 20 tests, including deterministic EAS payload generation and a check that the raw fixture account is not encoded into the payload.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed.
+- `curl /receipt/rr_a4a4f3f7ced8d437` confirmed the receipt page includes `EAS fallback payload`, `Encoded data`, `Hash verified`, and `Sepolia`.
+### remaining risks:
+This satisfies the documented fallback path, not a completed testnet transaction. A wallet/RPC flow is still needed to produce real EAS schema UID, attestation UID, and tx hash.
+
+### task id: t7-t8 review gate
+### codex mode:
+reviewer
+### delegated work:
+Verified fixture MVP still works, checked live Hyperliquid lookup, checked the EAS fallback receipt section, inspected source assumptions, and prepared docs for handoff.
+### output accepted:
+Fixture demo remains intact, live lookup works against a valid address, invalid live lookup fails gracefully, and receipt pages show a manual EAS fallback payload.
+### output rejected or changed:
+The app still does not claim live receipts or completed EAS attestations. The fallback is documented because wallet/RPC/testnet transaction setup was outside this slice.
+### human review notes:
+Review Hyperliquid mapping assumptions, especially funding direction and open-interest USD conversion. Review EAS schema privacy and whether hashed account/protocol fields are acceptable for the portfolio demo.
+### tests/checks run:
+- `npm test` passed: 20 tests, 20 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed.
+- `npm audit --audit-level=moderate` reported the known `postcss` advisory through `next`.
+- Local dev server ran on `http://localhost:3000` and was stopped.
+- Browser verification covered fixture dashboard, invalid address state, live lookup state, no-open-positions live account, fixture receipt restriction for live lookup, and receipt EAS fallback content.
+### remaining risks:
+Ready to merge as a read-only t7 plus documented t8 fallback slice. Not ready to claim onchain attestation completion.

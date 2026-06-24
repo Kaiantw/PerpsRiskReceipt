@@ -12,6 +12,7 @@ import {
   getFixtureReceipts,
   verifyReceipt,
 } from "@/lib/receipts/receipt.ts";
+import { buildEasAttestationPayload } from "@/lib/eas/attestation.ts";
 
 export async function generateStaticParams() {
   const receipts = await getFixtureReceipts();
@@ -52,6 +53,7 @@ export default async function ReceiptPage({
   }
 
   const verification = await verifyReceipt(receipt);
+  const easPayload = await buildEasAttestationPayload(receipt);
   const snapshot = receipt.snapshot;
   const aggregate = snapshot.aggregate;
 
@@ -177,6 +179,41 @@ export default async function ReceiptPage({
               value={receipt.chain_id ? String(receipt.chain_id) : "not attested"}
             />
           </dl>
+        </section>
+
+        <section className="rounded-lg border border-stone-300 bg-white p-4">
+          <h2 className="text-lg font-semibold">EAS fallback payload</h2>
+          <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+            <ReceiptMetric label="Chain" value={`${easPayload.chain_name} (${easPayload.chain_id})`} />
+            <ReceiptMetric
+              label="EAS contract"
+              value={easPayload.eas_contract_address}
+            />
+            <ReceiptMetric
+              label="Schema registry"
+              value={easPayload.schema_registry_address}
+            />
+            <ReceiptMetric label="Recipient" value={easPayload.recipient} />
+          </dl>
+          <div className="mt-4 rounded-lg border border-stone-200 bg-stone-50 p-3">
+            <p className="text-xs font-medium uppercase text-stone-500">Schema</p>
+            <p className="mt-2 break-words font-mono text-sm text-stone-950">
+              {easPayload.schema}
+            </p>
+          </div>
+          <div className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3">
+            <p className="text-xs font-medium uppercase text-stone-500">
+              Encoded data
+            </p>
+            <p className="mt-2 break-all font-mono text-xs text-stone-950">
+              {easPayload.encoded_data}
+            </p>
+          </div>
+          <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-stone-700">
+            {easPayload.manual_steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
         </section>
 
         <section className="rounded-lg border border-stone-300 bg-white p-4">

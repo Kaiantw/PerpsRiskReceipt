@@ -19,6 +19,12 @@ import {
 
 const scenarioMoves = [-10, -5, -2, 2, 5, 10];
 
+type live_lookup_state =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "loaded"; message: string }
+  | { status: "error"; message: string };
+
 type DashboardClientProps = {
   snapshots: normalized_account_snapshot[];
   receiptPathsByAccount: Record<string, string>;
@@ -68,12 +74,24 @@ export function DashboardClient({
     snapshots[0]?.account ?? "",
   );
   const [addressInput, setAddressInput] = useState("");
+  const [liveSnapshot, setLiveSnapshot] =
+    useState<normalized_account_snapshot | null>(null);
+  const [liveLookupState, setLiveLookupState] = useState<live_lookup_state>({
+    status: "idle",
+  });
   const [loadingAccount, setLoadingAccount] = useState(false);
   const selectedSnapshot = useMemo(
-    () =>
-      snapshots.find((snapshot) => snapshot.account === selectedAccount) ??
-      snapshots[0],
-    [selectedAccount, snapshots],
+    () => {
+      if (liveSnapshot?.account === selectedAccount) {
+        return liveSnapshot;
+      }
+
+      return (
+        snapshots.find((snapshot) => snapshot.account === selectedAccount) ??
+        snapshots[0]
+      );
+    },
+    [liveSnapshot, selectedAccount, snapshots],
   );
   const scenarios = useMemo(
     () =>
@@ -86,12 +104,53 @@ export function DashboardClient({
   const hasAddressInput = trimmedAddress.length > 0;
   const hasInvalidAddress =
     hasAddressInput && !/^0x[a-fA-F0-9]{40}$/.test(trimmedAddress);
-  const hasLiveLookupError = hasAddressInput && !hasInvalidAddress;
+  const isLiveSnapshotSelected = selectedSnapshot?.source === "live";
+  const demoAccountValue =
+    selectedSnapshot && selectedSnapshot.source === "fixture"
+      ? selectedSnapshot.account
+      : "";
 
   function selectAccount(account: string) {
     setLoadingAccount(true);
+    setLiveSnapshot(null);
+    setLiveLookupState({ status: "idle" });
     setSelectedAccount(account);
     window.setTimeout(() => setLoadingAccount(false), 200);
+  }
+
+  async function lookupHyperliquidAddress() {
+    if (!hasAddressInput || hasInvalidAddress) {
+      setLiveLookupState({ status: "idle" });
+      return;
+    }
+
+    setLiveLookupState({ status: "loading" });
+
+    try {
+      const response = await fetch(
+        `/api/hyperliquid/snapshot?address=${encodeURIComponent(trimmedAddress)}`,
+      );
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Hyperliquid lookup failed.");
+      }
+
+      setLiveSnapshot(payload.snapshot);
+      setSelectedAccount(payload.snapshot.account);
+      setLiveLookupState({
+        status: "loaded",
+        message: "Live Hyperliquid snapshot loaded.",
+      });
+    } catch (error) {
+      setLiveLookupState({
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Hyperliquid lookup failed. Fixture accounts are still available.",
+      });
+    }
   }
 
   if (!selectedSnapshot) {
@@ -108,7 +167,7 @@ export function DashboardClient({
   }
 
   const aggregate = selectedSnapshot.aggregate;
-  const receiptPath = receiptPathsByAccount[selectedSnapshot.account] ?? "/";
+  const receiptPath = receiptPathsByAccount[selectedSnapshot.account] ?? null;
 
   return (
     <main className="min-h-screen px-4 py-6 text-stone-950 sm:px-6 lg:px-8">
@@ -122,12 +181,18 @@ export function DashboardClient({
               Fixture risk dashboard
             </h1>
           </div>
-          <Link
-            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-semibold text-white transition hover:bg-stone-800"
-            href={receiptPath}
-          >
-            Create receipt
-          </Link>
+          {receiptPath ? (
+            <Link
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-semibold text-white transition hover:bg-stone-800"
+              href={receiptPath}
+            >
+              Create receipt
+            </Link>
+          ) : (
+            <span className="inline-flex min-h-11 items-center justify-center rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-600">
+              Fixture receipts only
+            </span>
+          )}
         </header>
 
         <section className="grid gap-4 lg:grid-cols-[minmax(260px,320px)_1fr]">
@@ -142,8 +207,11 @@ export function DashboardClient({
               className="mt-2 h-11 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm"
               id="demo-account"
               onChange={(event) => selectAccount(event.target.value)}
-              value={selectedSnapshot.account}
+              value={demoAccountValue}
             >
+              {isLiveSnapshotSelected ? (
+                <option value="">Live lookup loaded</option>
+              ) : null}
               {snapshots.map((snapshot) => (
                 <option key={snapshot.account} value={snapshot.account}>
                   {snapshot.account}
@@ -151,27 +219,56 @@ export function DashboardClient({
               ))}
             </select>
 
-            <label
-              className="mt-5 block text-sm font-semibold text-stone-700"
-              htmlFor="hyperliquid-address"
+            <form
+              className="mt-5"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void lookupHyperliquidAddress();
+              }}
             >
-              Hyperliquid address
-            </label>
-            <input
-              className="mt-2 h-11 w-full rounded-lg border border-stone-300 bg-white px-3 font-mono text-sm"
-              id="hyperliquid-address"
-              onChange={(event) => setAddressInput(event.target.value)}
-              placeholder="0x..."
-              value={addressInput}
-            />
+              <label
+                className="block text-sm font-semibold text-stone-700"
+                htmlFor="hyperliquid-address"
+              >
+                Hyperliquid address
+              </label>
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                <input
+                  className="h-11 min-w-0 flex-1 rounded-lg border border-stone-300 bg-white px-3 font-mono text-sm"
+                  id="hyperliquid-address"
+                  onChange={(event) => {
+                    setAddressInput(event.target.value);
+                    setLiveLookupState({ status: "idle" });
+                  }}
+                  placeholder="0x..."
+                  value={addressInput}
+                />
+                <button
+                  className="h-11 rounded-lg bg-stone-950 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-stone-400"
+                  disabled={
+                    !hasAddressInput ||
+                    hasInvalidAddress ||
+                    liveLookupState.status === "loading"
+                  }
+                  type="submit"
+                >
+                  {liveLookupState.status === "loading" ? "Loading" : "Lookup"}
+                </button>
+              </div>
+            </form>
             {hasInvalidAddress ? (
               <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
                 Invalid address format.
               </p>
             ) : null}
-            {hasLiveLookupError ? (
+            {liveLookupState.status === "loaded" ? (
+              <p className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-950">
+                {liveLookupState.message}
+              </p>
+            ) : null}
+            {liveLookupState.status === "error" ? (
               <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-                Live lookup is not enabled in this fixture build.
+                {liveLookupState.message}
               </p>
             ) : null}
           </div>
@@ -210,6 +307,11 @@ export function DashboardClient({
               {loadingAccount ? (
                 <span className="rounded-lg bg-blue-100 px-2.5 py-1 text-blue-900">
                   Loading account...
+                </span>
+              ) : null}
+              {!receiptPath ? (
+                <span className="rounded-lg bg-amber-100 px-2.5 py-1 text-amber-950">
+                  Receipt not persisted for live lookups
                 </span>
               ) : null}
             </div>
