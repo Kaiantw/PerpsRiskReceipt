@@ -53,6 +53,12 @@ export type risk_receipt = {
   chain_id?: number;
 };
 
+export type receipt_verification = {
+  expected_hash: string;
+  recomputed_hash: string;
+  matches: boolean;
+};
+
 export type position_input = Omit<
   normalized_position,
   "notional_usd" | "unrealized_pnl_usd"
