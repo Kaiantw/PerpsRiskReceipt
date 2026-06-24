@@ -6,35 +6,30 @@
 - `t1` agent rules/evidence docs is complete.
 - `t2` fixtures + types is complete.
 - `t3` risk engine is complete.
-- `t4` dashboard UI is complete for fixture data.
-- `t5` scenario simulator is complete for fixture data.
-- `t6` receipt system is complete for fixture data.
-- `t7` Hyperliquid read-only adapter is complete with graceful fixture fallback.
+- `t4` dashboard UI is complete.
+- `t5` scenario simulator is complete.
+- `t6` receipt system is complete.
+- `t7` Hyperliquid read-only adapter is complete with graceful error states.
 - `t8` EAS attestation fallback path is complete; no transaction was sent.
+- `t9` review + evidence is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote state: `origin/main` is marked gone because the GitHub repo has no remote branch yet.
-- Latest commit before this t7-t8 work: `a79995d docs: close out fixture dashboard receipts`.
-- Current work adds Hyperliquid live lookup, an API route, EAS fallback payload generation, tests, and docs.
-- Dev server was started on `http://localhost:3000` for verification and then stopped.
+- Baseline before t9: `4a799d6 feat: add hyperliquid lookup and eas fallback`.
+- Current t9 closeout fixes the receipt market-summary review item, replaces the scaffold README, expands the demo script, and updates review evidence.
+- Dev server was started on `http://localhost:3000` for smoke verification and then stopped.
 
 ## files changed
 
-- `package.json`: test command now runs risk, receipt, Hyperliquid adapter, and EAS payload tests.
-- `src/app/api/hyperliquid/snapshot/route.ts`: server route for validated read-only Hyperliquid snapshot lookup.
-- `src/app/dashboard-client.tsx`: live lookup form, loading/error/loaded states, live snapshot display, no-open-positions handling, and fixture-only receipt message for live lookups.
-- `src/app/receipt/[id]/page.tsx`: displays EAS Sepolia fallback payload and manual attestation steps.
-- `src/lib/hyperliquid/adapter.ts`: read-only Hyperliquid `info` adapter and normalization mapping.
-- `src/lib/hyperliquid/adapter.test.ts`: adapter mapping, stale state, address validation, and read-only request tests.
-- `src/lib/eas/attestation.ts`: Sepolia EAS constants, minimal schema, static ABI encoded payload, and manual steps.
-- `src/lib/eas/attestation.test.ts`: deterministic payload and no-raw-account-encoding tests.
-- `docs/source-notes.md`: documented Hyperliquid endpoint/request/response mappings and EAS fallback assumptions.
-- `docs/ai-build-log.md`: t7, t8, and review-gate entries.
-- `docs/known-limitations.md`: live lookup, live receipt persistence, and EAS fallback limitations.
-- `docs/session-handoff.md`: this updated handoff.
+- `README.md`: product README with architecture, assumptions, risk score weights, checks, demo flow, known limitations, source-of-truth docs, and resume bullet.
+- `docs/demo-script.md`: concrete reviewer walkthrough for fixtures, scenarios, receipts, EAS fallback, optional live lookup, and build evidence.
+- `src/app/receipt/[id]/page.tsx`: receipt market-summary rows now use per-position liquidation distance and daily funding.
+- `docs/known-limitations.md`: removed the stale receipt market-summary row limitation after fixing it.
+- `docs/ai-build-log.md`: t9 review/evidence entry with accepted output, rejected scope, human review points, checks, and remaining risks.
+- `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
@@ -42,28 +37,23 @@
 - `npm run typecheck` passed.
 - `npm run lint` passed.
 - `npm run build` passed.
-- `npm audit --audit-level=moderate` reported the known `postcss` advisory through `next`.
-- Local dev server ran on `http://localhost:3000`.
-- API checks:
-  - `GET /api/hyperliquid/snapshot?address=0x123` returned invalid address JSON.
-  - `GET /api/hyperliquid/snapshot?address=0x0000000000000000000000000000000000000000` returned a live normalized Hyperliquid snapshot.
-- Receipt check:
-  - `GET /receipt/rr_a4a4f3f7ced8d437` included `EAS fallback payload`, `Encoded data`, `Hash verified`, and `Sepolia`.
-- Browser verification confirmed:
-  - invalid address warning appears and lookup button is disabled
-  - valid Hyperliquid address loads a live snapshot
-  - live snapshot shows source/freshness and no open positions when applicable
-  - live lookup shows `Fixture receipts only` and `Receipt not persisted for live lookups`
-  - browser console error count for the checked flow was zero
+- `git diff --check` passed.
+- `npm audit --audit-level=moderate` reported the known `postcss` advisory through `next`; no force fix was applied because npm recommends a breaking Next downgrade path.
+- Local dev server ran on `http://localhost:3000` and was stopped.
+- Smoke checks:
+  - `curl /` confirmed the dashboard, create-receipt link, and Hyperliquid address input render.
+  - `curl /api/hyperliquid/snapshot?address=0x123` returned the invalid-address JSON state.
+  - `curl /receipt/rr_a4a4f3f7ced8d437` confirmed `Hash verified`, `EAS fallback payload`, `Encoded data`, `Sepolia`, and `Market summary`.
+  - `curl /receipt/rr_65d4187e8a65d6e0` confirmed mixed-book per-position receipt values: `22.58%`, `40.00%`, `n/a`, `+$9.30`, `-$18.00`, and `+$4.35`.
 
 ## blockers
 
-- No hard blocker for merging the t7-t8 fallback slice.
-- EAS wallet/RPC/testnet transaction setup is not implemented; this slice produces a manual payload and steps only.
-- Live Hyperliquid receipts are not persisted/shareable.
-- Live lookup depends on Hyperliquid API availability and response-shape stability.
-- `npm audit --audit-level=moderate` reports the known `postcss` advisory through `next`; do not force-fix without review because npm suggests a breaking downgrade path.
+- No hard blocker for merging the one-day MVP.
+- `npm audit --audit-level=moderate` still reports the known `postcss` advisory through `next`.
+- Live Hyperliquid receipts are not persisted or shareable.
+- EAS schema registration and attestation transactions are documented fallback steps only.
+- Risk score, liquidation distance, and scenario math remain heuristic and should not be described as official protocol risk.
 
 ## exact next recommended action
 
-Review the Hyperliquid mapping assumptions and EAS schema privacy tradeoff. If accepted, merge this slice; then either add live receipt persistence or move to `t9` review/evidence with README/demo-script cleanup.
+Commit the t9 closeout, push `main` to GitHub, and use `README.md` plus `docs/demo-script.md` for the portfolio walkthrough. The next product task should be live receipt persistence or a wallet-backed EAS Sepolia attestation flow.

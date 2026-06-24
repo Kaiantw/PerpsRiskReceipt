@@ -13,6 +13,10 @@ import {
   verifyReceipt,
 } from "@/lib/receipts/receipt.ts";
 import { buildEasAttestationPayload } from "@/lib/eas/attestation.ts";
+import {
+  calculateDailyFundingUsd,
+  calculateLiquidationDistanceBps,
+} from "@/lib/risk/risk-engine.ts";
 
 export async function generateStaticParams() {
   const receipts = await getFixtureReceipts();
@@ -147,13 +151,11 @@ export default async function ReceiptPage({
                     </td>
                     <td className="px-4 py-3">
                       {formatPercentFromBps(
-                        position.liquidation_price_usd === null
-                          ? null
-                          : snapshot.aggregate.min_liquidation_distance_bps,
+                        calculateLiquidationDistanceBps(position),
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {formatSignedUsd(snapshot.aggregate.daily_funding_usd)}
+                      {formatSignedUsd(calculateDailyFundingUsd(position))}
                     </td>
                   </tr>
                 ))}

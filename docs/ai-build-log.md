@@ -290,3 +290,29 @@ Review Hyperliquid mapping assumptions, especially funding direction and open-in
 - Browser verification covered fixture dashboard, invalid address state, live lookup state, no-open-positions live account, fixture receipt restriction for live lookup, and receipt EAS fallback content.
 ### remaining risks:
 Ready to merge as a read-only t7 plus documented t8 fallback slice. Not ready to claim onchain attestation completion.
+
+### task id: t9
+### codex mode:
+reviewer + documentation
+### delegated work:
+Performed the final review/evidence pass, fixed the receipt market-summary review item, replaced the scaffold README with a product README, expanded the demo script, updated known limitations, and prepared the final session handoff.
+### output accepted:
+Receipt market-summary rows now use the tested per-position liquidation-distance and daily-funding helpers instead of repeating account aggregate values. README now documents the product goal, architecture, risk score weights, assumptions, checks, demo flow, known limitations, source-of-truth docs, and resume bullet. `docs/demo-script.md` now gives a concrete walkthrough for fixture accounts, scenarios, receipts, EAS fallback, optional live lookup, and evidence review.
+### output rejected or changed:
+No wallet/RPC flow, live receipt persistence, new dependencies, or expanded protocol support were added during t9. The known `npm audit` finding was not force-fixed because npm recommends a breaking Next downgrade path.
+### human review notes:
+Review the heuristic risk-score weights before treating the score as portfolio-ready. Review Hyperliquid funding-direction and open-interest mapping assumptions. Review whether the EAS schema privacy tradeoff is acceptable before submitting a real attestation.
+### tests/checks run:
+- `npm test` passed: 20 tests, 20 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed.
+- `git diff --check` passed.
+- `npm audit --audit-level=moderate` reported the known `postcss` advisory through `next`; no force fix applied.
+- Local dev server ran on `http://localhost:3000` and was stopped.
+- `curl /` confirmed the dashboard, create-receipt link, and Hyperliquid address input render.
+- `curl /api/hyperliquid/snapshot?address=0x123` returned the invalid-address JSON state.
+- `curl /receipt/rr_a4a4f3f7ced8d437` confirmed `Hash verified`, `EAS fallback payload`, `Encoded data`, `Sepolia`, and `Market summary`.
+- `curl /receipt/rr_65d4187e8a65d6e0` confirmed mixed-book per-position receipt values: `22.58%`, `40.00%`, `n/a`, `+$9.30`, `-$18.00`, and `+$4.35`.
+### remaining risks:
+The app is mergeable as a one-day portfolio MVP, but live Hyperliquid receipts are still not persisted/shareable, EAS attestation is still a documented Sepolia fallback rather than a submitted transaction, and the Next/PostCSS audit advisory remains documented.

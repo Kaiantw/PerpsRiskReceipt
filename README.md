@@ -1,45 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Perp Risk Receipt
 
-## Project Docs
+Perp Risk Receipt is a read-only risk dashboard for perpetual positions. It normalizes account snapshots, explains liquidation and funding exposure, runs simple price scenarios, and creates a verifiable receipt with a canonical snapshot hash.
 
-- [Product spec](docs/product-spec.md)
-- [Task board](docs/task-board.md)
-- [AI build log](docs/ai-build-log.md)
-- [Known limitations](docs/known-limitations.md)
-- [Source notes](docs/source-notes.md)
-- [Session handoff](docs/session-handoff.md)
+The project is built as a one-day, fixture-first portfolio demo for serious onchain financial UX. It does not trade, place orders, ask for private keys, or claim that its risk score is official protocol risk.
 
-## Getting Started
+## What The Demo Shows
 
-First, run the development server:
+- Three fixture accounts: safe ETH long, near-liquidation BTC short, and a mixed multi-position book.
+- Account-level risk metrics: account value, margin used, margin usage, total notional, minimum liquidation distance, daily funding, 30-day funding, risk score, source, freshness, and data timestamp.
+- Position-level risk notes for liquidation distance and funding direction.
+- Six scenario moves: `-10%`, `-5%`, `-2%`, `+2%`, `+5%`, and `+10%`.
+- Deterministic fixture receipt pages with snapshot hash verification.
+- Read-only Hyperliquid address lookup through `POST /info`.
+- EAS Sepolia fallback payload and manual attestation steps.
+
+## Architecture
+
+- `src/app/page.tsx` loads fixture snapshots and deterministic fixture receipt routes.
+- `src/app/dashboard-client.tsx` renders the dashboard, address lookup states, position table, scenario simulator, and fixture receipt link.
+- `src/app/api/hyperliquid/snapshot/route.ts` validates addresses and calls the read-only Hyperliquid adapter.
+- `src/app/receipt/[id]/page.tsx` renders deterministic fixture receipts, recomputes the snapshot hash, and shows the EAS fallback payload.
+- `src/lib/perps/types.ts` defines the normalized snapshot, position, scenario, and receipt models.
+- `src/lib/perps/fixtures.ts` contains the demo account snapshots.
+- `src/lib/risk/risk-engine.ts` contains pure risk math.
+- `src/lib/receipts/receipt.ts` contains canonical JSON serialization, hashing, deterministic IDs, and verification.
+- `src/lib/hyperliquid/adapter.ts` maps Hyperliquid `info` responses into the normalized model.
+- `src/lib/eas/attestation.ts` builds the minimal EAS Sepolia fallback payload.
+
+## Risk Score
+
+The risk score is heuristic and intentionally simple:
+
+- Margin usage contributes up to 40 points.
+- Liquidation distance contributes up to 50 points.
+- Positive daily funding burden contributes up to 10 points.
+- Zero or negative account value returns 100.
+
+Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review and comparison only; it is not Hyperliquid's liquidation logic and is not financial advice.
+
+## Data And Protocol Assumptions
+
+- Fixture data is the default source so the app is demoable without external services.
+- Hyperliquid live lookup uses read-only `POST https://api.hyperliquid.xyz/info` calls only.
+- No exchange/trading endpoints are used.
+- Live response shapes and mappings are documented in `docs/source-notes.md`.
+- EAS support is a fallback payload and manual Sepolia flow, not an in-app wallet transaction.
+- The EAS payload hashes account/protocol identifiers instead of placing raw account identifiers onchain.
+
+## Run Locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm test
+npm run typecheck
+npm run lint
+npm run build
+npm audit --audit-level=moderate
+```
 
-## Learn More
+`npm audit --audit-level=moderate` currently reports a known `postcss` advisory through Next. The suggested npm force fix would install a breaking/incorrect Next version, so it is documented instead of force-applied.
 
-To learn more about Next.js, take a look at the following resources:
+## Demo Flow
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Use `docs/demo-script.md` for the reviewer-facing script. The short version:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Open the dashboard.
+2. Switch between fixture accounts.
+3. Explain account risk, position risk, funding direction, and scenarios.
+4. Create a fixture receipt.
+5. Open the receipt page and show hash verification.
+6. Show the EAS fallback payload and documented manual attestation steps.
+7. Optionally paste a Hyperliquid address to show live read-only lookup and graceful live receipt limitation.
 
-## Deploy on Vercel
+## Known Limitations
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+See `docs/known-limitations.md` for the current list. The major limitations are:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Live Hyperliquid receipts are dashboard-only and not persisted/shareable yet.
+- EAS schema registration and attestation transactions are not sent by the app.
+- Scenario results apply the same percentage move to every position.
+- Liquidation distance and risk score are heuristic and not exchange-official.
+
+## Source Of Truth Docs
+
+- `AGENTS.md`
+- `docs/product-spec.md`
+- `docs/task-board.md`
+- `docs/ai-build-log.md`
+- `docs/known-limitations.md`
+- `docs/source-notes.md`
+- `docs/session-handoff.md`
+
+## Resume Bullet
+
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, scenario simulation, deterministic snapshot hashing, shareable receipt pages, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
