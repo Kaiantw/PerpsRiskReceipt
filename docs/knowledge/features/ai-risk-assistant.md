@@ -2,7 +2,8 @@
 
 ## status
 
-Implemented as a dependency-free local assistant in this slice.
+Implemented as a dependency-free local dashboard assistant. Receipt-page
+question answering now lives in [[receipt-risk-assistant]].
 
 ## product idea
 
@@ -17,6 +18,7 @@ giving strategy recommendations or financial advice.
 - [[live-receipt-recheck]]
 - [[funding-carry-watch]]
 - [[mark-price-context]]
+- [[receipt-risk-assistant]]
 
 ## implemented behavior
 
@@ -25,6 +27,12 @@ giving strategy recommendations or financial advice.
 - Free-form questions are routed through deterministic local logic.
 - Trade-intent questions are refused while still explaining current risk signals.
 - Responses include snapshot-field citations.
+
+## related implemented behavior
+
+- [[receipt-risk-assistant]] reuses the same no-advice stance for saved receipts
+  and live rechecks, but cites receipt-specific context instead of dashboard
+  snapshot fields.
 
 ## guardrails
 

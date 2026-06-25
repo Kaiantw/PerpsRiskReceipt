@@ -124,6 +124,7 @@ export function LocalReceiptClient({ receiptId }: { receiptId: string }) {
             receipt={state.receipt}
           />
           <LiveRecheckPanel
+            hashVerified={state.verification.matches}
             receipt={state.receipt}
             receiptAccountValueContext={receiptAccountValueContext}
           />

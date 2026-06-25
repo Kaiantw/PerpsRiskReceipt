@@ -505,3 +505,24 @@ Review the summary priority order: account mismatch, position changes, liquidati
 - Browser verification used the existing dev server on `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_083fd5da1ef59cf7`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Receipt change summary`, `The receipt and live context are close.`, `Market context since receipt`, the sampled account-value review point, and zero console errors.
 ### remaining risks:
 Receipt change summary is a heuristic review layer over other heuristic signals. It depends on live Hyperliquid API availability, localStorage receipt persistence, comparable saved/current snapshots, and optional sampled portfolio context. It is not financial advice, an exact liquidation monitor, or a proof that the saved market state was correct.
+
+### task id: post-t9 receipt risk assistant
+### codex mode:
+product iteration + implementation
+### delegated work:
+Researched perps receipt-review context, then added a local receipt-page assistant so a reviewer can ask cited questions after running a live receipt recheck.
+### output accepted:
+Added `src/lib/assistant/receipt-risk-assistant.ts` with deterministic answer routing, receipt-specific citations, hash-scope explanations, and no-advice guardrails. Added `src/app/receipt/local/[id]/receipt-risk-assistant-panel.tsx` and wired it into local live receipt rechecks after `Receipt change summary`. The panel answers quick prompts for review, market, liquidation, funding, hash, and account history when loaded, plus free-form questions. Updated README, demo script, source notes, limitations, and the knowledge graph.
+### output rejected or changed:
+No LLM API, API key, backend chat persistence, new endpoint, trading endpoint, wallet/RPC flow, or new dependency was added. Browser verification exposed that the first guardrail treated `What should I review in this receipt?` as advice; the refusal rule was tightened to trade-intent verbs and covered with a regression test.
+### human review notes:
+Review the receipt assistant's keyword routing and refusal language. In particular, confirm that review/funding/hash/account-history questions stay explanatory while trade-intent questions still refuse clearly.
+### tests/checks run:
+- `npm test` passed: 76 tests, 76 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/api/hyperliquid/portfolio`, `/api/hyperliquid/snapshot`, `/receipt/[id]`, and `/receipt/local/[id]`.
+- `git diff --check` passed.
+- Browser verification used the existing dev server on `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_c010ad6fd463f5be`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Receipt risk assistant`, clicked `Review`, `Funding`, and `Hash`, asked `Should I increase leverage?`, confirmed the no-advice refusal, and saw zero console errors.
+### remaining risks:
+Receipt risk assistant is deterministic local explanation logic over visible receipt and recheck fields. It is not a connected LLM, does not reason beyond keyword routing, depends on the local live receipt/recheck context, and must not be treated as financial advice.

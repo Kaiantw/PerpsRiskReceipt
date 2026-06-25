@@ -39,3 +39,5 @@ in latest sampled account value.
 - [[mark-price-context]] explains per-position market changes while this feature
   explains account-value changes.
 - [[receipt-change-summary]] consumes this context when it is available.
+- [[receipt-risk-assistant]] can answer account-history questions from this
+  context when the panel has loaded.

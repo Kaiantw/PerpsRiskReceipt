@@ -42,6 +42,14 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
   - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
   - https://www.investopedia.com/what-are-perpetual-futures-7494870
+- docs checked on 2026-06-25 for receipt risk assistant:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/margining
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://www.kraken.com/learn/trading/perpetual-futures-contracts
+  - https://metamask.io/news/leverage-margin-perpetual-futures-trading
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -104,6 +112,12 @@ use this file for external protocol assumptions.
   - listed liquidation-buffer movement is summarized as review context, not exact liquidation monitoring.
   - funding deltas are summarized as holding-cost changes, not strategy recommendations.
   - account-value history is included only when the local receipt page has loaded sampled portfolio context.
+- receipt risk assistant assumptions:
+  - the assistant is deterministic local explanation logic; it does not call an LLM or any new endpoint.
+  - answers cite visible receipt-page context: receipt hash, receipt change summary, live recheck comparison, market context, funding deltas, and sampled account-value context.
+  - hash answers explain snapshot integrity only; they do not claim that external Hyperliquid data was correct at capture time.
+  - trade-intent questions are refused while still explaining the receipt signals.
+  - account-value history answers are only available after the receipt account-value context panel has loaded sampled portfolio context.
 
 ## eas
 

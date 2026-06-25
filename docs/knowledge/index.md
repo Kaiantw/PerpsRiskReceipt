@@ -13,6 +13,7 @@ informed it and forward to related feature ideas.
 - [[sources/perp-liquidation-buffer]] - Hyperliquid liquidation, margining, and listed-buffer assumptions.
 - [[sources/perp-account-value-history]] - Hyperliquid portfolio history and drawdown context.
 - [[sources/perp-risk-review-checklist]] - liquidation, funding, leverage, and market-condition review framing.
+- [[sources/perp-receipt-review-assistant]] - receipt-question source notes for hash scope, live recheck review, funding, liquidation, and guardrails.
 
 ## implemented feature notes
 
@@ -24,8 +25,9 @@ informed it and forward to related feature ideas.
 - [[features/account-value-timeline]] - live dashboard account-value history, drawdown, and sampled PnL context.
 - [[features/receipt-account-value-context]] - local receipt panel that positions the saved snapshot inside sampled account-value history.
 - [[features/receipt-change-summary]] - single live-recheck summary combining position, market, funding, and account-history signals.
+- [[features/receipt-risk-assistant]] - local receipt-page assistant that answers cited questions from the receipt summary and live recheck context.
 
 ## connected backlog ideas
 
-- [[features/ai-risk-assistant]] could cite [[features/receipt-change-summary]]
-  when answering questions on receipt pages.
+- [[features/receipt-risk-assistant]] could later use a guarded server-side LLM
+  once citations, refusal policy, and private-data boundaries are stronger.

@@ -34,6 +34,9 @@ claims:
   raw metric grid.
 - It now includes `Receipt change summary` so the most important receipt-vs-live
   change is visible before the detailed comparison tables.
+- It now includes [[receipt-risk-assistant]] so reviewers can ask cited
+  questions about what changed, market context, funding, account history, and
+  hash scope after the recheck.
 
 ## related ideas
 
@@ -41,4 +44,5 @@ claims:
 - [[mark-price-context]] can explain why mark movement is the right comparison.
 - [[receipt-change-summary]] combines live recheck, market context, and sampled
   account-history context.
-- [[ai-risk-assistant]] can translate a loaded comparison into plain English.
+- [[receipt-risk-assistant]] translates a loaded comparison into cited
+  plain-English receipt answers.

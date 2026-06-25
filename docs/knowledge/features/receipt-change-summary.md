@@ -38,7 +38,7 @@ account-value history into one short read.
 
 ## connected feature ideas
 
-- [[ai-risk-assistant]] can later cite this summary as a source when answering
-  receipt-page questions.
+- [[receipt-risk-assistant]] cites this summary as its primary "what changed"
+  source for local live receipt pages.
 - [[account-value-timeline]] can eventually expose a stable summary window
   preference so receipt summaries can choose day/week context deliberately.

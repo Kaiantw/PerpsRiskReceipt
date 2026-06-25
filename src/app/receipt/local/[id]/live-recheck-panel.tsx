@@ -27,6 +27,7 @@ import {
   type receipt_change_summary,
 } from "@/lib/receipts/receipt-change-summary.ts";
 import { compareSnapshots } from "@/lib/receipts/snapshot-comparison.ts";
+import { ReceiptRiskAssistantPanel } from "./receipt-risk-assistant-panel.tsx";
 
 type recheck_state =
   | { status: "idle" }
@@ -106,9 +107,11 @@ const receiptSummaryTone: Record<receipt_change_summary["severity"], string> = {
 };
 
 export function LiveRecheckPanel({
+  hashVerified,
   receipt,
   receiptAccountValueContext,
 }: {
+  hashVerified?: boolean;
   receipt: risk_receipt;
   receiptAccountValueContext?: receipt_account_value_context | null;
 }) {
@@ -188,6 +191,8 @@ export function LiveRecheckPanel({
       {state.status === "loaded" ? (
         <LiveRecheckResult
           comparison={state.comparison}
+          hashVerified={hashVerified}
+          receipt={receipt}
           receiptAccountValueContext={receiptAccountValueContext ?? null}
         />
       ) : null}
@@ -197,9 +202,13 @@ export function LiveRecheckPanel({
 
 function LiveRecheckResult({
   comparison,
+  hashVerified,
+  receipt,
   receiptAccountValueContext,
 }: {
   comparison: snapshot_comparison;
+  hashVerified?: boolean;
+  receipt: risk_receipt;
   receiptAccountValueContext: receipt_account_value_context | null;
 }) {
   const marketContext = buildMarketContext(comparison);
@@ -208,6 +217,14 @@ function LiveRecheckResult({
     marketContext,
     accountValueContext: receiptAccountValueContext,
   });
+  const assistantKey = [
+    receipt.id,
+    comparison.status,
+    comparison.changed_position_count,
+    comparison.max_abs_mark_price_change_percent,
+    changeSummary.label,
+    receiptAccountValueContext?.label ?? "no-account-context",
+  ].join(":");
 
   return (
     <div className="mt-4 flex flex-col gap-4">
@@ -237,6 +254,17 @@ function LiveRecheckResult({
       </div>
 
       <ReceiptChangeSummaryResult summary={changeSummary} />
+      <ReceiptRiskAssistantPanel
+        context={{
+          receipt,
+          comparison,
+          marketContext,
+          changeSummary,
+          accountValueContext: receiptAccountValueContext,
+          hashVerified,
+        }}
+        key={assistantKey}
+      />
       <MarketContextResult context={marketContext} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

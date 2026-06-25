@@ -62,6 +62,9 @@ Open `http://localhost:3000`.
    - Click `Recheck live account`.
    - Show `Receipt change summary`.
    - Point out that it combines account match, position state, liquidation buffer movement, funding changes, market movement, and sampled account-value context.
+   - Show `Receipt risk assistant`.
+   - Click `Review`, `Funding`, and `Hash` to show cited answers from the receipt summary, live recheck, funding delta, and snapshot hash.
+   - Ask `Should I increase leverage?` and show that it refuses trade recommendations while still explaining receipt signals.
    - Show saved-vs-current risk score, margin usage, liquidation distance, funding, mark movement, and position-state comparison.
    - Show `Market context since receipt`.
    - Point out saved mark price vs current mark price, whether the move is toward or away from liquidation, 8-hour funding change, and open-interest change.
@@ -73,4 +76,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, receipt change summaries, receipt account-history context, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

@@ -1,0 +1,395 @@
+import {
+  formatPercentFromBps,
+  formatSignedUsd,
+  truncateMiddle,
+} from "../formatters.ts";
+import type { receipt_account_value_context } from "../history/receipt-account-value-context.ts";
+import type { market_context } from "../market/market-context.ts";
+import type { risk_receipt } from "../perps/types.ts";
+import type { receipt_change_summary } from "../receipts/receipt-change-summary.ts";
+import type {
+  metric_comparison,
+  snapshot_comparison,
+} from "../receipts/snapshot-comparison.ts";
+
+export type receipt_risk_assistant_context = {
+  receipt: risk_receipt;
+  comparison: snapshot_comparison;
+  marketContext: market_context;
+  changeSummary: receipt_change_summary;
+  accountValueContext?: receipt_account_value_context | null;
+  hashVerified?: boolean;
+};
+
+export type receipt_risk_assistant_response = {
+  answer: string;
+  citations: string[];
+};
+
+export type receipt_risk_assistant_suggestion = {
+  id: string;
+  label: string;
+  question: string;
+};
+
+const advicePatterns = [
+  /\bwhat should i do\b/,
+  /\bshould i (trade|buy|sell|open|close|increase|reduce|use leverage|add leverage)\b/,
+  /\b(buy|sell|ape)\b/,
+  /\b(use|add|increase|reduce) leverage\b/,
+  /\b(increase|reduce) (my |this |the )?(position|size|exposure|margin)\b/,
+  /\b(open|close) (a |my |this |the )?(position|trade|long|short)\b/,
+  /\bgo long\b/,
+  /\bgo short\b/,
+];
+
+function includesAny(value: string, patterns: string[]) {
+  return patterns.some((pattern) => value.includes(pattern));
+}
+
+function includesAdviceIntent(value: string) {
+  return advicePatterns.some((pattern) => pattern.test(value));
+}
+
+function formatNullableSignedUsd(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return formatSignedUsd(value);
+}
+
+function formatPercent(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return `${value.toFixed(2)}%`;
+}
+
+function formatMetricMove(
+  metric: metric_comparison,
+  formatter: (value: number | null) => string,
+) {
+  return `${formatter(metric.receipt_value)} to ${formatter(metric.current_value)}`;
+}
+
+function getHashStatus(hashVerified: boolean | undefined) {
+  if (hashVerified === true) {
+    return "Hash verification is passing on this page.";
+  }
+
+  if (hashVerified === false) {
+    return "Hash verification is not passing on this page.";
+  }
+
+  return "Use the hash verification block above to confirm the recomputed hash.";
+}
+
+function buildSummaryAnswer(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_response {
+  return {
+    answer: [
+      context.changeSummary.headline,
+      context.changeSummary.primary_detail,
+      `The saved receipt risk score is ${context.receipt.snapshot.aggregate.risk_score} (${context.receipt.snapshot.aggregate.risk_label}), and the live recheck status is ${context.comparison.status.replaceAll("_", " ")}.`,
+      `${getHashStatus(context.hashVerified)} I can explain the receipt and live recheck, but I cannot recommend trades or position changes.`,
+    ].join(" "),
+    citations: [
+      "receipt_change_summary.headline",
+      "receipt_change_summary.primary_detail",
+      "receipt.snapshot.aggregate.risk_score",
+      "snapshot_comparison.status",
+      "receipt.snapshot_hash",
+    ],
+  };
+}
+
+function buildReviewAnswer(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_response {
+  const reviewPoints = context.changeSummary.review_points
+    .map((point) => `- ${point}`)
+    .join(" ");
+
+  return {
+    answer: [
+      `Review this receipt as ${context.changeSummary.label.replaceAll("_", " ")}.`,
+      context.changeSummary.primary_detail,
+      reviewPoints,
+      `Position state changes: ${context.comparison.changed_position_count}. Largest comparable mark move: ${context.comparison.max_abs_mark_price_change_percent.toFixed(2)}%.`,
+    ].join(" "),
+    citations: [
+      "receipt_change_summary.label",
+      "receipt_change_summary.review_points",
+      "snapshot_comparison.changed_position_count",
+      "snapshot_comparison.max_abs_mark_price_change_percent",
+    ],
+  };
+}
+
+function buildMarketAnswer(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_response {
+  const focusMarket =
+    context.marketContext.most_relevant_position?.market ?? "no single market";
+  const openInterestDelta = formatNullableSignedUsd(
+    context.marketContext.total_open_interest_delta_usd,
+  );
+
+  return {
+    answer: [
+      context.marketContext.headline,
+      context.marketContext.summary,
+      `Focus market: ${focusMarket}. Largest comparable mark move: ${context.marketContext.max_abs_mark_price_change_percent.toFixed(2)}%. Total open-interest delta: ${openInterestDelta}.`,
+      "This is descriptive market context, not a direction signal or trade recommendation.",
+    ].join(" "),
+    citations: [
+      "market_context.headline",
+      "market_context.summary",
+      "market_context.most_relevant_position",
+      "market_context.max_abs_mark_price_change_percent",
+      "market_context.total_open_interest_delta_usd",
+    ],
+  };
+}
+
+function buildLiquidationAnswer(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_response {
+  const focusPosition = context.marketContext.most_relevant_position;
+
+  if (!focusPosition) {
+    return {
+      answer:
+        "There is no comparable open position with market context in this live recheck. The app cannot identify a focus liquidation buffer for this receipt state.",
+      citations: [
+        "market_context.positions",
+        "market_context.most_relevant_position",
+      ],
+    };
+  }
+
+  return {
+    answer: `${focusPosition.market} is the current focus market for liquidation review. Its listed liquidation distance moved ${formatMetricMove(focusPosition.liquidation_distance_bps, formatPercentFromBps)}, and the position read is: ${focusPosition.summary} This uses listed liquidation prices and mark-price context, not Hyperliquid's exact liquidation engine.`,
+    citations: [
+      "market_context.most_relevant_position.market",
+      "market_context.most_relevant_position.liquidation_distance_bps",
+      "market_context.most_relevant_position.summary",
+      "snapshot_comparison.metrics.min_liquidation_distance_bps",
+    ],
+  };
+}
+
+function buildFundingAnswer(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_response {
+  const fundingDelta = formatNullableSignedUsd(
+    context.marketContext.total_daily_funding_delta_usd,
+  );
+
+  return {
+    answer: [
+      `Receipt daily funding was ${formatSignedUsd(context.receipt.snapshot.aggregate.daily_funding_usd)}.`,
+      `The live recheck daily funding moved ${formatMetricMove(context.comparison.metrics.daily_funding_usd, formatNullableSignedUsd)}.`,
+      `Market-context total daily funding delta is ${fundingDelta}. Funding is a holding-cost signal and can change while the position stays open.`,
+    ].join(" "),
+    citations: [
+      "receipt.snapshot.aggregate.daily_funding_usd",
+      "snapshot_comparison.metrics.daily_funding_usd",
+      "market_context.total_daily_funding_delta_usd",
+    ],
+  };
+}
+
+function buildAccountHistoryAnswer(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_response {
+  const accountValueContext = context.accountValueContext ?? null;
+
+  if (!accountValueContext) {
+    return {
+      answer:
+        "Sampled account-value context has not loaded for this receipt. Use the receipt account-value context panel when available; it compares the receipt timestamp to the nearest Hyperliquid portfolio-history sample.",
+      citations: ["receipt_account_value_context"],
+    };
+  }
+
+  const latestVsReceipt = formatPercent(
+    accountValueContext.latest_vs_receipt_percent,
+  );
+  const sampleGap =
+    accountValueContext.nearest_sample_gap_minutes === null
+      ? "n/a"
+      : `${accountValueContext.nearest_sample_gap_minutes} minutes`;
+
+  return {
+    answer: `${accountValueContext.headline} Latest sampled account value is ${latestVsReceipt} versus the receipt value, and the nearest sample gap is ${sampleGap}. Receipt drawdown is ${formatPercent(accountValueContext.receipt_drawdown_percent)}. This is sampled context, not complete accounting.`,
+    citations: [
+      "receipt_account_value_context.headline",
+      "receipt_account_value_context.latest_vs_receipt_percent",
+      "receipt_account_value_context.nearest_sample_gap_minutes",
+      "receipt_account_value_context.receipt_drawdown_percent",
+    ],
+  };
+}
+
+function buildHashAnswer(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_response {
+  return {
+    answer: `Receipt ${context.receipt.id} saves snapshot hash ${truncateMiddle(context.receipt.snapshot_hash, 14)}. ${getHashStatus(context.hashVerified)} The hash proves the local snapshot content has not changed since receipt creation; it does not prove Hyperliquid's external data was correct at capture time.`,
+    citations: [
+      "receipt.id",
+      "receipt.snapshot_hash",
+      "receipt_verification.matches",
+    ],
+  };
+}
+
+function buildAdviceRefusal(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_response {
+  return {
+    answer: [
+      "I cannot recommend trades, leverage, or position changes.",
+      `I can explain the receipt signals: ${context.changeSummary.headline}`,
+      `Saved risk score is ${context.receipt.snapshot.aggregate.risk_score}, live recheck status is ${context.comparison.status.replaceAll("_", " ")}, and market context says: ${context.marketContext.headline}`,
+    ].join(" "),
+    citations: [
+      "receipt_change_summary.headline",
+      "receipt.snapshot.aggregate.risk_score",
+      "snapshot_comparison.status",
+      "market_context.headline",
+    ],
+  };
+}
+
+export function answerReceiptRiskQuestion(input: {
+  context: receipt_risk_assistant_context;
+  question: string;
+}): receipt_risk_assistant_response {
+  const normalizedQuestion = input.question.trim().toLowerCase();
+
+  if (normalizedQuestion.length === 0) {
+    return buildSummaryAnswer(input.context);
+  }
+
+  if (includesAdviceIntent(normalizedQuestion)) {
+    return buildAdviceRefusal(input.context);
+  }
+
+  if (
+    includesAny(normalizedQuestion, [
+      "hash",
+      "verify",
+      "verified",
+      "proof",
+      "receipt id",
+      "snapshot",
+    ])
+  ) {
+    return buildHashAnswer(input.context);
+  }
+
+  if (
+    includesAny(normalizedQuestion, [
+      "liquidation",
+      "liq",
+      "buffer",
+      "distance",
+      "maintenance",
+    ])
+  ) {
+    return buildLiquidationAnswer(input.context);
+  }
+
+  if (includesAny(normalizedQuestion, ["funding", "carry", "cost", "earn"])) {
+    return buildFundingAnswer(input.context);
+  }
+
+  if (
+    includesAny(normalizedQuestion, [
+      "market",
+      "mark",
+      "price",
+      "open interest",
+      "oi",
+    ])
+  ) {
+    return buildMarketAnswer(input.context);
+  }
+
+  if (
+    includesAny(normalizedQuestion, [
+      "history",
+      "drawdown",
+      "account value",
+      "portfolio",
+      "sample",
+    ])
+  ) {
+    return buildAccountHistoryAnswer(input.context);
+  }
+
+  if (
+    includesAny(normalizedQuestion, [
+      "change",
+      "changed",
+      "different",
+      "review",
+      "summary",
+      "what happened",
+    ])
+  ) {
+    return buildReviewAnswer(input.context);
+  }
+
+  return buildSummaryAnswer(input.context);
+}
+
+export function getReceiptRiskAssistantSuggestions(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_suggestion[] {
+  const suggestions = [
+    {
+      id: "review",
+      label: "Review",
+      question: "What should I review in this receipt?",
+    },
+    {
+      id: "market",
+      label: "Market",
+      question: "What changed in the current market context?",
+    },
+    {
+      id: "liquidation",
+      label: "Liquidation",
+      question: "What changed around liquidation distance?",
+    },
+    {
+      id: "funding",
+      label: "Funding",
+      question: "What changed around funding carry?",
+    },
+    {
+      id: "hash",
+      label: "Hash",
+      question: "What does the receipt hash verify?",
+    },
+  ];
+
+  if (context.accountValueContext) {
+    return [
+      ...suggestions,
+      {
+        id: "history",
+        label: "History",
+        question: "How does account-value history change the read?",
+      },
+    ];
+  }
+
+  return suggestions;
+}

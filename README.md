@@ -17,6 +17,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - Browser-local receipt pages for live Hyperliquid lookups.
 - Live receipt recheck that compares a saved receipt against a fresh read-only Hyperliquid snapshot.
 - Receipt change summary that combines live recheck, market context, funding movement, position changes, and sampled account-value context into one quick read.
+- Receipt risk assistant that answers cited questions about a saved live receipt after recheck.
 - Receipt account-value context that shows whether a saved live receipt was near a sampled account peak, in drawdown, or materially different from latest sampled account value.
 - Market context since receipt: saved-vs-current mark price, liquidation direction, funding change, and open-interest change for live rechecks.
 - Guarded local risk assistant chat that explains the loaded snapshot and refuses trade recommendations.
@@ -35,6 +36,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/app/receipt/[id]/page.tsx` renders deterministic fixture receipts, recomputes the snapshot hash, and shows the EAS fallback payload.
 - `src/app/receipt/local/[id]/page.tsx` renders browser-local live receipts created from pasted Hyperliquid addresses and supports live rechecks.
 - `src/app/receipt/local/[id]/receipt-account-value-context-panel.tsx` renders sampled account-value context for local live receipts.
+- `src/app/receipt/local/[id]/receipt-risk-assistant-panel.tsx` renders the local assistant chat for a rechecked receipt.
 - `src/lib/receipts/receipt-change-summary.ts` synthesizes live recheck, market context, and account-value context into a compact receipt summary.
 - `src/lib/perps/types.ts` defines the normalized snapshot, position, scenario, and receipt models.
 - `src/lib/perps/fixtures.ts` contains the demo account snapshots.
@@ -45,6 +47,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/lib/funding/funding-watch.ts` derives funding carry labels, burden, and top funding drivers.
 - `src/lib/market/market-context.ts` derives plain-English saved-vs-current market context for receipt rechecks.
 - `src/lib/assistant/risk-assistant.ts` contains dependency-free assistant response logic and guardrails.
+- `src/lib/assistant/receipt-risk-assistant.ts` contains dependency-free receipt assistant response logic and guardrails.
 - `src/lib/receipts/receipt.ts` contains canonical JSON serialization, hashing, deterministic IDs, and verification.
 - `src/lib/receipts/snapshot-comparison.ts` compares saved receipt snapshots against fresh live snapshots.
 - `src/lib/hyperliquid/adapter.ts` maps Hyperliquid `info` responses into the normalized model.
@@ -70,6 +73,7 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - EAS support is a fallback payload and manual Sepolia flow, not an in-app wallet transaction.
 - The EAS payload hashes account/protocol identifiers instead of placing raw account identifiers onchain.
 - The risk assistant is local and deterministic in this build; it does not call an LLM API.
+- The receipt risk assistant is local and deterministic in this build; it answers only from receipt, hash, live recheck, market, funding, and sampled account-value context.
 - Liquidation buffer ladder uses listed liquidation prices and does not compute exact Hyperliquid liquidation behavior.
 - Funding carry watch assumes current funding and notional stay unchanged and uses normalized mark-price notional as an estimate.
 - Market context uses mark price for saved-vs-current comparison and treats open interest as descriptive context, not a standalone direction signal.
@@ -119,6 +123,7 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 - Account value history is sampled from Hyperliquid portfolio windows and is not complete accounting.
 - Receipt account-value context uses a nearest sampled point, not an exact historical account audit.
 - Receipt change summary is heuristic and descriptive; it is not a trading recommendation.
+- Receipt risk assistant responses are deterministic explanations of local receipt/recheck fields, not financial advice or LLM reasoning.
 - Live receipt recheck compares the saved receipt to a fresh snapshot but is not an exact liquidation monitor.
 - Market context is descriptive and depends on a comparable saved/current position pair.
 - Liquidation buffer ladder ranks listed buffer only; actual liquidation behavior can change with cross margin, funding, and other open-position PnL.
@@ -140,4 +145,4 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 
 ## Resume Bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, receipt change summaries, receipt account-history context, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
