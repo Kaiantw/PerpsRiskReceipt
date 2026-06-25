@@ -43,5 +43,5 @@ buffer, notional concentration, positive funding cost, and unrealized loss.
 - [[funding-carry-watch]] remains the detailed funding carry view.
 - [[account-value-timeline]] shows whether account equity has recently changed
   around the current risk-driver state.
-- A future receipt-page version could compare saved risk drivers against live
-  recheck drivers.
+- [[receipt-risk-driver-comparison]] reuses this driver model on local receipt
+  pages after a live recheck.

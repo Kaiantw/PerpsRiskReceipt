@@ -88,6 +88,13 @@ use this file for external protocol assumptions.
   - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
   - https://www.investopedia.com/what-are-perpetual-futures-7494870
   - https://metamask.io/news/leverage-margin-perpetual-futures-trading
+- docs checked on 2026-06-25 for receipt risk-driver comparison:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://www.investopedia.com/what-are-perpetual-futures-7494870
+  - https://metamask.io/news/leverage-margin-perpetual-futures-trading
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -197,6 +204,13 @@ use this file for external protocol assumptions.
   - listed liquidation price remains an input, not an exact Hyperliquid liquidation calculation; cross margin, other open-position PnL, and funding can change actual liquidation behavior.
   - positive funding burden is treated as a holding-cost driver; earned funding does not increase the funding-cost component.
   - the panel is a triage view for inspection, not a recommendation to change leverage, close, hedge, or resize a position.
+- receipt risk-driver comparison assumptions:
+  - local Hyperliquid receipt live rechecks reuse the existing fresh read-only snapshot; no new endpoint is called.
+  - saved receipt drivers and current drivers both use `buildPositionRiskDrivers` so the comparison is consistent with the dashboard.
+  - account mismatch and position-state changes take priority over risk-driver interpretation.
+  - material driver-score movement uses 10 points, material listed-buffer movement uses 500 bps, and material daily funding movement uses 1 USD/day.
+  - top-driver changes are review cues only when material worsening/improvement thresholds are not crossed first.
+  - the panel compares heuristic driver attribution, not Hyperliquid's official liquidation engine, cross-margin model, or a trade recommendation.
 
 ## eas
 

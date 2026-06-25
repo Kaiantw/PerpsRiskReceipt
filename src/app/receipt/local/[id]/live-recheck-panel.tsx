@@ -22,10 +22,18 @@ import type {
   metric_comparison,
   snapshot_comparison,
 } from "@/lib/receipts/snapshot-comparison.ts";
+import type { position_risk_driver_category } from "@/lib/risk/position-risk-drivers.ts";
 import {
   buildReceiptChangeSummary,
   type receipt_change_summary,
 } from "@/lib/receipts/receipt-change-summary.ts";
+import {
+  compareReceiptRiskDrivers,
+  type receipt_risk_driver_comparison,
+  type receipt_risk_driver_comparison_label,
+  type receipt_risk_driver_comparison_severity,
+  type receipt_risk_driver_market_status,
+} from "@/lib/receipts/receipt-risk-driver-comparison.ts";
 import { compareSnapshots } from "@/lib/receipts/snapshot-comparison.ts";
 import { ReceiptRiskAssistantPanel } from "./receipt-risk-assistant-panel.tsx";
 
@@ -33,7 +41,11 @@ type recheck_state =
   | { status: "idle" }
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "loaded"; comparison: snapshot_comparison };
+  | {
+      status: "loaded";
+      comparison: snapshot_comparison;
+      currentSnapshot: normalized_account_snapshot;
+    };
 
 type hyperliquid_snapshot_response =
   | { snapshot: normalized_account_snapshot }
@@ -106,6 +118,39 @@ const receiptSummaryTone: Record<receipt_change_summary["severity"], string> = {
   neutral: "border-emerald-200 bg-emerald-100 text-emerald-950",
 };
 
+const riskDriverComparisonLabels: Record<
+  receipt_risk_driver_comparison_label,
+  string
+> = {
+  no_live_snapshot: "no live snapshot",
+  account_mismatch: "account mismatch",
+  positions_changed: "positions changed",
+  driver_worsened: "driver higher",
+  driver_improved: "driver lower",
+  driver_changed: "driver changed",
+  little_changed: "little changed",
+};
+
+const riskDriverComparisonTone: Record<
+  receipt_risk_driver_comparison_severity,
+  string
+> = {
+  critical: "border-red-200 bg-red-100 text-red-950",
+  changed: "border-amber-200 bg-amber-100 text-amber-950",
+  watch: "border-yellow-200 bg-yellow-100 text-yellow-950",
+  neutral: "border-emerald-200 bg-emerald-100 text-emerald-950",
+};
+
+const riskDriverMarketStatusLabels: Record<
+  receipt_risk_driver_market_status,
+  string
+> = {
+  same_position: "same position",
+  position_changed: "position changed",
+  closed: "closed",
+  new: "new",
+};
+
 export function LiveRecheckPanel({
   hashVerified,
   receipt,
@@ -137,6 +182,7 @@ export function LiveRecheckPanel({
 
       setState({
         status: "loaded",
+        currentSnapshot: body.snapshot,
         comparison: compareSnapshots({
           receiptSnapshot: receipt.snapshot,
           currentSnapshot: body.snapshot,
@@ -191,6 +237,7 @@ export function LiveRecheckPanel({
       {state.status === "loaded" ? (
         <LiveRecheckResult
           comparison={state.comparison}
+          currentSnapshot={state.currentSnapshot}
           hashVerified={hashVerified}
           receipt={receipt}
           receiptAccountValueContext={receiptAccountValueContext ?? null}
@@ -202,16 +249,22 @@ export function LiveRecheckPanel({
 
 function LiveRecheckResult({
   comparison,
+  currentSnapshot,
   hashVerified,
   receipt,
   receiptAccountValueContext,
 }: {
   comparison: snapshot_comparison;
+  currentSnapshot: normalized_account_snapshot;
   hashVerified?: boolean;
   receipt: risk_receipt;
   receiptAccountValueContext: receipt_account_value_context | null;
 }) {
   const marketContext = buildMarketContext(comparison);
+  const riskDriverComparison = compareReceiptRiskDrivers({
+    savedSnapshot: receipt.snapshot,
+    currentSnapshot,
+  });
   const changeSummary = buildReceiptChangeSummary({
     comparison,
     marketContext,
@@ -254,6 +307,7 @@ function LiveRecheckResult({
       </div>
 
       <ReceiptChangeSummaryResult summary={changeSummary} />
+      <ReceiptRiskDriverComparisonResult comparison={riskDriverComparison} />
       <ReceiptRiskAssistantPanel
         context={{
           receipt,
@@ -353,6 +407,166 @@ function LiveRecheckResult({
         </div>
       )}
     </div>
+  );
+}
+
+function ReceiptRiskDriverComparisonResult({
+  comparison,
+}: {
+  comparison: receipt_risk_driver_comparison;
+}) {
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-stone-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">
+            Risk drivers since receipt
+          </h3>
+          <p className="mt-1 text-sm font-medium text-stone-800">
+            {comparison.headline}
+          </p>
+          <p className="mt-1 text-sm text-stone-600">
+            {comparison.summary}
+          </p>
+        </div>
+        <span
+          className={`rounded-lg border px-3 py-2 text-sm font-semibold ${riskDriverComparisonTone[comparison.severity]}`}
+        >
+          {riskDriverComparisonLabels[comparison.label]}
+        </span>
+      </div>
+
+      <dl className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MiniMetric
+          label="Saved top"
+          value={comparison.saved_top_driver_market ?? "n/a"}
+        />
+        <MiniMetric
+          label="Current top"
+          value={comparison.current_top_driver_market ?? "n/a"}
+        />
+        <MiniMetric
+          label="Score delta"
+          value={formatSignedNullableNumber(
+            comparison.top_driver_score_delta,
+          )}
+        />
+        <MiniMetric
+          label="Daily funding delta"
+          value={formatSignedNullableUsd(comparison.daily_funding_delta_usd)}
+        />
+        <MiniMetric
+          label="Gross exposure delta"
+          value={formatSignedPercentFromBps(
+            comparison.gross_exposure_delta_bps,
+          )}
+        />
+        <MiniMetric
+          label="Largest share delta"
+          value={formatSignedPercentFromBps(
+            comparison.largest_position_share_delta_bps,
+          )}
+        />
+        <MiniMetric
+          label="Closest buffer delta"
+          value={formatSignedPercentFromBps(
+            comparison.closest_liquidation_distance_delta_bps,
+          )}
+        />
+        <MiniMetric
+          label="Net directional delta"
+          value={formatSignedNullableUsd(
+            comparison.net_directional_notional_delta_usd,
+          )}
+        />
+      </dl>
+
+      <ul className="space-y-2 border-t border-stone-200 p-4 text-sm text-stone-700">
+        {comparison.review_points.map((point) => (
+          <li className="flex gap-2" key={point}>
+            <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 rounded-full bg-stone-400" />
+            <span>{point}</span>
+          </li>
+        ))}
+      </ul>
+
+      {comparison.market_changes.length === 0 ? (
+        <p className="border-t border-stone-200 px-4 py-3 text-sm text-stone-600">
+          No position-level driver rows are available.
+        </p>
+      ) : (
+        <div className="overflow-x-auto border-t border-stone-200">
+          <table className="w-full min-w-[1040px] text-left text-sm">
+            <thead className="bg-stone-100 text-xs uppercase text-stone-600">
+              <tr>
+                <th className="px-4 py-3">Market</th>
+                <th className="px-4 py-3">State</th>
+                <th className="px-4 py-3">Primary factor</th>
+                <th className="px-4 py-3">Driver score</th>
+                <th className="px-4 py-3">Liq. buffer</th>
+                <th className="px-4 py-3">Daily funding</th>
+                <th className="px-4 py-3">Read</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparison.market_changes.map((marketChange) => (
+                <tr className="border-t border-stone-200" key={marketChange.market}>
+                  <td className="px-4 py-3 font-mono">{marketChange.market}</td>
+                  <td className="px-4 py-3">
+                    {riskDriverMarketStatusLabels[marketChange.status]}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatPrimaryDriverPair(
+                      marketChange.saved_driver?.primary_driver ?? null,
+                      marketChange.current_driver?.primary_driver ?? null,
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatDriverScorePair(
+                      marketChange.saved_driver?.driver_score ?? null,
+                      marketChange.current_driver?.driver_score ?? null,
+                    )}
+                    <p className="mt-1 text-xs text-stone-500">
+                      Delta:{" "}
+                      {formatSignedNullableNumber(
+                        marketChange.driver_score_delta,
+                      )}
+                    </p>
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatDriverMetricPair(
+                      marketChange.saved_driver?.liquidation_distance_bps ??
+                        null,
+                      marketChange.current_driver?.liquidation_distance_bps ??
+                        null,
+                      formatPercentFromBps,
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatDriverMetricPair(
+                      marketChange.saved_driver?.daily_funding_usd ?? null,
+                      marketChange.current_driver?.daily_funding_usd ?? null,
+                      formatSignedNullableUsd,
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <p className="max-w-72 text-xs leading-5 text-stone-600">
+                      {marketChange.summary}
+                    </p>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <p className="border-t border-stone-200 px-4 py-3 text-xs text-stone-500">
+        Driver comparison reuses the app&apos;s heuristic position-driver score
+        on the saved receipt and fresh snapshot. It is not a protocol-official
+        liquidation monitor or a trade recommendation.
+      </p>
+    </section>
   );
 }
 
@@ -601,6 +815,59 @@ function formatNullableSignedPercent(value: number | null) {
   }
 
   return formatSignedPercent(value);
+}
+
+function formatSignedNullableNumber(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  if (value === 0) {
+    return "0";
+  }
+
+  return `${value > 0 ? "+" : "-"}${Math.abs(value).toFixed(2)}`;
+}
+
+function formatPrimaryDriver(category: position_risk_driver_category | null) {
+  switch (category) {
+    case "liquidation_buffer":
+      return "liq. buffer";
+    case "missing_liquidation":
+      return "missing liq.";
+    case "notional_concentration":
+      return "notional";
+    case "funding_cost":
+      return "funding";
+    case "unrealized_loss":
+      return "unrealized loss";
+    case null:
+      return "n/a";
+  }
+}
+
+function formatPrimaryDriverPair(
+  savedValue: position_risk_driver_category | null,
+  currentValue: position_risk_driver_category | null,
+) {
+  return `${formatPrimaryDriver(savedValue)} to ${formatPrimaryDriver(
+    currentValue,
+  )}`;
+}
+
+function formatDriverScorePair(
+  savedValue: number | null,
+  currentValue: number | null,
+) {
+  return `${formatScore(savedValue)} to ${formatScore(currentValue)}`;
+}
+
+function formatDriverMetricPair(
+  savedValue: number | null,
+  currentValue: number | null,
+  formatter: (value: number | null) => string,
+) {
+  return `${formatter(savedValue)} to ${formatter(currentValue)}`;
 }
 
 function formatMetricPair(

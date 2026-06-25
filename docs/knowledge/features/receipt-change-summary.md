@@ -40,5 +40,7 @@ account-value history into one short read.
 
 - [[receipt-risk-assistant]] cites this summary as its primary "what changed"
   source for local live receipt pages.
+- [[receipt-risk-driver-comparison]] gives a more detailed saved-vs-current
+  driver attribution panel under this summary.
 - [[account-value-timeline]] can eventually expose a stable summary window
   preference so receipt summaries can choose day/week context deliberately.

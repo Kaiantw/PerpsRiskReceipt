@@ -22,6 +22,7 @@
 - redacted market trend uses public 24-hour candle and funding history only; it cannot prove the hidden receipt state and is capped to five disclosed markets to keep read-only history requests bounded.
 - redacted market watchlist is heuristic public-context triage over disclosed redacted fields; it cannot prove hidden receipt state, recompute the snapshot hash, or monitor exact liquidation state.
 - live receipt recheck compares against a fresh read-only snapshot but is not an exact liquidation monitor or historical account audit.
+- receipt risk-driver comparison reuses heuristic position-driver scores for saved and live snapshots; it is not protocol-official attribution and position-state changes limit direct comparison.
 - receipt account-value context uses the nearest sampled Hyperliquid portfolio point, so the visible sample gap matters for interpretation.
 - receipt change summary is heuristic and prioritizes review cues; it is not a trading recommendation or exact risk monitor.
 - receipt risk assistant is deterministic local explanation logic over visible receipt/recheck fields, not a connected LLM or financial adviser.

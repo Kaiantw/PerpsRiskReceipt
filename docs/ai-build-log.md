@@ -653,3 +653,25 @@ Review the component weights: listed liquidation buffer up to 45 points, notiona
 - Browser verification used `http://localhost:3000`, selected `demo-near-liquidation-btc-short`, confirmed `Position risk drivers`, `BTC-PERP · 77`, gross exposure `2.24x`, directional bias `net short`, components `L 42 · N 25 · F 0 · PnL 10`, the no-advice caveat, and zero browser console errors.
 ### remaining risks:
 Position risk drivers are heuristic triage over the loaded snapshot. They do not prove protocol-official risk attribution, exact liquidation state, cross-margin behavior, maintenance tiers, liquidity effects, funding settlement, or what a trader should do next.
+
+### task id: post-t9 receipt risk-driver comparison
+### codex mode:
+product iteration + implementation
+### delegated work:
+Turned the "what is valuable in the current market?" product question into a local receipt recheck panel that compares saved receipt risk drivers with fresh live risk drivers.
+### output accepted:
+Added `src/lib/receipts/receipt-risk-driver-comparison.ts`, a pure comparison module that reuses `buildPositionRiskDrivers` for saved and current snapshots. It labels no-live, account mismatch, position changes, driver worsened, driver improved, driver changed, and little-changed states; surfaces saved/current top driver, score delta, gross exposure delta, largest-position-share delta, closest listed-buffer delta, net directional delta, daily funding delta, review points, and per-market driver rows. Added tests for no-live, tighter/wider listed buffer, position changes, account mismatch, and top-driver handoff. Local live receipt rechecks now render `Risk drivers since receipt` after `Receipt change summary`. Updated source notes, limitations, README, demo script, knowledge graph, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, trading/exchange endpoint, wallet/RPC flow, backend store, exact Hyperliquid liquidation formula, alerting, LLM call, or data model change was added. The first top-driver-handoff test fixture did not actually change the lead driver; focused testing exposed that, and the fixture was corrected while keeping the production rule unchanged.
+### human review notes:
+Review the comparison thresholds: material driver-score movement at 10 points, listed-buffer movement at 500 bps, and daily funding movement at 1 USD/day. Review whether the receipt assistant should cite `Risk drivers since receipt` directly in a later slice, and whether the no-position live-account case is the right demo target for local smoke tests.
+### tests/checks run:
+- `node --test src/lib/receipts/receipt-risk-driver-comparison.test.ts` passed: 7 tests, 7 passing.
+- `npm test` passed: 112 tests, 112 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]` plus existing receipt/API routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_b1431ac476135441`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Receipt change summary`, `Risk drivers since receipt`, `Saved top`, `Current top`, `Score delta`, `No material risk-driver changes crossed the current app thresholds.`, `Market context since receipt`, and zero browser console errors.
+### remaining risks:
+Receipt risk-driver comparison is heuristic saved-vs-live attribution over normalized snapshot fields. It is not Hyperliquid's official liquidation engine, does not model margin tiers, liquidity, exact cross-margin behavior, or funding settlement, and cannot compare changed positions as the same risk object. It is descriptive review context only, not financial advice.

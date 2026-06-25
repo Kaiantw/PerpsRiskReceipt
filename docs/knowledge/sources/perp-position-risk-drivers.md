@@ -37,6 +37,7 @@ This is a triage score, not an exchange formula.
 ## linked feature ideas
 
 - [[../features/position-risk-drivers]]
+- [[../features/receipt-risk-driver-comparison]]
 - [[../features/liquidation-buffer-ladder]]
 - [[../features/funding-carry-watch]]
 - [[../features/account-value-timeline]]

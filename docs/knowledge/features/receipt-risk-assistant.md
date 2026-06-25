@@ -40,6 +40,8 @@ than giving uncited trading advice.
 - [[ai-risk-assistant]] can eventually share guardrail language and citation UI
   with this receipt-specific assistant.
 - [[receipt-change-summary]] is now the assistant's primary "what changed" source.
+- [[receipt-risk-driver-comparison]] could become a direct citation source for
+  driver-specific receipt questions.
 - [[account-value-timeline]] could later add richer account-history citations if
   the app imports more complete portfolio history.
 - [[portable-receipt-bundle]] lets the same assistant workflow apply after a

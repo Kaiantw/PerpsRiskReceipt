@@ -12,6 +12,7 @@ informed it and forward to related feature ideas.
 - [[sources/perp-market-context]] - mark price and open-interest context for current-market receipt checks.
 - [[sources/perp-liquidation-buffer]] - Hyperliquid liquidation, margining, and listed-buffer assumptions.
 - [[sources/perp-position-risk-drivers]] - position-level risk attribution notes for notional, liquidation, funding, and unrealized loss drivers.
+- [[sources/perp-receipt-risk-driver-comparison]] - saved-vs-live risk-driver comparison notes for local receipt rechecks.
 - [[sources/perp-account-value-history]] - Hyperliquid portfolio history and drawdown context.
 - [[sources/perp-risk-review-checklist]] - liquidation, funding, leverage, and market-condition review framing.
 - [[sources/perp-receipt-review-assistant]] - receipt-question source notes for hash scope, live recheck review, funding, liquidation, and guardrails.
@@ -27,6 +28,7 @@ informed it and forward to related feature ideas.
 - [[features/ai-risk-assistant]] - local guarded chat assistant for explaining the loaded snapshot.
 - [[features/funding-carry-watch]] - dashboard panel for net funding carry, burden, and top funding drivers.
 - [[features/position-risk-drivers]] - dashboard triage panel ranking position-level risk contributors.
+- [[features/receipt-risk-driver-comparison]] - local receipt recheck panel comparing saved and current risk drivers.
 - [[features/mark-price-context]] - receipt recheck panel for saved-vs-current mark, liquidation, funding, and open-interest context.
 - [[features/liquidation-buffer-ladder]] - dashboard ladder for closest listed liquidation buffers.
 - [[features/account-value-timeline]] - live dashboard account-value history, drawdown, and sampled PnL context.
@@ -47,5 +49,5 @@ informed it and forward to related feature ideas.
   cryptographic selective disclosure using EAS private data or Merkle proofs.
 - [[features/redacted-market-watchlist]] could later add configurable market-only
   thresholds without requiring a raw account address.
-- [[features/position-risk-drivers]] could later be reused on local receipt pages
-  to compare saved-vs-live risk-driver changes after a recheck.
+- [[features/receipt-risk-driver-comparison]] could later feed direct citations
+  into the receipt risk assistant.
