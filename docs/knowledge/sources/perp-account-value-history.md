@@ -22,6 +22,7 @@
 ## linked feature ideas
 
 - [[../features/account-value-timeline]]
+- [[../features/receipt-account-value-context]]
 - [[../features/live-receipt-recheck]]
 - [[../features/mark-price-context]]
 - [[../features/liquidation-buffer-ladder]]

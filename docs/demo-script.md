@@ -57,6 +57,8 @@ Open `http://localhost:3000`.
    - Point out sampled account value, period change, current drawdown, max drawdown, PnL history, and volume.
    - Click `Create local receipt`.
    - Show that the live receipt page has a snapshot hash, hash verification, and market summary.
+   - Show `Receipt account-value context`.
+   - Point out receipt value, nearest sampled account value, sample gap, latest sampled value, receipt drawdown, current drawdown, and max drawdown.
    - Click `Recheck live account`.
    - Show saved-vs-current risk score, margin usage, liquidation distance, funding, mark movement, and position-state comparison.
    - Show `Market context since receipt`.
@@ -69,4 +71,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, receipt account-history context, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

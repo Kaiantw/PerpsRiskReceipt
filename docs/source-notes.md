@@ -33,6 +33,10 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/portfolio-graphs
   - https://www.investopedia.com/terms/m/maximum-drawdown-mdd.asp
+- docs checked on 2026-06-25 for receipt account-value context:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/portfolio-graphs
+  - https://www.investopedia.com/terms/m/maximum-drawdown-mdd.asp
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -83,6 +87,12 @@ use this file for external protocol assumptions.
   - the dashboard prefers perp-specific windows such as `perpDay`, `perpWeek`, `perpMonth`, and `perpAllTime` when present.
   - drawdown is calculated from sampled account values as peak-to-current and maximum peak-to-trough decline inside the selected window.
   - the feature does not infer why account value changed; it only displays sampled account value, PnL history, volume, and drawdown context.
+- receipt account-value context assumptions:
+  - local Hyperliquid receipt pages can call the same read-only `portfolio` route used by the dashboard.
+  - the receipt context chooses the preferred perp history window with usable points.
+  - the receipt timestamp is compared to the nearest sampled account-value point, and the sample gap is shown because portfolio history is sampled.
+  - receipt drawdown is measured against sampled highs up to the nearest receipt sample, while current and max drawdown come from the selected sampled window.
+  - latest sampled account value is descriptive drift context, not proof of why the account changed.
 
 ## eas
 

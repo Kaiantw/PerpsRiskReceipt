@@ -19,51 +19,50 @@
 - Post-t9 market context is complete.
 - Post-t9 liquidation buffer ladder is complete.
 - Post-t9 account value history is complete.
+- Post-t9 receipt account-value context is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote state: `main` tracks `origin/main`.
-- Baseline before this slice: `a6bd62c feat: add liquidation buffer ladder`.
-- Current work adds live Hyperliquid account-value history and updates the linked research/feature notes under `docs/knowledge/`.
-- Dev server was started on `http://localhost:3000` for smoke verification.
+- Baseline before this slice: `c73f255 feat: add account value history`.
+- Current work adds local live receipt account-value context, reusing the read-only Hyperliquid `portfolio` route and updating the linked research/feature notes under `docs/knowledge/`.
+- A Next dev server was already running on `http://localhost:3000` for smoke verification.
 
 ## files changed
 
-- `src/lib/history/account-value-timeline.ts`: derives sampled account-value period change, current drawdown, max drawdown, labels, and headlines.
-- `src/lib/history/account-value-timeline.test.ts`: tests single-point, higher, lower, drawdown, and zero-start cases.
-- `src/lib/hyperliquid/adapter.ts`: maps and fetches the read-only `portfolio` info response.
-- `src/lib/hyperliquid/adapter.test.ts`: tests portfolio mapping and the exact read-only `portfolio` request body.
-- `src/app/api/hyperliquid/portfolio/route.ts`: dashboard API route for portfolio history.
-- `src/app/account-value-history-panel.tsx`: live dashboard panel for account-value history, drawdown, sparkline, PnL history, and volume.
-- `src/app/dashboard-client.tsx`: fetches portfolio history after successful live lookup and renders the panel.
-- `package.json`: includes account-value timeline tests.
-- `docs/knowledge/index.md`: links the account-value history source and implemented feature.
-- `docs/knowledge/features/account-value-timeline.md`: marks the feature implemented.
-- `docs/knowledge/sources/perp-account-value-history.md`: source-backed account history and drawdown note.
-- `docs/source-notes.md`: records `portfolio` endpoint assumptions.
-- `README.md`: documents account-value history.
-- `docs/demo-script.md`: adds the account-value history walkthrough.
-- `docs/known-limitations.md`: adds sampled-history limitations.
+- `src/lib/history/receipt-account-value-context.ts`: derives the receipt's nearest sampled account-value point, sample gap, latest-vs-receipt drift, receipt drawdown, and label/headline.
+- `src/lib/history/receipt-account-value-context.test.ts`: tests no history, preferred windows, nearest sample, near-peak receipts, drawdown receipts, latest drift, sample-gap watch, and zero-account percentage safety.
+- `src/app/receipt/local/[id]/receipt-account-value-context-panel.tsx`: renders local live receipt account-value context from the read-only portfolio route.
+- `src/app/receipt/local/[id]/local-receipt-client.tsx`: adds the new receipt context panel before the existing live recheck panel.
+- `package.json`: includes receipt account-value context tests.
+- `docs/knowledge/features/receipt-account-value-context.md`: new feature note.
+- `docs/knowledge/features/account-value-timeline.md`: links the dashboard timeline to receipt-page reuse.
+- `docs/knowledge/index.md`: links the new implemented feature and updates the backlog.
+- `docs/knowledge/sources/perp-account-value-history.md`: links the new feature.
+- `docs/source-notes.md`: documents receipt account-value context assumptions.
+- `docs/known-limitations.md`: documents the nearest-sampled-point limitation.
+- `README.md`: documents receipt account-history context in the demo and architecture.
+- `docs/demo-script.md`: adds the receipt account-value context walkthrough.
 - `docs/ai-build-log.md`: records this post-t9 feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `npm test` passed: 53 tests, 53 passing.
+- `npm test` passed: 60 tests, 60 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
 - `npm run build` passed and listed `/api/hyperliquid/portfolio` plus `/receipt/local/[id]`.
 - `git diff --check` passed.
-- Browser verification pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, confirmed `Account value history`, `Perp week`, `Current drawdown`, `Max drawdown`, `Window volume`, and zero console errors.
+- Browser verification used the existing dev server on `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_6ff6d84eeca07e7a`, confirmed `Receipt account-value context`, `Nearest sample`, `Sample gap`, `Latest vs receipt`, `Receipt drawdown`, the sampled-history caveat, and `Hash verified`, then clicked `Recheck live account` and confirmed `Market context since receipt` still rendered with zero console errors.
 
 ## blockers
 
-- No hard blocker for merging the one-day MVP.
-- `npm audit --audit-level=moderate` still reports the known `postcss` advisory through `next`.
+- No hard blocker for this feature slice.
+- `npm audit --audit-level=moderate` still has the previously documented `postcss` advisory through `next`; it was not rerun or force-fixed in this slice.
 - Live Hyperliquid receipts are browser-local only and are not synced/shareable across devices.
-- Live account value history depends on Hyperliquid `portfolio` response availability and is sampled context, not complete accounting.
+- Receipt account-value context depends on Hyperliquid `portfolio` response availability and is sampled context, not complete accounting or a historical account audit.
 - Live receipt recheck depends on Hyperliquid API availability and is not an exact liquidation monitor.
 - Market context requires comparable saved/current positions and treats open interest as descriptive context, not a standalone direction signal.
 - Liquidation buffer ladder ranks listed liquidation prices only and does not model cross-margin equity, funding changes, liquidity changes, or other open-position PnL.
@@ -74,4 +73,4 @@
 
 ## exact next recommended action
 
-Commit and push the account value history slice. The next product task should be receipt-page portfolio context: show the same account-value history next to saved live receipts so the viewer can see whether the receipt happened near a recent peak, in a drawdown, or during a flat account-value window.
+Commit and push the receipt account-value context slice. The next product task should be a receipt change summary that combines account-value context, live recheck status, market context, and position changes into one short reviewer-readable verdict.

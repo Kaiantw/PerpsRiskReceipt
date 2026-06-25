@@ -2,7 +2,7 @@
 
 ## status
 
-Implemented for live Hyperliquid lookups.
+Implemented for live Hyperliquid lookups and reused by local receipt pages.
 
 ## product idea
 
@@ -29,8 +29,11 @@ the current risk state is unusual for the account.
   drawdown watch.
 - States that the history is sampled context and not complete accounting or
   financial advice.
+- Local receipt pages reuse the same portfolio history to show where the saved
+  receipt sat inside sampled account-value history.
 
 ## next connected feature
 
-[[live-receipt-recheck]] can reuse this timeline so receipt pages show whether a
-saved risk state happened during an account drawdown or near a recent high.
+[[receipt-account-value-context]] now handles receipt-page account-history
+context. A later slice could combine this with [[mark-price-context]] into a
+single receipt-change summary.

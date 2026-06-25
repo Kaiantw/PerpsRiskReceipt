@@ -21,7 +21,9 @@ informed it and forward to related feature ideas.
 - [[features/mark-price-context]] - receipt recheck panel for saved-vs-current mark, liquidation, funding, and open-interest context.
 - [[features/liquidation-buffer-ladder]] - dashboard ladder for closest listed liquidation buffers.
 - [[features/account-value-timeline]] - live dashboard account-value history, drawdown, and sampled PnL context.
+- [[features/receipt-account-value-context]] - local receipt panel that positions the saved snapshot inside sampled account-value history.
 
 ## connected backlog ideas
 
-- [[features/live-receipt-recheck]] can show account-value history on local live receipt pages, not only on the dashboard.
+- [[features/live-receipt-recheck]] could next combine account-value context,
+  market context, and position changes into a single printable reviewer summary.

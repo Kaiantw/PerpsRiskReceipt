@@ -463,3 +463,24 @@ Review the account-value trend thresholds: higher/lower at 2% period change and 
 - Browser verification pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, confirmed `Account value history`, `Perp week`, `Current drawdown`, `Max drawdown`, `Window volume`, and zero console errors.
 ### remaining risks:
 Account value history depends on Hyperliquid API availability and the `portfolio` response shape. It is sampled context, not complete accounting, a trade journal import, or financial advice.
+
+### task id: post-t9 receipt account-value context
+### codex mode:
+product iteration + implementation
+### delegated work:
+Extended local live receipt pages with sampled account-value context so a saved receipt can be compared against Hyperliquid portfolio history, not only against a fresh current snapshot.
+### output accepted:
+Added a pure receipt account-value context module with tests for no history, preferred perp windows, nearest receipt sample, near-peak receipts, drawdown receipts, latest sampled account-value drift, far sample gaps, and zero-account percentage safety. Added a local receipt panel that fetches the existing read-only `portfolio` route, shows receipt value, nearest sample, sample gap, latest sampled value, latest versus receipt, receipt drawdown, current drawdown, max drawdown, and sampled point count. Updated the knowledge graph, source notes, README, demo script, limitations, and handoff.
+### output rejected or changed:
+The first implementation labeled a receipt near peak before considering material latest-account-value drift. Tests exposed that product-priority bug, so label priority now treats material latest higher/lower drift as more important than near-peak status. No trading endpoint, websocket, backend receipt persistence, chart dependency, exact historical audit, or recommendation logic was added.
+### human review notes:
+Review the receipt context thresholds: material latest-vs-receipt change at 2%, drawdown at 10%, near peak within 2% drawdown, and sample-gap watch above 60 minutes. Review whether `Perp day` should remain the first preferred receipt context window or whether local receipts should prefer `Perp week`.
+### tests/checks run:
+- `npm test` passed: 60 tests, 60 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/api/hyperliquid/portfolio` plus `/receipt/local/[id]`.
+- `git diff --check` passed.
+- Browser verification used the existing dev server on `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_6ff6d84eeca07e7a`, confirmed `Receipt account-value context`, `Nearest sample`, `Sample gap`, `Latest vs receipt`, `Receipt drawdown`, `Portfolio history is sampled account-value context`, and `Hash verified`, then clicked `Recheck live account` and confirmed `Market context since receipt` still rendered with zero console errors.
+### remaining risks:
+Receipt account-value context depends on Hyperliquid API availability and the `portfolio` response shape. It uses the nearest sampled portfolio point, so the sample gap matters. It is not exact accounting, causality analysis, a trade journal import, or financial advice.
