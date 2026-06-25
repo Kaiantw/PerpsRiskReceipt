@@ -15,6 +15,7 @@ informed it and forward to related feature ideas.
 - [[sources/perp-risk-review-checklist]] - liquidation, funding, leverage, and market-condition review framing.
 - [[sources/perp-receipt-review-assistant]] - receipt-question source notes for hash scope, live recheck review, funding, liquidation, and guardrails.
 - [[sources/portable-receipt-privacy]] - privacy framing for full receipt export, hash verification, offchain sharing, and minimal onchain metadata.
+- [[sources/redacted-receipt-sharing]] - data-minimization and selective-disclosure source notes for redacted receipt sharing.
 
 ## implemented feature notes
 
@@ -28,10 +29,11 @@ informed it and forward to related feature ideas.
 - [[features/receipt-change-summary]] - single live-recheck summary combining position, market, funding, and account-history signals.
 - [[features/receipt-risk-assistant]] - local receipt-page assistant that answers cited questions from the receipt summary and live recheck context.
 - [[features/portable-receipt-bundle]] - explicit full-snapshot export/import flow for reviewing local live receipts across browsers.
+- [[features/redacted-receipt-share]] - minimized receipt share that hides raw account and exact position values while preserving a hash reference and risk summary.
 
 ## connected backlog ideas
 
 - [[features/receipt-risk-assistant]] could later use a guarded server-side LLM
   once citations, refusal policy, and private-data boundaries are stronger.
-- [[features/portable-receipt-bundle]] could later support redacted or selective
-  disclosure bundles when the product needs safer public sharing.
+- [[features/redacted-receipt-share]] could later evolve from minimized JSON to
+  cryptographic selective disclosure using EAS private data or Merkle proofs.

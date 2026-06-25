@@ -58,6 +58,12 @@ use this file for external protocol assumptions.
   - https://easscan.org/privacy
   - https://w3c-ccg.github.io/data-minimization/
   - https://www.w3.org/TR/vc-data-model-2.0/
+- docs checked on 2026-06-25 for redacted receipt sharing:
+  - https://docs.attest.org/docs/tutorials/private-data-attestations
+  - https://github.com/ethereum-attestation-service/eas-docs-site/blob/main/docs/developer-tools/eas-sdk.md
+  - https://w3c-ccg.github.io/data-minimization/
+  - https://www.w3.org/TR/vc-data-model-2.0/
+  - https://w3c-ccg.github.io/Merkle-Disclosure-2021/jwp/
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -133,6 +139,12 @@ use this file for external protocol assumptions.
   - importing stores the receipt in browser localStorage under the existing local receipt key and does not sync it to a backend.
   - the import flow recomputes the snapshot hash before enabling import.
   - EAS/onchain fallback remains minimal metadata plus snapshot hash; full private trading state is not put onchain by this feature.
+- redacted receipt share assumptions:
+  - the redacted bundle is a minimized JSON presentation, not a Merkle proof, zero-knowledge proof, Verifiable Credential, JSON Web Proof, or EAS private-data attestation.
+  - the redacted bundle preserves the original snapshot hash as a reference only; the hidden full snapshot is required to recompute that hash.
+  - redacted shares hide the raw account identifier, withdrawable value, exact account value, exact total notional, position sizes, entry prices, mark prices, liquidation prices, unrealized PnL, and exact funding dollars.
+  - redacted shares keep protocol, data timestamp, freshness, risk score, aggregate bucketed values, disclosed market names, side, notional bucket, liquidation-distance bps, funding bps, and optional open-interest bucket.
+  - redacted shares can support lightweight review or public portfolio evidence, but full bundles are still required for local receipt import, hash recomputation, live recheck, EAS payload generation, and receipt assistant context.
 
 ## eas
 
@@ -151,6 +163,8 @@ use this file for external protocol assumptions.
   - `bytes32 snapshotHash,bytes32 accountHash,bytes32 protocolHash,uint16 riskScore,uint64 dataTimestamp,uint64 accountValueUsd,uint64 totalNotionalUsd,uint64 marginUsageBps`
 - fallback privacy note:
   - the encoded payload stores account/protocol hashes rather than the raw account identifier.
+- private-data note:
+  - EAS private-data patterns use private data plus Merkle proofs for selective disclosure; this app's redacted receipt bundle is only a minimized offchain summary and does not implement that proof system.
 - manual fallback steps:
   - register the schema on Sepolia if no schema UID exists.
   - call `EAS.attest` with zero recipient, no expiration, revocable true, zero refUID, and the encoded payload.

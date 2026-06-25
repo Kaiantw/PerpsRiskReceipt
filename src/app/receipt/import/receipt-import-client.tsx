@@ -14,8 +14,12 @@ import type { receipt_verification, risk_receipt } from "@/lib/perps/types.ts";
 import { getLocalReceiptStorageKey } from "@/lib/receipts/local-receipts.ts";
 import {
   getPortableReceiptBundlePreview,
+  isFullReceiptBundle,
+  isRedactedReceiptBundle,
   parsePortableReceiptBundleJson,
   type portable_receipt_bundle_preview,
+  type redacted_receipt_bundle,
+  type redacted_receipt_bundle_preview,
 } from "@/lib/receipts/portable-receipt-bundle.ts";
 import { verifyReceipt } from "@/lib/receipts/receipt.ts";
 
@@ -23,10 +27,15 @@ type import_state =
   | { status: "empty" }
   | { status: "invalid"; message: string }
   | {
-      status: "preview";
+      status: "full_preview";
       receipt: risk_receipt;
       preview: portable_receipt_bundle_preview;
       verification: receipt_verification;
+    }
+  | {
+      status: "redacted_preview";
+      bundle: redacted_receipt_bundle;
+      preview: redacted_receipt_bundle_preview;
     };
 
 export function ReceiptImportClient() {
@@ -53,6 +62,23 @@ export function ReceiptImportClient() {
       return;
     }
 
+    if (isRedactedReceiptBundle(parsed.bundle)) {
+      setState({
+        status: "redacted_preview",
+        bundle: parsed.bundle,
+        preview: getPortableReceiptBundlePreview(parsed.bundle),
+      });
+      return;
+    }
+
+    if (!isFullReceiptBundle(parsed.bundle)) {
+      setState({
+        status: "invalid",
+        message: "Bundle format is not supported by this version of the app.",
+      });
+      return;
+    }
+
     const verification = await verifyReceipt(parsed.bundle.receipt);
 
     if (importPreviewRequestIdRef.current !== requestId) {
@@ -60,7 +86,7 @@ export function ReceiptImportClient() {
     }
 
     setState({
-      status: "preview",
+      status: "full_preview",
       receipt: parsed.bundle.receipt,
       preview: getPortableReceiptBundlePreview(parsed.bundle),
       verification,
@@ -68,7 +94,7 @@ export function ReceiptImportClient() {
   }
 
   function importReceipt() {
-    if (state.status !== "preview" || !state.verification.matches) {
+    if (state.status !== "full_preview" || !state.verification.matches) {
       return;
     }
 
@@ -88,7 +114,7 @@ export function ReceiptImportClient() {
               Risk receipt
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-normal">
-              Import portable bundle
+              Inspect portable bundle
             </h1>
           </div>
           <Link
@@ -100,9 +126,9 @@ export function ReceiptImportClient() {
         </header>
 
         <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-950">
-          A portable bundle contains a full private risk snapshot: account,
-          positions, sizes, prices, liquidation prices, funding estimates, and
-          risk metrics. Import only bundles you intend to review in this browser.
+          Full bundles contain private account and position details. Redacted
+          bundles hide those details and preserve only a hash reference plus a
+          minimized risk summary.
         </section>
 
         <section className="rounded-lg border border-stone-300 bg-white p-4">
@@ -124,8 +150,8 @@ export function ReceiptImportClient() {
 
           {state.status === "empty" ? (
             <p className="mt-3 text-sm text-stone-600">
-              Paste an exported receipt bundle to preview and verify it before
-              saving it locally.
+              Paste a full bundle to import a local receipt, or paste a
+              redacted bundle to inspect the minimized share summary.
             </p>
           ) : null}
 
@@ -136,7 +162,7 @@ export function ReceiptImportClient() {
           ) : null}
         </section>
 
-        {state.status === "preview" ? (
+        {state.status === "full_preview" ? (
           <section className="rounded-lg border border-stone-300 bg-white p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -205,6 +231,105 @@ export function ReceiptImportClient() {
             >
               Import receipt
             </button>
+          </section>
+        ) : null}
+
+        {state.status === "redacted_preview" ? (
+          <section className="rounded-lg border border-stone-300 bg-white p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Redacted share preview</h2>
+                <p className="mt-1 text-sm text-stone-600">
+                  This bundle hides the full snapshot. The original snapshot
+                  hash is preserved as a reference, but the app cannot recompute
+                  it without the hidden account and position fields.
+                </p>
+              </div>
+              <span className="rounded-lg border border-emerald-200 bg-emerald-100 px-3 py-2 text-sm font-semibold text-emerald-950">
+                Redacted
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <ImportMetric label="Receipt" value={state.preview.receipt_id} />
+              <ImportMetric label="Protocol" value={state.preview.protocol} />
+              <ImportMetric
+                label="Data timestamp"
+                value={formatIsoDate(state.preview.data_time_iso)}
+              />
+              <ImportMetric
+                label="Risk score"
+                value={`${state.preview.risk_score} · ${state.preview.risk_label}`}
+              />
+              <ImportMetric
+                label="Account value"
+                value={state.bundle.aggregate.account_value_bucket_usd}
+              />
+              <ImportMetric
+                label="Total notional"
+                value={state.bundle.aggregate.total_notional_bucket_usd}
+              />
+              <ImportMetric
+                label="Margin usage"
+                value={formatPercentFromBps(
+                  state.bundle.aggregate.margin_usage_bps,
+                )}
+              />
+              <ImportMetric
+                label="Positions"
+                value={String(state.preview.position_count)}
+              />
+            </div>
+
+            <div className="mt-4 rounded-lg border border-stone-200 bg-stone-50 p-3">
+              <p className="text-xs font-medium uppercase text-stone-500">
+                Snapshot hash reference
+              </p>
+              <p className="mt-2 break-all font-mono text-xs font-semibold text-stone-950">
+                {state.preview.snapshot_hash}
+              </p>
+            </div>
+
+            {state.bundle.markets.length > 0 ? (
+              <div className="mt-4 overflow-x-auto">
+                <table className="min-w-[640px] w-full text-left text-sm">
+                  <thead className="bg-stone-100 text-xs uppercase text-stone-600">
+                    <tr>
+                      <th className="px-4 py-3">Market</th>
+                      <th className="px-4 py-3">Side</th>
+                      <th className="px-4 py-3">Notional bucket</th>
+                      <th className="px-4 py-3">Liq. distance</th>
+                      <th className="px-4 py-3">Funding 8h</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {state.bundle.markets.map((market) => (
+                      <tr className="border-t border-stone-200" key={market.market}>
+                        <td className="px-4 py-3 font-mono">{market.market}</td>
+                        <td className="px-4 py-3 capitalize">{market.side}</td>
+                        <td className="px-4 py-3">{market.notional_bucket_usd}</td>
+                        <td className="px-4 py-3">
+                          {formatPercentFromBps(market.liquidation_distance_bps)}
+                        </td>
+                        <td className="px-4 py-3">
+                          {market.funding_8h_bps_user_perspective.toFixed(2)} bps
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-stone-600">
+                No market rows were disclosed in this redacted bundle.
+              </p>
+            )}
+
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-950">
+              Redacted bundles cannot be imported as full local receipts. Use a
+              full receipt bundle if the reviewer needs hash recomputation, live
+              recheck, EAS payload generation, or receipt assistant context.
+            </div>
           </section>
         ) : null}
       </div>

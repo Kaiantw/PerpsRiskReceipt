@@ -15,7 +15,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - Six scenario moves: `-10%`, `-5%`, `-2%`, `+2%`, `+5%`, and `+10%`.
 - Deterministic fixture receipt pages with snapshot hash verification.
 - Browser-local receipt pages for live Hyperliquid lookups.
-- Portable receipt bundle export/import for reviewing browser-local live receipts across browsers.
+- Portable receipt bundle export/import for reviewing browser-local live receipts across browsers, with redacted share mode for minimized public review.
 - Live receipt recheck that compares a saved receipt against a fresh read-only Hyperliquid snapshot.
 - Receipt change summary that combines live recheck, market context, funding movement, position changes, and sampled account-value context into one quick read.
 - Receipt risk assistant that answers cited questions about a saved live receipt after recheck.
@@ -35,9 +35,9 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/app/api/hyperliquid/snapshot/route.ts` validates addresses and calls the read-only Hyperliquid snapshot adapter.
 - `src/app/api/hyperliquid/portfolio/route.ts` validates addresses and calls the read-only Hyperliquid portfolio-history adapter.
 - `src/app/receipt/[id]/page.tsx` renders deterministic fixture receipts, recomputes the snapshot hash, and shows the EAS fallback payload.
-- `src/app/receipt/import/page.tsx` imports portable receipt bundles, previews the full snapshot, recomputes the hash, and stores verified receipts locally.
+- `src/app/receipt/import/page.tsx` inspects portable receipt bundles, previews redacted shares, imports full bundles, recomputes full-bundle hashes, and stores verified full receipts locally.
 - `src/app/receipt/local/[id]/page.tsx` renders browser-local live receipts created from pasted Hyperliquid addresses and supports live rechecks.
-- `src/app/receipt/local/[id]/portable-receipt-panel.tsx` exports a full-snapshot portable JSON bundle for local live receipts.
+- `src/app/receipt/local/[id]/portable-receipt-panel.tsx` exports redacted-share or full-snapshot portable JSON bundles for local live receipts.
 - `src/app/receipt/local/[id]/receipt-account-value-context-panel.tsx` renders sampled account-value context for local live receipts.
 - `src/app/receipt/local/[id]/receipt-risk-assistant-panel.tsx` renders the local assistant chat for a rechecked receipt.
 - `src/lib/receipts/receipt-change-summary.ts` synthesizes live recheck, market context, and account-value context into a compact receipt summary.
@@ -52,7 +52,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/lib/assistant/risk-assistant.ts` contains dependency-free assistant response logic and guardrails.
 - `src/lib/assistant/receipt-risk-assistant.ts` contains dependency-free receipt assistant response logic and guardrails.
 - `src/lib/receipts/receipt.ts` contains canonical JSON serialization, hashing, deterministic IDs, and verification.
-- `src/lib/receipts/portable-receipt-bundle.ts` contains the versioned export/import bundle contract and preview metadata.
+- `src/lib/receipts/portable-receipt-bundle.ts` contains the versioned full and redacted bundle contracts, parsers, and preview metadata.
 - `src/lib/receipts/snapshot-comparison.ts` compares saved receipt snapshots against fresh live snapshots.
 - `src/lib/hyperliquid/adapter.ts` maps Hyperliquid `info` responses into the normalized model.
 - `src/lib/eas/attestation.ts` builds the minimal EAS Sepolia fallback payload.
@@ -84,7 +84,10 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - Account value history uses sampled Hyperliquid portfolio windows and is not complete accounting or a trade journal import.
 - Receipt account-value context uses the nearest sampled portfolio point to the receipt timestamp and shows the sample gap.
 - Receipt change summary is a heuristic review aid and does not recommend position changes.
-- Portable receipt bundles are explicit full-snapshot exports. They solve cross-browser review for local receipts, but they are not encrypted, redacted, or access-controlled.
+- Portable receipt bundles have two modes: redacted shares for minimized review and full-snapshot exports for hash recomputation/import.
+- Redacted receipt shares hide raw account and exact position values, preserve the original snapshot hash as a reference, and disclose only bucketed summary values plus market-level review cues.
+- Redacted receipt shares are not cryptographic selective disclosure proofs; full bundles are still required when a reviewer needs to recompute the snapshot hash, import the receipt, run live recheck, generate EAS fallback payloads, or use the receipt assistant context.
+- Full portable receipt bundles are explicit full-snapshot exports. They solve cross-browser review for local receipts, but they are not encrypted, selectively disclosed, or access-controlled.
 
 ## Run Locally
 
@@ -118,14 +121,15 @@ Use `docs/demo-script.md` for the reviewer-facing script. The short version:
 5. Create a fixture receipt.
 6. Open the receipt page and show hash verification.
 7. Show the EAS fallback payload and documented manual attestation steps.
-8. Optionally paste a Hyperliquid address, show account value history/drawdown context, create a local live receipt, export a portable receipt bundle, import it at `/receipt/import`, show receipt account-value context, run `Recheck live account`, show the receipt change summary, and show that hash verification still works while the app compares the saved receipt with current live market context.
+8. Optionally paste a Hyperliquid address, show account value history/drawdown context, create a local live receipt, export a redacted receipt share, inspect it at `/receipt/import`, switch to full bundle export/import when hash recomputation is needed, show receipt account-value context, run `Recheck live account`, show the receipt change summary, and show that hash verification still works while the app compares the saved receipt with current live market context.
 
 ## Known Limitations
 
 See `docs/known-limitations.md` for the current list. The major limitations are:
 
 - Live Hyperliquid receipts are stored in browser localStorage only and require a portable bundle for cross-browser review.
-- Portable receipt bundles contain the full private snapshot and are not encrypted, access-controlled, redacted, or selectively disclosed.
+- Full portable receipt bundles contain the private snapshot and are not encrypted, access-controlled, or selectively disclosed.
+- Redacted receipt bundles are minimized summaries; they cannot recompute the hidden full snapshot hash by themselves and are not cryptographic privacy proofs.
 - Account value history is sampled from Hyperliquid portfolio windows and is not complete accounting.
 - Receipt account-value context uses a nearest sampled point, not an exact historical account audit.
 - Receipt change summary is heuristic and descriptive; it is not a trading recommendation.
@@ -151,4 +155,4 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 
 ## Resume Bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, portable receipt bundles, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, portable full/redacted receipt bundles, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

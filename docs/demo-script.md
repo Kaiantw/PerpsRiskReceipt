@@ -58,8 +58,10 @@ Open `http://localhost:3000`.
    - Click `Create local receipt`.
    - Show that the live receipt page has a snapshot hash, hash verification, and market summary.
    - Show `Portable receipt bundle`.
-   - Point out that this is a full-snapshot JSON export for intentional review, not an encrypted or redacted share.
-   - Click `Copy bundle`, open `/receipt/import`, paste the bundle, and show the import preview with `Hash verified`.
+   - Point out that redacted share mode is the default for lightweight/public review: it hides raw account and exact position values, keeps the risk score, timestamp, market list, bucketed values, and original snapshot hash reference.
+   - Click `Copy redacted share`, open `/receipt/import`, paste the bundle, and show the redacted preview.
+   - Point out that the redacted preview cannot recompute the hidden full snapshot hash, so it is for minimized review rather than full verification.
+   - Return to the local receipt, switch to `Full receipt`, click `Copy full bundle`, open `/receipt/import`, paste the bundle, and show the import preview with `Hash verified`.
    - Click `Import receipt` and show that the app opens the same local receipt route in this browser.
    - Show `Receipt account-value context`.
    - Point out receipt value, nearest sampled account value, sample gap, latest sampled value, receipt drawdown, current drawdown, and max drawdown.
@@ -80,4 +82,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, portable receipt bundles, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, portable full/redacted receipt bundles, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

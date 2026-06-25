@@ -547,3 +547,24 @@ Review whether the warning copy is strong enough: the bundle includes account, m
 - Browser verification used `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, clicked `Lookup`, created `/receipt/local/rr_05dffdb4ef7f5354`, confirmed `Hash verified`, `Portable receipt bundle`, the full-export warning, copied the bundle, opened `/receipt/import`, pasted the bundle, confirmed `Import preview` and `Hash verified`, clicked `Import receipt`, landed back on `/receipt/local/rr_05dffdb4ef7f5354`, confirmed the portable panel and local-storage notice still rendered, and saw zero browser console errors.
 ### remaining risks:
 Portable receipt bundles are explicit full-snapshot exports. They are not encrypted, access-controlled, redacted, or selectively disclosed. Imported receipts still live in browser localStorage and are not synced to a backend. The bundle hash verifies snapshot integrity, not the correctness of the original external Hyperliquid data.
+
+### task id: post-t9 redacted receipt share
+### codex mode:
+product iteration + implementation
+### delegated work:
+Researched data-minimization and selective-disclosure patterns, then added a redacted receipt share mode so local live receipts can be shared for lightweight review without exposing raw account identifiers or exact position values.
+### output accepted:
+Added a versioned `perps-risk-receipt.redacted.v1` bundle contract with bucketed account/notional/funding values, disclosed market names, side, notional bucket, liquidation-distance bps, funding bps, optional open-interest bucket, redacted-field metadata, and a clear verification scope. Local live receipt pages now default the portable bundle panel to `Redacted share`, with a `Full receipt` toggle for exact hash recomputation/import. `/receipt/import` now previews redacted bundles as inspect-only and keeps full bundles on the existing hash-verifying import path. Added tests for redacted privacy fields, parser round-trip, redacted preview scope, and malformed redacted bundle rejection. Added source-backed knowledge notes and updated README, demo script, source notes, and limitations.
+### output rejected or changed:
+No backend share service, encrypted bundle, EAS private-data attestation, Merkle proof, zero-knowledge proof, Verifiable Credential, JSON Web Proof, wallet/RPC flow, new Hyperliquid endpoint, trading endpoint, or new dependency was added. The redacted bundle preserves the original snapshot hash as a reference only; the hidden full snapshot is required to recompute that hash.
+### human review notes:
+Review whether the disclosed fields are the right privacy line: risk score, risk label, freshness, timestamps, bucketed account/notional/funding values, market names, side, notional buckets, liquidation-distance bps, funding bps, and open-interest buckets. Review whether `$0-$1k`, `$1k-$10k`, `$10k-$50k`, `$50k-$100k`, `$100k-$250k`, `$250k-$1m`, and `$1m+` buckets are coarse enough for public sharing.
+### tests/checks run:
+- `npm test` passed: 85 tests, 85 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/import` as a static route plus `/receipt/local/[id]` as dynamic.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_866402e16069cc3f`, confirmed `Portable receipt bundle`, default `redacted summary`, `Copy redacted share`, and absence of the raw account in the redacted clipboard payload, opened `/receipt/import`, pasted the redacted bundle, confirmed `Redacted share preview`, `Snapshot hash reference`, the inspect-only warning, and no `Import receipt` button. Browser verification then switched to `Full receipt`, copied the full bundle, pasted it into `/receipt/import`, confirmed `Import preview` and `Hash verified`, clicked `Import receipt`, returned to `/receipt/local/rr_866402e16069cc3f`, confirmed `Hash verified` and the redacted default still rendered, and saw zero browser console errors.
+### remaining risks:
+Redacted shares are minimized offchain JSON summaries, not cryptographic selective-disclosure proofs. They cannot recompute the original snapshot hash without the hidden full snapshot and cannot support live account recheck, EAS payload generation, full local import, or receipt assistant context by themselves. Full bundles still disclose private snapshot data and remain browser-local after import.

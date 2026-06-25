@@ -23,60 +23,60 @@
 - Post-t9 receipt change summary is complete.
 - Post-t9 receipt risk assistant is complete.
 - Post-t9 portable receipt bundle is complete.
+- Post-t9 redacted receipt share is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote state: `main` tracks `origin/main`.
-- Baseline before this slice: `faa8612 feat: add receipt risk assistant`.
-- Current work adds privacy-aware portable bundles for browser-local live receipts. A local receipt can now be copied/downloaded as versioned JSON, imported at `/receipt/import`, previewed with hash verification, and saved into the importing browser's local receipt store.
-- The bundle deliberately contains the full private snapshot and is labeled as explicit full disclosure. EAS/onchain fallback still uses minimal metadata plus snapshot hash.
+- Baseline before this slice: `71c02db feat: add portable receipt bundles`.
+- Current work adds redacted receipt-share bundles for browser-local live receipts. The portable receipt panel now defaults to `Redacted share`, with `Full receipt` still available for hash recomputation/import.
+- Redacted bundles preserve receipt id, snapshot hash reference, protocol, source, freshness, timestamps, risk score, risk label, bucketed aggregate values, and disclosed market rows while hiding raw account and exact position values.
+- `/receipt/import` can inspect redacted bundles without importing them as full local receipts. Full bundles still recompute the hash and import into browser localStorage.
 - A Next dev server was already running on `http://localhost:3000` for smoke verification.
 
 ## files changed
 
-- `src/lib/receipts/local-receipts.ts`: tightened stored receipt validation and exported `parseRiskReceipt`.
-- `src/lib/receipts/portable-receipt-bundle.ts`: new versioned bundle contract, parser, stringifier, and privacy preview metadata.
-- `src/lib/receipts/portable-receipt-bundle.test.ts`: tests round-trip, preview privacy fields, imported hash verification, invalid envelope rejection, and invalid receipt rejection.
-- `src/app/receipt/local/[id]/portable-receipt-panel.tsx`: new local receipt export/copy/download panel with full-snapshot warning.
-- `src/app/receipt/local/[id]/local-receipt-client.tsx`: wires the portable bundle panel into local receipts and links missing receipts to import.
-- `src/app/receipt/import/page.tsx`: new import route.
-- `src/app/receipt/import/receipt-import-client.tsx`: pasted-bundle validation, preview, hash verification, local import, and navigation.
-- `package.json`: includes the portable bundle test in `npm test`.
-- `docs/knowledge/sources/portable-receipt-privacy.md`: new source-backed note for bundle privacy and minimal proof framing.
-- `docs/knowledge/features/portable-receipt-bundle.md`: new feature note.
-- `docs/knowledge/index.md`: links the new source and feature.
-- `docs/knowledge/features/live-receipt-recheck.md`: links recheck to portable import/export.
-- `docs/knowledge/features/receipt-risk-assistant.md`: links assistant workflow to imported receipts.
-- `docs/source-notes.md`: documents portable bundle sources and assumptions.
-- `docs/known-limitations.md`: documents full-snapshot bundle limitations.
-- `README.md`: documents the new route, architecture pieces, assumptions, limitations, demo flow, and resume bullet.
-- `docs/demo-script.md`: adds the portable bundle walkthrough.
+- `src/lib/receipts/portable-receipt-bundle.ts`: added the redacted bundle contract, redacted preview metadata, parser/type guards, USD bucketing helpers, and full/redacted stringification support.
+- `src/lib/receipts/portable-receipt-bundle.test.ts`: added redacted privacy, preview, parser round-trip, and malformed-bundle tests.
+- `src/app/receipt/local/[id]/portable-receipt-panel.tsx`: added `Redacted share` and `Full receipt` modes, defaulted to redacted sharing, and adjusted copy/download labels and warnings.
+- `src/app/receipt/import/receipt-import-client.tsx`: added inspect-only redacted previews while keeping full-bundle hash verification and import.
+- `docs/knowledge/sources/redacted-receipt-sharing.md`: new source-backed note for data minimization and selective-disclosure boundaries.
+- `docs/knowledge/features/redacted-receipt-share.md`: new implemented feature note.
+- `docs/knowledge/features/portable-receipt-bundle.md`: updated full-bundle feature note to point to redacted share mode.
+- `docs/knowledge/index.md`: linked the new redacted source and feature notes.
+- `docs/source-notes.md`: documented redacted share sources and assumptions.
+- `docs/known-limitations.md`: documented redacted-share verification and privacy limits.
+- `README.md`: documented redacted/full portable bundle behavior, architecture, assumptions, demo flow, limitations, and resume bullet.
+- `docs/demo-script.md`: updated the live receipt walkthrough to show redacted inspect-only sharing and full hash-verifying import.
 - `docs/ai-build-log.md`: records this feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `npm test` passed: 81 tests, 81 passing.
+- `npm test` passed: 85 tests, 85 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm run build` passed and listed `/receipt/import` as a static route.
+- `npm run build` passed and listed `/receipt/import` as a static route plus `/receipt/local/[id]` as dynamic.
 - `git diff --check` passed.
-- Browser verification used `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, clicked `Lookup`, created `/receipt/local/rr_05dffdb4ef7f5354`, confirmed `Hash verified`, `Portable receipt bundle`, and the full-export warning, copied the bundle, opened `/receipt/import`, pasted the bundle, confirmed `Import preview` and `Hash verified`, clicked `Import receipt`, landed back on `/receipt/local/rr_05dffdb4ef7f5354`, confirmed the portable panel and local-storage notice still rendered, and saw zero browser console errors.
+- Browser verification used `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_866402e16069cc3f`, confirmed `Portable receipt bundle`, default `redacted summary`, `Copy redacted share`, and that the redacted clipboard payload did not include the raw account.
+- Browser verification opened `/receipt/import`, pasted the redacted bundle, confirmed `Redacted share preview`, `Snapshot hash reference`, the inspect-only warning, and no `Import receipt` button.
+- Browser verification switched to `Full receipt`, copied the full bundle, pasted it into `/receipt/import`, confirmed `Import preview` and `Hash verified`, clicked `Import receipt`, returned to `/receipt/local/rr_866402e16069cc3f`, confirmed `Hash verified` and the redacted default still rendered, and saw zero browser console errors.
 
 ## blockers
 
 - No hard blocker for this feature slice.
 - `npm audit --audit-level=moderate` still has the previously documented `postcss` advisory through `next`; it was not rerun or force-fixed in this slice.
-- Portable receipt bundles are explicit full-snapshot exports. They are not encrypted, access-controlled, redacted, or selectively disclosed.
-- Imported receipts remain browser-local and are not synced to a backend.
+- Redacted receipt shares are minimized offchain JSON summaries, not encrypted payloads, Merkle proofs, zero-knowledge proofs, Verifiable Credentials, JSON Web Proofs, or EAS private-data attestations.
+- Redacted receipt shares preserve the snapshot hash as a reference but cannot recompute or verify it without the hidden full snapshot.
+- Full portable receipt bundles still disclose private snapshot data and are not encrypted, access-controlled, or selectively disclosed.
+- Imported full receipts remain browser-local and are not synced to a backend.
 - Receipt hash verification proves snapshot integrity, not correctness of the original external Hyperliquid data.
-- Receipt risk assistant is deterministic local explanation logic, not a connected LLM or financial adviser.
 - Live receipt recheck depends on Hyperliquid API availability and is not an exact liquidation monitor.
 - EAS schema registration and attestation transactions are documented fallback steps only.
 - Risk score, liquidation distance, and scenario math remain heuristic and should not be described as official protocol risk.
 
 ## exact next recommended action
 
-Add a redacted receipt share mode: a minimized bundle that hides raw account and position sizes while preserving snapshot hash, aggregate risk score, timestamp, protocol, market list, and enough reviewer context to support privacy-preserving public sharing.
+Add a market-only context panel for redacted shares: use Hyperliquid read-only market metadata to show current mark price, funding, and open-interest context for disclosed markets without requiring the raw account snapshot.
