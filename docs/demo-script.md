@@ -53,6 +53,8 @@ Open `http://localhost:3000`.
 9. Optional live lookup.
    - Paste a valid Hyperliquid address.
    - Show loading, live/stale freshness, source, no-open-positions handling if applicable, and graceful API error behavior if the endpoint is unavailable.
+   - Show `Account value history`.
+   - Point out sampled account value, period change, current drawdown, max drawdown, PnL history, and volume.
    - Click `Create local receipt`.
    - Show that the live receipt page has a snapshot hash, hash verification, and market summary.
    - Click `Recheck live account`.
@@ -67,4 +69,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

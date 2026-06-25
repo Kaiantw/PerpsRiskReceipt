@@ -2,11 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  fetchHyperliquidPortfolioHistory,
   fetchHyperliquidSnapshot,
   isHyperliquidAddress,
+  mapHyperliquidPortfolioHistory,
   mapHyperliquidSnapshot,
   type hyperliquid_fetch,
   type hyperliquid_meta_and_asset_contexts,
+  type hyperliquid_portfolio_response,
 } from "./adapter.ts";
 
 const exampleAddress = "0x0000000000000000000000000000000000000001";
@@ -61,6 +64,25 @@ const metaAndAssetContextsFixture: hyperliquid_meta_and_asset_contexts = [
       funding: "0.00012",
       markPx: "70000",
       openInterest: "8",
+    },
+  ],
+];
+
+const portfolioFixture: hyperliquid_portfolio_response = [
+  [
+    "perpWeek",
+    {
+      accountValueHistory: [
+        [Date.parse("2026-06-24T12:00:00.000Z"), "1000"],
+        [Date.parse("2026-06-24T13:00:00.000Z"), "1200"],
+        [Date.parse("2026-06-24T14:00:00.000Z"), "900"],
+        [Date.parse("2026-06-24T15:00:00.000Z"), "1100"],
+      ],
+      pnlHistory: [
+        [Date.parse("2026-06-24T12:00:00.000Z"), "0"],
+        [Date.parse("2026-06-24T15:00:00.000Z"), "100"],
+      ],
+      vlm: "25000.5",
     },
   ],
 ];
@@ -136,4 +158,42 @@ test("fetches only read-only Hyperliquid info endpoint bodies", async () => {
     { type: "metaAndAssetCtxs" },
   ]);
   assert.equal(snapshot.account, exampleAddress);
+});
+
+test("maps portfolio response into account value timeline", () => {
+  const timelines = mapHyperliquidPortfolioHistory(portfolioFixture);
+  const timeline = timelines[0];
+
+  assert.equal(timeline.window_id, "perpWeek");
+  assert.equal(timeline.point_count, 4);
+  assert.equal(timeline.label, "drawdown_watch");
+  assert.equal(timeline.peak_account_value_usd, 1_200);
+  assert.equal(timeline.max_drawdown_percent, 25);
+  assert.equal(timeline.current_drawdown_percent, 8.33);
+  assert.equal(timeline.account_value_change_usd, 100);
+  assert.equal(timeline.account_value_change_percent, 10);
+  assert.equal(timeline.volume_usd, 25_000.5);
+  assert.equal(timeline.points.at(-1)?.pnl_usd, 100);
+});
+
+test("fetches Hyperliquid portfolio with only the read-only info endpoint", async () => {
+  const requests: unknown[] = [];
+  const mockFetch: hyperliquid_fetch = async (_url, init) => {
+    const body = JSON.parse(String(init.body));
+    requests.push(body);
+
+    if (body.type === "portfolio") {
+      return Response.json(portfolioFixture);
+    }
+
+    return new Response("unexpected request", { status: 500 });
+  };
+
+  const timelines = await fetchHyperliquidPortfolioHistory({
+    address: exampleAddress,
+    fetchImpl: mockFetch,
+  });
+
+  assert.deepEqual(requests, [{ type: "portfolio", user: exampleAddress }]);
+  assert.equal(timelines[0].window_id, "perpWeek");
 });

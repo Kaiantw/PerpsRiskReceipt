@@ -442,3 +442,24 @@ Review ladder thresholds: thin up to 5%, tight up to 10%, moderate up to 25%, an
 - Browser verification selected `demo-near-liquidation-btc-short`, confirmed `Liquidation buffer ladder`, `thin buffer`, `BTC-PERP`, `3.57%`, `$2,000.00`, the listed-buffer caveat, and zero console errors.
 ### remaining risks:
 The ladder uses listed liquidation prices and existing normalized position fields only. It does not model cross-margin equity, funding changes, liquidity changes, maintenance tiers, or exact Hyperliquid liquidation behavior.
+
+### task id: post-t9 account value history
+### codex mode:
+product iteration + implementation
+### delegated work:
+Researched Hyperliquid portfolio history and drawdown context, then added a live dashboard account-value history panel for Hyperliquid lookups.
+### output accepted:
+Added tested account-value timeline math for period change, current drawdown, max drawdown, zero-start percentage safety, and point sorting. Extended the Hyperliquid read-only adapter with the `portfolio` info request, a mocked response mapper, and a dashboard API route. Added a live `Account value history` panel showing sampled account value, PnL history, volume, period change, drawdown metrics, sparkline, and recent sampled rows.
+### output rejected or changed:
+No chart dependency, websocket, trading endpoint, backend persistence, tax/accounting export, strategy recommendation, or exact performance audit was added. The feature labels Hyperliquid portfolio history as sampled context.
+### human review notes:
+Review the account-value trend thresholds: higher/lower at 2% period change and drawdown watch at 10% max drawdown. Review whether perp-only windows should remain preferred over all-account windows.
+### tests/checks run:
+- `npm test` passed: 53 tests, 53 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed.
+- `git diff --check` passed.
+- Browser verification pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, confirmed `Account value history`, `Perp week`, `Current drawdown`, `Max drawdown`, `Window volume`, and zero console errors.
+### remaining risks:
+Account value history depends on Hyperliquid API availability and the `portfolio` response shape. It is sampled context, not complete accounting, a trade journal import, or financial advice.

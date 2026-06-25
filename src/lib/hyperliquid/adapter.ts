@@ -1,4 +1,9 @@
 import { normalizeAccountSnapshot } from "../risk/risk-engine.ts";
+import { buildAccountValueTimeline } from "../history/account-value-timeline.ts";
+import type {
+  account_value_history_point,
+  account_value_timeline,
+} from "../history/account-value-timeline.ts";
 import type {
   account_snapshot_input,
   normalized_account_snapshot,
@@ -46,6 +51,19 @@ export type hyperliquid_clearinghouse_state = {
   withdrawable?: string;
 };
 
+type hyperliquid_portfolio_history_point = [number, string];
+
+type hyperliquid_portfolio_window = [
+  string,
+  {
+    accountValueHistory?: hyperliquid_portfolio_history_point[];
+    pnlHistory?: hyperliquid_portfolio_history_point[];
+    vlm?: string | null;
+  },
+];
+
+export type hyperliquid_portfolio_response = hyperliquid_portfolio_window[];
+
 export type hyperliquid_fetch = (
   url: string,
   init: RequestInit,
@@ -70,6 +88,57 @@ function parseNumber(value: string | null | undefined) {
   const parsed = Number(value);
 
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseHistoryPoint(
+  point: hyperliquid_portfolio_history_point,
+): { time_ms: number; value: number } | null {
+  const [timeMs, value] = point;
+  const parsedValue = parseNumber(value);
+
+  if (!Number.isFinite(timeMs) || parsedValue === null) {
+    return null;
+  }
+
+  return {
+    time_ms: timeMs,
+    value: parsedValue,
+  };
+}
+
+function mapPortfolioPoints(
+  accountValueHistory: hyperliquid_portfolio_history_point[] | undefined,
+  pnlHistory: hyperliquid_portfolio_history_point[] | undefined,
+): account_value_history_point[] {
+  const pnlByTime = new Map<number, number>();
+
+  pnlHistory?.forEach((point) => {
+    const parsedPoint = parseHistoryPoint(point);
+
+    if (parsedPoint) {
+      pnlByTime.set(parsedPoint.time_ms, parsedPoint.value);
+    }
+  });
+
+  const mappedPoints: Array<account_value_history_point | null> = (
+    accountValueHistory ?? []
+  ).map((point) => {
+    const parsedPoint = parseHistoryPoint(point);
+
+    if (!parsedPoint) {
+      return null;
+    }
+
+    return {
+      time_ms: parsedPoint.time_ms,
+      account_value_usd: parsedPoint.value,
+      pnl_usd: pnlByTime.get(parsedPoint.time_ms) ?? null,
+    };
+  });
+
+  return mappedPoints.filter(
+    (point): point is account_value_history_point => point !== null,
+  );
 }
 
 function getAssetContextsByCoin(
@@ -201,6 +270,21 @@ export function mapHyperliquidSnapshot(input: {
   return normalizeAccountSnapshot(snapshotInput);
 }
 
+export function mapHyperliquidPortfolioHistory(
+  response: hyperliquid_portfolio_response,
+): account_value_timeline[] {
+  return response.map(([windowId, payload]) =>
+    buildAccountValueTimeline({
+      window_id: windowId,
+      points: mapPortfolioPoints(
+        payload.accountValueHistory,
+        payload.pnlHistory,
+      ),
+      volume_usd: parseNumber(payload.vlm),
+    }),
+  );
+}
+
 async function postHyperliquidInfo<T>(
   body: Record<string, unknown>,
   fetchImpl: hyperliquid_fetch,
@@ -249,4 +333,22 @@ export async function fetchHyperliquidSnapshot(input: {
     metaAndAssetContexts,
     now: input.now ?? new Date(),
   });
+}
+
+export async function fetchHyperliquidPortfolioHistory(input: {
+  address: string;
+  fetchImpl?: hyperliquid_fetch;
+}) {
+  if (!isHyperliquidAddress(input.address)) {
+    throw new HyperliquidAdapterError("Invalid Hyperliquid address format.");
+  }
+
+  const fetchImpl = input.fetchImpl ?? fetch;
+  const portfolioResponse =
+    await postHyperliquidInfo<hyperliquid_portfolio_response>(
+      { type: "portfolio", user: input.address },
+      fetchImpl,
+    );
+
+  return mapHyperliquidPortfolioHistory(portfolioResponse);
 }

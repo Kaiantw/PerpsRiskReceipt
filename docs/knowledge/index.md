@@ -11,6 +11,7 @@ informed it and forward to related feature ideas.
 - [[sources/perp-funding-mechanics]] - funding-rate mechanics and holding-cost assumptions.
 - [[sources/perp-market-context]] - mark price and open-interest context for current-market receipt checks.
 - [[sources/perp-liquidation-buffer]] - Hyperliquid liquidation, margining, and listed-buffer assumptions.
+- [[sources/perp-account-value-history]] - Hyperliquid portfolio history and drawdown context.
 
 ## implemented feature notes
 
@@ -19,7 +20,8 @@ informed it and forward to related feature ideas.
 - [[features/funding-carry-watch]] - dashboard panel for net funding carry, burden, and top funding drivers.
 - [[features/mark-price-context]] - receipt recheck panel for saved-vs-current mark, liquidation, funding, and open-interest context.
 - [[features/liquidation-buffer-ladder]] - dashboard ladder for closest listed liquidation buffers.
+- [[features/account-value-timeline]] - live dashboard account-value history, drawdown, and sampled PnL context.
 
 ## connected backlog ideas
 
-- [[features/account-value-timeline]] - compare receipt snapshots against account-value/PnL history when historical data is available.
+- [[features/live-receipt-recheck]] can show account-value history on local live receipt pages, not only on the dashboard.

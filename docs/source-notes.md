@@ -29,11 +29,16 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/margining
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+- docs checked on 2026-06-25 for account value history:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/portfolio-graphs
+  - https://www.investopedia.com/terms/m/maximum-drawdown-mdd.asp
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
   - `{ "type": "clearinghouseState", "user": "0x..." }`
   - `{ "type": "metaAndAssetCtxs" }`
+  - `{ "type": "portfolio", "user": "0x..." }`
 - normalized mapping:
   - `marginSummary.accountValue` -> `account_value_usd`
   - `marginSummary.totalMarginUsed` -> `margin_used_usd`
@@ -72,6 +77,12 @@ use this file for external protocol assumptions.
   - listed buffer is sorted by `calculateLiquidationDistanceBps`; missing liquidation prices stay visible as unavailable.
   - approximate PnL to listed liquidation is `abs(size) * adverse_move_usd`, so it is a position-level estimate and not account-level equity loss.
   - the copy must say cross margin, funding, and other open-position PnL can change actual liquidation behavior.
+- account value history assumptions:
+  - the dashboard calls the read-only `portfolio` info request only after a live Hyperliquid address lookup succeeds.
+  - portfolio history is sampled context and not complete accounting, tax data, or a trade journal import.
+  - the dashboard prefers perp-specific windows such as `perpDay`, `perpWeek`, `perpMonth`, and `perpAllTime` when present.
+  - drawdown is calculated from sampled account values as peak-to-current and maximum peak-to-trough decline inside the selected window.
+  - the feature does not infer why account value changed; it only displays sampled account value, PnL history, volume, and drawdown context.
 
 ## eas
 

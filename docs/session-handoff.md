@@ -18,47 +18,52 @@
 - Post-t9 funding carry watch is complete.
 - Post-t9 market context is complete.
 - Post-t9 liquidation buffer ladder is complete.
+- Post-t9 account value history is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote state: `main` tracks `origin/main`.
-- Baseline before this slice: `934ac8a feat: add receipt market context`.
-- Current work adds a dashboard liquidation buffer ladder and updates the linked research/feature notes under `docs/knowledge/`.
+- Baseline before this slice: `a6bd62c feat: add liquidation buffer ladder`.
+- Current work adds live Hyperliquid account-value history and updates the linked research/feature notes under `docs/knowledge/`.
 - Dev server was started on `http://localhost:3000` for smoke verification.
 
 ## files changed
 
-- `src/lib/liquidation/liquidation-buffer.ts`: derives listed liquidation buffer ladder labels, adverse move values, and closest-position ordering.
-- `src/lib/liquidation/liquidation-buffer.test.ts`: tests long, short, missing-liquidation, at-or-through liquidation, and no-position cases.
-- `src/app/liquidation-buffer-panel.tsx`: dashboard panel for the ladder.
-- `src/app/dashboard-client.tsx`: mounts the ladder before funding carry watch.
-- `package.json`: includes liquidation-buffer tests.
-- `docs/knowledge/index.md`: links the liquidation-buffer source and implemented feature.
-- `docs/knowledge/features/liquidation-buffer-ladder.md`: implemented feature note.
-- `docs/knowledge/sources/perp-liquidation-buffer.md`: source-backed liquidation buffer note.
-- `docs/source-notes.md`: records listed-buffer assumptions.
-- `README.md`: documents the ladder.
-- `docs/demo-script.md`: adds the ladder walkthrough.
-- `docs/known-limitations.md`: adds listed-buffer limitations.
+- `src/lib/history/account-value-timeline.ts`: derives sampled account-value period change, current drawdown, max drawdown, labels, and headlines.
+- `src/lib/history/account-value-timeline.test.ts`: tests single-point, higher, lower, drawdown, and zero-start cases.
+- `src/lib/hyperliquid/adapter.ts`: maps and fetches the read-only `portfolio` info response.
+- `src/lib/hyperliquid/adapter.test.ts`: tests portfolio mapping and the exact read-only `portfolio` request body.
+- `src/app/api/hyperliquid/portfolio/route.ts`: dashboard API route for portfolio history.
+- `src/app/account-value-history-panel.tsx`: live dashboard panel for account-value history, drawdown, sparkline, PnL history, and volume.
+- `src/app/dashboard-client.tsx`: fetches portfolio history after successful live lookup and renders the panel.
+- `package.json`: includes account-value timeline tests.
+- `docs/knowledge/index.md`: links the account-value history source and implemented feature.
+- `docs/knowledge/features/account-value-timeline.md`: marks the feature implemented.
+- `docs/knowledge/sources/perp-account-value-history.md`: source-backed account history and drawdown note.
+- `docs/source-notes.md`: records `portfolio` endpoint assumptions.
+- `README.md`: documents account-value history.
+- `docs/demo-script.md`: adds the account-value history walkthrough.
+- `docs/known-limitations.md`: adds sampled-history limitations.
 - `docs/ai-build-log.md`: records this post-t9 feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `npm test` passed: 46 tests, 46 passing.
+- `npm test` passed: 53 tests, 53 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm run build` passed and listed `/receipt/local/[id]` as a dynamic route.
+- `npm run build` passed and listed `/api/hyperliquid/portfolio` plus `/receipt/local/[id]`.
 - `git diff --check` passed.
-- Browser verification selected `demo-near-liquidation-btc-short`, confirmed `Liquidation buffer ladder`, `thin buffer`, `BTC-PERP`, `3.57%`, `$2,000.00`, the listed-buffer caveat, and zero console errors.
+- Browser verification pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, confirmed `Account value history`, `Perp week`, `Current drawdown`, `Max drawdown`, `Window volume`, and zero console errors.
 
 ## blockers
 
 - No hard blocker for merging the one-day MVP.
 - `npm audit --audit-level=moderate` still reports the known `postcss` advisory through `next`.
 - Live Hyperliquid receipts are browser-local only and are not synced/shareable across devices.
+- Live account value history depends on Hyperliquid `portfolio` response availability and is sampled context, not complete accounting.
 - Live receipt recheck depends on Hyperliquid API availability and is not an exact liquidation monitor.
 - Market context requires comparable saved/current positions and treats open interest as descriptive context, not a standalone direction signal.
 - Liquidation buffer ladder ranks listed liquidation prices only and does not model cross-margin equity, funding changes, liquidity changes, or other open-position PnL.
@@ -69,4 +74,4 @@
 
 ## exact next recommended action
 
-Commit and push the liquidation buffer ladder slice. The next product task should be account-value timeline: store multiple local receipts for the same account and show whether risk is persistently improving, worsening, or only briefly moving with the market.
+Commit and push the account value history slice. The next product task should be receipt-page portfolio context: show the same account-value history next to saved live receipts so the viewer can see whether the receipt happened near a recent peak, in a drawdown, or during a flat account-value window.

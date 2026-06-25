@@ -18,6 +18,10 @@ import {
 } from "@/lib/risk/risk-engine.ts";
 import { getLocalReceiptStorageKey } from "@/lib/receipts/local-receipts.ts";
 import { createRiskReceipt } from "@/lib/receipts/receipt.ts";
+import {
+  AccountValueHistoryPanel,
+  type account_value_history_state,
+} from "./account-value-history-panel.tsx";
 import { FundingCarryWatchPanel } from "./funding-carry-watch-panel.tsx";
 import { LiquidationBufferPanel } from "./liquidation-buffer-panel.tsx";
 import { RiskAssistantPanel } from "./risk-assistant-panel.tsx";
@@ -91,6 +95,8 @@ export function DashboardClient({
   });
   const [receiptCreationState, setReceiptCreationState] =
     useState<receipt_creation_state>({ status: "idle" });
+  const [accountValueHistoryState, setAccountValueHistoryState] =
+    useState<account_value_history_state>({ status: "idle" });
   const [loadingAccount, setLoadingAccount] = useState(false);
   const selectedSnapshot = useMemo(
     () => {
@@ -127,8 +133,37 @@ export function DashboardClient({
     setLiveSnapshot(null);
     setLiveLookupState({ status: "idle" });
     setReceiptCreationState({ status: "idle" });
+    setAccountValueHistoryState({ status: "idle" });
     setSelectedAccount(account);
     window.setTimeout(() => setLoadingAccount(false), 200);
+  }
+
+  async function lookupHyperliquidPortfolioHistory(account: string) {
+    setAccountValueHistoryState({ status: "loading" });
+
+    try {
+      const response = await fetch(
+        `/api/hyperliquid/portfolio?address=${encodeURIComponent(account)}`,
+      );
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Hyperliquid portfolio history failed.");
+      }
+
+      setAccountValueHistoryState({
+        status: "loaded",
+        timelines: payload.timelines,
+      });
+    } catch (error) {
+      setAccountValueHistoryState({
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Hyperliquid portfolio history failed.",
+      });
+    }
   }
 
   async function lookupHyperliquidAddress() {
@@ -156,7 +191,9 @@ export function DashboardClient({
         status: "loaded",
         message: "Live Hyperliquid snapshot loaded.",
       });
+      void lookupHyperliquidPortfolioHistory(payload.snapshot.account);
     } catch (error) {
+      setAccountValueHistoryState({ status: "idle" });
       setLiveLookupState({
         status: "error",
         message:
@@ -291,6 +328,7 @@ export function DashboardClient({
                   onChange={(event) => {
                     setAddressInput(event.target.value);
                     setLiveLookupState({ status: "idle" });
+                    setAccountValueHistoryState({ status: "idle" });
                   }}
                   placeholder="0x..."
                   value={addressInput}
@@ -374,6 +412,10 @@ export function DashboardClient({
             </div>
           </div>
         </section>
+
+        {isLiveSnapshotSelected ? (
+          <AccountValueHistoryPanel state={accountValueHistoryState} />
+        ) : null}
 
         <LiquidationBufferPanel snapshot={selectedSnapshot} />
 
