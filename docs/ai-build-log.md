@@ -589,3 +589,24 @@ Review whether the 1 bps funding-delta threshold is the right bar for "more expe
 - Browser verification used `http://localhost:3000/receipt/import`, pasted a handcrafted redacted bundle with disclosed `ETH-PERP` and `BTC-PERP` rows, clicked `Load current markets`, confirmed `Current market context`, current mark, funding now, funding at receipt, open interest, matched `2/2 markets`, no raw account, no `Import receipt` button, and zero browser console errors.
 ### remaining risks:
 Redacted market context depends on Hyperliquid API availability and the `metaAndAssetCtxs` response shape. It is current public market context only, not a proof of the hidden receipt state, exact account-equity comparison, PnL comparison, exact size comparison, live risk monitor, or financial advice.
+
+### task id: post-t9 redacted market trend history
+### codex mode:
+product iteration + implementation
+### delegated work:
+Researched Hyperliquid `candleSnapshot`, `fundingHistory`, and rate-limit docs, sampled live response shapes, then added a 24h market-history panel for imported redacted receipt shares.
+### output accepted:
+Extended the Hyperliquid adapter with typed candle/funding-history mapping and a read-only `fetchHyperliquidMarketHistory` function. Added `/api/hyperliquid/market-history`, capped at five disclosed `*-PERP` markets, using fixed 24h one-hour candles and funding history without a user address. Added `src/lib/market/redacted-market-trend.ts` with tested labels for adverse price trend, persistent funding cost, persistent funding credit, and no-history states. `/receipt/import` now shows a `24h market trend` panel for redacted shares with a close-price sparkline, 24h price change, high/low range, average side-adjusted funding, latest side-adjusted funding, matched-market count, and privacy-scope copy. Updated README, demo script, source notes, known limitations, and knowledge docs.
+### output rejected or changed:
+No raw account lookup, trading/exchange endpoint, websocket, chart dependency, backend receipt store, exact saved-mark comparison, recommendation logic, or full-snapshot import path was added for redacted shares. The lookup is intentionally capped because `candleSnapshot` and `fundingHistory` have additional response-size rate weights.
+### human review notes:
+Review the thresholds: adverse price trend at 2% in the disclosed side's liquidation direction, persistent funding cost/credit at 1 bps average and latest side-adjusted funding. Review whether the five-market cap and fixed 24h/1h window are right for demos.
+### tests/checks run:
+- `npm test` passed: 96 tests, 96 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/api/hyperliquid/market-history`.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted a redacted bundle with disclosed `ETH-PERP` and `BTC-PERP`, clicked `Load current markets`, confirmed current market context matched `2/2` markets, clicked `Load 24h trends`, confirmed `24h close path`, `24h price`, `Avg funding`, `Latest funding`, matched `2/2` markets, no raw account, no `Import receipt` button, and zero browser console errors.
+### remaining risks:
+Redacted market trend depends on Hyperliquid API availability and the `candleSnapshot` / `fundingHistory` response shapes. It is public market history only, not proof of the hidden receipt state, exact saved mark, exact account equity, exact liquidation behavior, or financial advice.

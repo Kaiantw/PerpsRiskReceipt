@@ -86,6 +86,56 @@ type hyperliquid_portfolio_window = [
 
 export type hyperliquid_portfolio_response = hyperliquid_portfolio_window[];
 
+type hyperliquid_candle_snapshot = {
+  T?: number;
+  c?: string | null;
+  h?: string | null;
+  i?: string | null;
+  l?: string | null;
+  n?: number | null;
+  o?: string | null;
+  s?: string | null;
+  t?: number;
+  v?: string | null;
+};
+
+type hyperliquid_funding_history_item = {
+  coin?: string;
+  fundingRate?: string | null;
+  premium?: string | null;
+  time?: number;
+};
+
+export type hyperliquid_market_candle = {
+  open_time_ms: number;
+  close_time_ms: number;
+  market: string;
+  interval: string;
+  open_price_usd: number;
+  high_price_usd: number;
+  low_price_usd: number;
+  close_price_usd: number;
+  volume_base: number;
+  trade_count: number | null;
+};
+
+export type hyperliquid_market_funding_point = {
+  time_ms: number;
+  market: string;
+  funding_8h_bps: number;
+  premium_bps: number | null;
+};
+
+export type hyperliquid_market_history = {
+  market: string;
+  coin: string;
+  interval: string;
+  start_time_ms: number;
+  end_time_ms: number;
+  candles: hyperliquid_market_candle[];
+  funding: hyperliquid_market_funding_point[];
+};
+
 export type hyperliquid_fetch = (
   url: string,
   init: RequestInit,
@@ -359,6 +409,112 @@ export function mapHyperliquidMarketContexts(input: {
   });
 }
 
+function mapCandleSnapshot(input: {
+  market: string;
+  candles: hyperliquid_candle_snapshot[];
+}): hyperliquid_market_candle[] {
+  const mappedCandles = input.candles.map((candle) => {
+    const openPriceUsd = parseNumber(candle.o);
+    const highPriceUsd = parseNumber(candle.h);
+    const lowPriceUsd = parseNumber(candle.l);
+    const closePriceUsd = parseNumber(candle.c);
+    const volumeBase = parseNumber(candle.v);
+
+    if (
+      candle.t === undefined ||
+      candle.T === undefined ||
+      !Number.isFinite(candle.t) ||
+      !Number.isFinite(candle.T) ||
+      openPriceUsd === null ||
+      highPriceUsd === null ||
+      lowPriceUsd === null ||
+      closePriceUsd === null ||
+      volumeBase === null
+    ) {
+      return null;
+    }
+
+    return {
+      open_time_ms: candle.t,
+      close_time_ms: candle.T,
+      market: input.market,
+      interval: candle.i ?? "unknown",
+      open_price_usd: openPriceUsd,
+      high_price_usd: highPriceUsd,
+      low_price_usd: lowPriceUsd,
+      close_price_usd: closePriceUsd,
+      volume_base: volumeBase,
+      trade_count:
+        candle.n === null || candle.n === undefined || !Number.isFinite(candle.n)
+          ? null
+          : candle.n,
+    };
+  });
+
+  return mappedCandles
+    .filter((candle): candle is hyperliquid_market_candle => candle !== null)
+    .sort((left, right) => left.open_time_ms - right.open_time_ms);
+}
+
+function mapFundingHistory(input: {
+  market: string;
+  fundingHistory: hyperliquid_funding_history_item[];
+}): hyperliquid_market_funding_point[] {
+  const mappedFunding = input.fundingHistory.map((fundingPoint) => {
+    const fundingRate = parseNumber(fundingPoint.fundingRate);
+    const premium = parseNumber(fundingPoint.premium);
+
+    if (
+      fundingPoint.time === undefined ||
+      !Number.isFinite(fundingPoint.time) ||
+      fundingRate === null
+    ) {
+      return null;
+    }
+
+    return {
+      time_ms: fundingPoint.time,
+      market: input.market,
+      funding_8h_bps: roundNullable(fundingRate * 10_000, 4) ?? 0,
+      premium_bps: premium === null ? null : roundNullable(premium * 10_000, 4),
+    };
+  });
+
+  return mappedFunding
+    .filter(
+      (fundingPoint): fundingPoint is hyperliquid_market_funding_point =>
+        fundingPoint !== null,
+    )
+    .sort((left, right) => left.time_ms - right.time_ms);
+}
+
+export function mapHyperliquidMarketHistory(input: {
+  market: string;
+  candles: hyperliquid_candle_snapshot[];
+  fundingHistory: hyperliquid_funding_history_item[];
+  startTimeMs: number;
+  endTimeMs: number;
+  interval: string;
+}): hyperliquid_market_history {
+  const coin = getMarketCoin(input.market);
+
+  return {
+    market: input.market,
+    coin,
+    interval: input.interval,
+    start_time_ms: input.startTimeMs,
+    end_time_ms: input.endTimeMs,
+    candles: mapCandleSnapshot({
+      market: input.market,
+      candles: input.candles,
+    }),
+    funding: mapFundingHistory({
+      market: input.market,
+      fundingHistory: input.fundingHistory,
+    }),
+  };
+}
+
 async function postHyperliquidInfo<T>(
   body: Record<string, unknown>,
   fetchImpl: hyperliquid_fetch,
@@ -442,4 +598,53 @@ export async function fetchHyperliquidMarketContexts(input: {
     markets: input.markets,
     metaAndAssetContexts,
   });
+}
+
+export async function fetchHyperliquidMarketHistory(input: {
+  markets: string[];
+  startTimeMs: number;
+  endTimeMs: number;
+  interval?: string;
+  fetchImpl?: hyperliquid_fetch;
+}) {
+  const fetchImpl = input.fetchImpl ?? fetch;
+  const interval = input.interval ?? "1h";
+
+  return Promise.all(
+    input.markets.map(async (market) => {
+      const coin = getMarketCoin(market);
+      const [candles, fundingHistory] = await Promise.all([
+        postHyperliquidInfo<hyperliquid_candle_snapshot[]>(
+          {
+            type: "candleSnapshot",
+            req: {
+              coin,
+              interval,
+              startTime: input.startTimeMs,
+              endTime: input.endTimeMs,
+            },
+          },
+          fetchImpl,
+        ),
+        postHyperliquidInfo<hyperliquid_funding_history_item[]>(
+          {
+            type: "fundingHistory",
+            coin,
+            startTime: input.startTimeMs,
+            endTime: input.endTimeMs,
+          },
+          fetchImpl,
+        ),
+      ]);
+
+      return mapHyperliquidMarketHistory({
+        market,
+        candles,
+        fundingHistory,
+        startTimeMs: input.startTimeMs,
+        endTimeMs: input.endTimeMs,
+        interval,
+      });
+    }),
+  );
 }

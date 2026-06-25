@@ -15,7 +15,14 @@ import {
   buildRedactedMarketContext,
   type redacted_market_context,
 } from "@/lib/market/redacted-market-context.ts";
-import type { hyperliquid_market_context } from "@/lib/hyperliquid/adapter.ts";
+import {
+  buildRedactedMarketTrend,
+  type redacted_market_trend,
+} from "@/lib/market/redacted-market-trend.ts";
+import type {
+  hyperliquid_market_context,
+  hyperliquid_market_history,
+} from "@/lib/hyperliquid/adapter.ts";
 import type { receipt_verification, risk_receipt } from "@/lib/perps/types.ts";
 import { getLocalReceiptStorageKey } from "@/lib/receipts/local-receipts.ts";
 import {
@@ -50,9 +57,22 @@ type redacted_market_context_state =
   | { status: "loaded"; context: redacted_market_context }
   | { status: "error"; message: string };
 
+type redacted_market_trend_state =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "loaded"; trend: redacted_market_trend }
+  | { status: "error"; message: string };
+
 type hyperliquid_markets_payload = {
   fetched_at_iso: string;
   markets: hyperliquid_market_context[];
+};
+
+type hyperliquid_market_history_payload = {
+  fetched_at_iso: string;
+  interval: string;
+  window_hours: number;
+  histories: hyperliquid_market_history[];
 };
 
 export function ReceiptImportClient() {
@@ -61,16 +81,21 @@ export function ReceiptImportClient() {
   const [state, setState] = useState<import_state>({ status: "empty" });
   const [redactedMarketContextState, setRedactedMarketContextState] =
     useState<redacted_market_context_state>({ status: "idle" });
+  const [redactedMarketTrendState, setRedactedMarketTrendState] =
+    useState<redacted_market_trend_state>({ status: "idle" });
   const importPreviewRequestIdRef = useRef(0);
   const redactedMarketContextRequestIdRef = useRef(0);
+  const redactedMarketTrendRequestIdRef = useRef(0);
 
   async function updateBundleText(value: string) {
     const requestId = importPreviewRequestIdRef.current + 1;
 
     importPreviewRequestIdRef.current = requestId;
     redactedMarketContextRequestIdRef.current += 1;
+    redactedMarketTrendRequestIdRef.current += 1;
     setBundleText(value);
     setRedactedMarketContextState({ status: "idle" });
+    setRedactedMarketTrendState({ status: "idle" });
 
     if (!value.trim()) {
       setState({ status: "empty" });
@@ -180,6 +205,79 @@ export function ReceiptImportClient() {
           error instanceof Error
             ? error.message
             : "Hyperliquid market context lookup failed.",
+      });
+    }
+  }
+
+  async function loadRedactedMarketTrend(bundle: redacted_receipt_bundle) {
+    const requestId = redactedMarketTrendRequestIdRef.current + 1;
+
+    redactedMarketTrendRequestIdRef.current = requestId;
+
+    if (bundle.protocol !== "hyperliquid") {
+      setRedactedMarketTrendState({
+        status: "error",
+        message: "24h market history is only available for Hyperliquid shares.",
+      });
+      return;
+    }
+
+    if (bundle.markets.length === 0) {
+      setRedactedMarketTrendState({
+        status: "error",
+        message: "This redacted share does not disclose any markets.",
+      });
+      return;
+    }
+
+    setRedactedMarketTrendState({ status: "loading" });
+
+    try {
+      const marketList = Array.from(
+        new Set(bundle.markets.map((market) => market.market)),
+      ).join(",");
+      const response = await fetch(
+        `/api/hyperliquid/market-history?markets=${encodeURIComponent(
+          marketList,
+        )}`,
+      );
+      const payload = (await response.json()) as
+        | hyperliquid_market_history_payload
+        | { error?: string };
+
+      if (!response.ok || !("histories" in payload)) {
+        throw new Error(
+          "error" in payload && payload.error
+            ? payload.error
+            : "Hyperliquid market history lookup failed.",
+        );
+      }
+
+      if (redactedMarketTrendRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setRedactedMarketTrendState({
+        status: "loaded",
+        trend: buildRedactedMarketTrend({
+          bundle,
+          histories: payload.histories,
+          fetchedAtIso: payload.fetched_at_iso,
+          windowHours: payload.window_hours,
+          interval: payload.interval,
+        }),
+      });
+    } catch (error) {
+      if (redactedMarketTrendRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setRedactedMarketTrendState({
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Hyperliquid market history lookup failed.",
       });
     }
   }
@@ -429,6 +527,14 @@ export function ReceiptImportClient() {
                 void loadRedactedMarketContext(state.bundle);
               }}
             />
+
+            <RedactedMarketTrendPanel
+              bundle={state.bundle}
+              marketTrendState={redactedMarketTrendState}
+              onLoadMarketTrend={() => {
+                void loadRedactedMarketTrend(state.bundle);
+              }}
+            />
           </section>
         ) : null}
       </div>
@@ -554,12 +660,210 @@ function RedactedMarketContextResult({
   );
 }
 
+function RedactedMarketTrendPanel({
+  bundle,
+  marketTrendState,
+  onLoadMarketTrend,
+}: {
+  bundle: redacted_receipt_bundle;
+  marketTrendState: redacted_market_trend_state;
+  onLoadMarketTrend: () => void;
+}) {
+  const canLoadMarketTrend =
+    bundle.protocol === "hyperliquid" &&
+    bundle.markets.length > 0 &&
+    bundle.markets.length <= 5;
+
+  return (
+    <div className="mt-4 rounded-lg border border-stone-300 bg-white p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">24h market trend</h3>
+          <p className="mt-1 text-sm text-stone-600">
+            Load public one-hour candles and funding history for disclosed
+            markets to see whether the current context looks recent or
+            persistent.
+          </p>
+        </div>
+        <button
+          className="inline-flex min-h-11 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-stone-400"
+          disabled={!canLoadMarketTrend || marketTrendState.status === "loading"}
+          onClick={onLoadMarketTrend}
+          type="button"
+        >
+          {marketTrendState.status === "loading"
+            ? "Loading 24h history"
+            : "Load 24h trends"}
+        </button>
+      </div>
+
+      {!canLoadMarketTrend ? (
+        <p className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-700">
+          24h trend context is available for Hyperliquid redacted shares with
+          one to five disclosed markets.
+        </p>
+      ) : null}
+
+      {marketTrendState.status === "error" ? (
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-950">
+          {marketTrendState.message}
+        </p>
+      ) : null}
+
+      {marketTrendState.status === "loaded" ? (
+        <RedactedMarketTrendResult trend={marketTrendState.trend} />
+      ) : null}
+    </div>
+  );
+}
+
+function RedactedMarketTrendResult({
+  trend,
+}: {
+  trend: redacted_market_trend;
+}) {
+  return (
+    <div className="mt-4">
+      <div className="rounded-lg border border-sky-200 bg-sky-50 p-3">
+        <p className="text-sm font-semibold text-sky-950">{trend.headline}</p>
+        <p className="mt-1 text-sm text-sky-900">{trend.summary}</p>
+        <p className="mt-2 text-xs font-medium uppercase text-sky-900">
+          Fetched {formatIsoDate(trend.fetched_at_iso)} · {trend.window_hours}h
+          · {trend.interval} candles · matched {trend.matched_market_count}/
+          {trend.rows.length} markets
+        </p>
+      </div>
+
+      {trend.rows.length > 0 ? (
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-[1040px] w-full text-left text-sm">
+            <thead className="bg-stone-100 text-xs uppercase text-stone-600">
+              <tr>
+                <th className="px-4 py-3">Market</th>
+                <th className="px-4 py-3">Side</th>
+                <th className="px-4 py-3">24h close path</th>
+                <th className="px-4 py-3">24h price</th>
+                <th className="px-4 py-3">High/low range</th>
+                <th className="px-4 py-3">Avg funding</th>
+                <th className="px-4 py-3">Latest funding</th>
+                <th className="px-4 py-3">Read</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trend.rows.map((row) => (
+                <tr className="border-t border-stone-200" key={row.market}>
+                  <td className="px-4 py-3 font-mono">{row.market}</td>
+                  <td className="px-4 py-3 capitalize">{row.side}</td>
+                  <td className="px-4 py-3">
+                    <MarketTrendSparkline values={row.close_prices_usd} />
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatNullableSignedPercent(row.price_change_percent)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatNullablePercent(row.high_low_range_percent)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatNullableSignedBps(
+                      row.average_funding_8h_bps_user_perspective,
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatNullableSignedBps(
+                      row.latest_funding_8h_bps_user_perspective,
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-stone-700">{row.summary}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function MarketTrendSparkline({ values }: { values: number[] }) {
+  const width = 180;
+  const height = 56;
+  const minValue = values.length > 0 ? Math.min(...values) : 0;
+  const maxValue = values.length > 0 ? Math.max(...values) : 0;
+  const valueRange = maxValue - minValue;
+  const coordinatePairs = values.map((value, index) => {
+    const x =
+      values.length <= 1 ? width / 2 : (index / (values.length - 1)) * width;
+    const y =
+      valueRange === 0
+        ? height / 2
+        : height - ((value - minValue) / valueRange) * (height - 12) - 6;
+
+    return `${roundSvgNumber(x)},${roundSvgNumber(y)}`;
+  });
+
+  return (
+    <svg
+      aria-label="24h close price path"
+      className="h-14 w-44 rounded-md border border-stone-200 bg-stone-50"
+      role="img"
+      viewBox={`0 0 ${width} ${height}`}
+    >
+      <line
+        stroke="#d6d3d1"
+        strokeDasharray="3 3"
+        strokeWidth="1"
+        x1="0"
+        x2={width}
+        y1={height / 2}
+        y2={height / 2}
+      />
+      {values.length > 1 ? (
+        <polyline
+          fill="none"
+          points={coordinatePairs.join(" ")}
+          stroke="#0369a1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="3"
+        />
+      ) : null}
+      {values.length === 1 ? (
+        <circle cx={width / 2} cy={height / 2} fill="#0369a1" r="4" />
+      ) : null}
+    </svg>
+  );
+}
+
+function roundSvgNumber(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
 function formatNullableUsd(value: number | null) {
   return value === null ? "n/a" : formatUsd(value);
 }
 
 function formatNullableSignedBps(value: number | null) {
   return value === null ? "n/a" : formatSignedBps(value);
+}
+
+function formatNullablePercent(value: number | null) {
+  return value === null ? "n/a" : `${value.toFixed(2)}%`;
+}
+
+function formatNullableSignedPercent(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  const roundedValue = Math.round(value * 100) / 100;
+
+  if (roundedValue === 0) {
+    return "0.00%";
+  }
+
+  return `${roundedValue > 0 ? "+" : "-"}${Math.abs(roundedValue).toFixed(
+    2,
+  )}%`;
 }
 
 function ImportMetric({ label, value }: { label: string; value: string }) {

@@ -15,8 +15,10 @@ market metadata.
 ## source links
 
 - [[../sources/redacted-market-context]]
+- [[../sources/redacted-market-trend]]
 - [[../sources/redacted-receipt-sharing]]
 - [[redacted-receipt-share]]
+- [[redacted-market-trend]]
 - [[mark-price-context]]
 - docs/source-notes.md#hyperliquid
 
@@ -39,5 +41,5 @@ market metadata.
 - [[redacted-receipt-share]] is the privacy-preserving share object.
 - [[mark-price-context]] remains the full-receipt saved-vs-current comparison
   once the private account snapshot is available.
-- A later version could add a small public market trend sparkline using only
-  market endpoints, still without an account address.
+- [[redacted-market-trend]] adds a small public market trend sparkline using
+  read-only market endpoints, still without an account address.

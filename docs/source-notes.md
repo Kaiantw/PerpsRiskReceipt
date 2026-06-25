@@ -69,12 +69,18 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
   - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
+- docs checked on 2026-06-25 for redacted market trend history:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
   - `{ "type": "clearinghouseState", "user": "0x..." }`
   - `{ "type": "metaAndAssetCtxs" }`
   - `{ "type": "portfolio", "user": "0x..." }`
+  - `{ "type": "candleSnapshot", "req": { "coin": "ETH", "interval": "1h", "startTime": 1782406800000, "endTime": 1782428400000 } }`
+  - `{ "type": "fundingHistory", "coin": "ETH", "startTime": 1782406800000, "endTime": 1782428400000 }`
 - normalized mapping:
   - `marginSummary.accountValue` -> `account_value_usd`
   - `marginSummary.totalMarginUsed` -> `margin_used_usd`
@@ -98,7 +104,7 @@ use this file for external protocol assumptions.
   - funding deltas are displayed as estimated holding-cost changes, not strategy recommendations.
 - funding carry watch assumptions:
   - current funding comes from the existing `metaAndAssetCtxs` mapping.
-  - historical `userFunding`, `fundingHistory`, and `predictedFundings` endpoints exist but are not called in this slice.
+  - historical `userFunding`, `fundingHistory`, and `predictedFundings` endpoints exist but are not called by the dashboard funding carry watch.
   - the watch assumes current funding and notional stay unchanged for daily and 30-day estimates.
   - Hyperliquid actual funding uses position size and oracle price; this app estimates from normalized mark-price notional.
   - positive user-perspective funding is shown as cost; negative is shown as earned funding.
@@ -156,6 +162,13 @@ use this file for external protocol assumptions.
   - current mark price, oracle price, funding, open interest, and day volume are public market context; saved mark price, exact size, raw account, PnL, and exact funding dollars remain hidden.
   - funding comparison is side-adjusted from the disclosed side and receipt funding bps; it is descriptive holding-cost context, not a strategy recommendation.
   - open interest is displayed as market participation/liquidity context and not as a standalone bullish or bearish signal.
+- redacted market trend assumptions:
+  - redacted market trend calls only read-only `candleSnapshot` and `fundingHistory` info requests and does not send a raw account address.
+  - the lookup is capped at five disclosed PERP markets because these endpoints have response-size rate weights.
+  - the app uses a fixed 24-hour window with one-hour candles to keep the request bounded and easy to review.
+  - candle close prices are public market context; they do not reveal saved mark price or exact receipt entry state.
+  - funding history is side-adjusted from the disclosed side and summarized as average/latest 8-hour bps.
+  - a 24-hour adverse price trend or persistent funding cost is a review cue only, not a recommendation to trade or change leverage.
 
 ## eas
 

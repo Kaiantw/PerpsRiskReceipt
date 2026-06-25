@@ -63,6 +63,8 @@ Open `http://localhost:3000`.
    - Point out that the redacted preview cannot recompute the hidden full snapshot hash, so it is for minimized review rather than full verification.
    - Click `Load current markets`.
    - Point out current mark price, side-adjusted funding, open interest, and the note that the lookup uses public market data without a raw account address.
+   - Click `Load 24h trends`.
+   - Point out the close-price sparkline, 24h price move, high/low range, average funding, latest funding, and that this uses public candle/funding history only.
    - Return to the local receipt, switch to `Full receipt`, click `Copy full bundle`, open `/receipt/import`, paste the bundle, and show the import preview with `Hash verified`.
    - Click `Import receipt` and show that the app opens the same local receipt route in this browser.
    - Show `Receipt account-value context`.
@@ -84,4 +86,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, portable full/redacted receipt bundles, redacted-share market context, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, portable full/redacted receipt bundles, redacted-share market context and 24h trend history, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

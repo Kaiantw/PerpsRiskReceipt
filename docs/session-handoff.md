@@ -25,54 +25,56 @@
 - Post-t9 portable receipt bundle is complete.
 - Post-t9 redacted receipt share is complete.
 - Post-t9 redacted market context is complete.
+- Post-t9 redacted market trend history is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote state: `main` tracks `origin/main`.
-- Baseline before this slice: `0f42103 feat: add redacted receipt shares`.
-- Current work adds a market-only context panel for imported redacted receipt shares.
-- Redacted imports can now fetch public Hyperliquid context for disclosed markets only, without sending a raw account address or importing the hidden full snapshot.
-- The panel shows matched-market count, current mark/oracle, funding now, funding at receipt, funding delta, open interest, day notional volume, and privacy-scope copy.
+- Baseline before this slice: `96afd6d feat: add redacted market context`.
+- Current work adds 24h public market trend history for imported redacted receipt shares.
+- Redacted imports can now fetch public Hyperliquid one-hour candles and funding history for disclosed markets only, without sending a raw account address or importing the hidden full snapshot.
+- The new panel shows matched-market count, close-price sparkline, 24h price change, high/low range, average side-adjusted funding, latest side-adjusted funding, and privacy-scope copy.
+- The trend lookup is capped at five disclosed markets and uses a fixed 24h/1h window because the underlying endpoints have response-size rate weights.
 - A Next dev server was already running on `http://localhost:3000` for smoke verification.
 
 ## files changed
 
-- `src/lib/hyperliquid/adapter.ts`: added market-only context types, mapping, and fetch support for `metaAndAssetCtxs`.
-- `src/lib/hyperliquid/adapter.test.ts`: covered market-only mapping and request body behavior.
-- `src/app/api/hyperliquid/markets/route.ts`: added a read-only market-context API route for disclosed `*-PERP` markets.
-- `src/lib/market/redacted-market-context.ts`: added deterministic redacted-share market context and funding-delta summaries.
-- `src/lib/market/redacted-market-context.test.ts`: covered loaded, unavailable, and favorable-funding cases.
-- `src/app/receipt/import/receipt-import-client.tsx`: added `Load current markets` behavior and the current-market context panel for redacted previews.
-- `src/lib/formatters.ts`: fixed signed-bps formatting for rounded zero values.
-- `package.json`: included the new redacted market-context test in `npm test`.
-- `docs/knowledge/sources/redacted-market-context.md`: new source-backed note for market-only redacted context.
-- `docs/knowledge/features/redacted-market-context.md`: new implemented feature note.
-- `docs/knowledge/features/redacted-receipt-share.md`: linked redacted-share market context.
-- `docs/knowledge/sources/perp-market-context.md`: added public market-context takeaways.
+- `src/lib/hyperliquid/adapter.ts`: added candle/funding-history response mapping and read-only market-history fetch support.
+- `src/lib/hyperliquid/adapter.test.ts`: covered market-history mapping and exact `candleSnapshot` / `fundingHistory` request bodies.
+- `src/app/api/hyperliquid/market-history/route.ts`: added a read-only 24h market-history API route for disclosed `*-PERP` markets.
+- `src/lib/market/redacted-market-trend.ts`: added deterministic redacted-share 24h trend context and labels.
+- `src/lib/market/redacted-market-trend.test.ts`: covered hidden-snapshot-safe trend context, short side-adjusted funding, no-history state, and persistent funding cost.
+- `src/app/receipt/import/receipt-import-client.tsx`: added `Load 24h trends` behavior and the trend-history panel for redacted previews.
+- `package.json`: included the new redacted market-trend test in `npm test`.
+- `docs/knowledge/sources/redacted-market-trend.md`: new source-backed note for candle/funding-history context.
+- `docs/knowledge/features/redacted-market-trend.md`: new implemented feature note.
+- `docs/knowledge/features/redacted-market-context.md`: linked the implemented trend feature.
+- `docs/knowledge/features/redacted-receipt-share.md`: linked redacted-share trend behavior.
 - `docs/knowledge/index.md`: linked the new source and feature notes.
-- `docs/source-notes.md`: documented Hyperliquid market-context assumptions.
-- `docs/known-limitations.md`: documented redacted market-context limits.
-- `README.md`: documented the new redacted-share market-context behavior.
-- `docs/demo-script.md`: added the redacted import market-context step.
+- `docs/source-notes.md`: documented Hyperliquid market-history assumptions and request bodies.
+- `docs/known-limitations.md`: documented redacted market-trend limits.
+- `README.md`: documented the new redacted-share 24h trend behavior.
+- `docs/demo-script.md`: added the redacted import trend-history demo step.
 - `docs/ai-build-log.md`: records this feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `npm test` passed: 90 tests, 90 passing.
+- `npm test` passed: 96 tests, 96 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm run build` passed and listed `/api/hyperliquid/markets`.
+- `npm run build` passed and listed `/api/hyperliquid/market-history`.
 - `git diff --check` passed.
-- Browser verification used `http://localhost:3000/receipt/import`, pasted a handcrafted redacted bundle with disclosed `ETH-PERP` and `BTC-PERP` rows, clicked `Load current markets`, confirmed `Current market context`, current mark, funding now, funding at receipt, open interest, matched `2/2 markets`, no raw account, no `Import receipt` button, and zero browser console errors.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted a redacted bundle with disclosed `ETH-PERP` and `BTC-PERP`, clicked `Load current markets`, confirmed current market context matched `2/2` markets, clicked `Load 24h trends`, confirmed `24h close path`, `24h price`, `Avg funding`, `Latest funding`, matched `2/2` markets, no raw account, no `Import receipt` button, and zero browser console errors.
 
 ## blockers
 
 - No hard blocker for this feature slice.
-- Redacted market context depends on Hyperliquid API availability and the `metaAndAssetCtxs` response shape.
-- Redacted market context is current public market context only. It cannot compare hidden saved mark prices, exact sizes, exact notional, exact account equity, PnL, or exact funding dollars.
+- Redacted market trend depends on Hyperliquid API availability and the `candleSnapshot` / `fundingHistory` response shapes.
+- Redacted market trend is current public market history only. It cannot prove the hidden receipt state, exact saved mark prices, exact sizes, exact notional, exact account equity, PnL, or exact funding dollars.
+- The trend lookup is capped at five disclosed markets and uses a fixed 24h/1h window to keep read-only history requests bounded.
 - Redacted shares remain minimized offchain JSON summaries, not encrypted payloads, Merkle proofs, zero-knowledge proofs, Verifiable Credentials, JSON Web Proofs, or EAS private-data attestations.
 - Redacted receipt shares preserve the snapshot hash as a reference but cannot recompute or verify it without the hidden full snapshot.
 - Full portable receipt bundles still disclose private snapshot data and are not encrypted, access-controlled, or selectively disclosed.
@@ -84,4 +86,4 @@
 
 ## exact next recommended action
 
-Add a market-only trend/history panel for redacted shares: first research Hyperliquid read-only candle and funding-history endpoints, then show whether current funding and price context look transient or persistent for disclosed markets without requiring a raw account address.
+Add market-only watch thresholds for redacted shares: use the existing current-context and 24h trend outputs to produce a compact "review watchlist" for disclosed markets, such as adverse trend plus thin liquidation bucket, persistent funding cost, high volatility range, or missing public history, still without requiring a raw account address.

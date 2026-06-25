@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  fetchHyperliquidMarketHistory,
   fetchHyperliquidPortfolioHistory,
   fetchHyperliquidMarketContexts,
   fetchHyperliquidSnapshot,
   isHyperliquidAddress,
+  mapHyperliquidMarketHistory,
   mapHyperliquidMarketContexts,
   mapHyperliquidPortfolioHistory,
   mapHyperliquidSnapshot,
@@ -87,6 +89,51 @@ const portfolioFixture: hyperliquid_portfolio_response = [
       vlm: "25000.5",
     },
   ],
+];
+
+const marketHistoryStartMs = Date.parse("2026-06-25T00:00:00.000Z");
+const marketHistoryEndMs = Date.parse("2026-06-25T03:00:00.000Z");
+
+const candleFixture = [
+  {
+    t: Date.parse("2026-06-25T00:00:00.000Z"),
+    T: Date.parse("2026-06-25T00:59:59.999Z"),
+    s: "ETH",
+    i: "1h",
+    o: "100",
+    h: "112",
+    l: "99",
+    c: "110",
+    v: "123.45",
+    n: 10,
+  },
+  {
+    t: Date.parse("2026-06-25T01:00:00.000Z"),
+    T: Date.parse("2026-06-25T01:59:59.999Z"),
+    s: "ETH",
+    i: "1h",
+    o: "110",
+    h: "111",
+    l: "104",
+    c: "105",
+    v: "67.89",
+    n: 8,
+  },
+];
+
+const fundingHistoryFixture = [
+  {
+    coin: "ETH",
+    fundingRate: "0.00021",
+    premium: "0.00005",
+    time: Date.parse("2026-06-25T01:00:00.000Z"),
+  },
+  {
+    coin: "ETH",
+    fundingRate: "0.00018",
+    premium: "0.00004",
+    time: Date.parse("2026-06-25T02:00:00.000Z"),
+  },
 ];
 
 test("validates Hyperliquid address shape", () => {
@@ -194,6 +241,27 @@ test("maps market-only asset context for disclosed redacted markets", () => {
   assert.equal(markets[2].mark_price_usd, null);
 });
 
+test("maps market history candles and funding rates", () => {
+  const history = mapHyperliquidMarketHistory({
+    market: "ETH-PERP",
+    candles: candleFixture,
+    fundingHistory: fundingHistoryFixture,
+    startTimeMs: marketHistoryStartMs,
+    endTimeMs: marketHistoryEndMs,
+    interval: "1h",
+  });
+
+  assert.equal(history.market, "ETH-PERP");
+  assert.equal(history.coin, "ETH");
+  assert.equal(history.candles.length, 2);
+  assert.equal(history.candles[0].close_price_usd, 110);
+  assert.equal(history.candles[0].volume_base, 123.45);
+  assert.equal(history.candles[1].trade_count, 8);
+  assert.equal(history.funding.length, 2);
+  assert.equal(history.funding[0].funding_8h_bps, 2.1);
+  assert.equal(history.funding[0].premium_bps, 0.5);
+});
+
 test("fetches Hyperliquid portfolio with only the read-only info endpoint", async () => {
   const requests: unknown[] = [];
   const mockFetch: hyperliquid_fetch = async (_url, init) => {
@@ -236,4 +304,50 @@ test("fetches Hyperliquid market contexts with only the read-only info endpoint"
 
   assert.deepEqual(requests, [{ type: "metaAndAssetCtxs" }]);
   assert.equal(markets[0].market, "ETH-PERP");
+});
+
+test("fetches Hyperliquid market history with only read-only info endpoint bodies", async () => {
+  const requests: unknown[] = [];
+  const mockFetch: hyperliquid_fetch = async (_url, init) => {
+    const body = JSON.parse(String(init.body));
+    requests.push(body);
+
+    if (body.type === "candleSnapshot") {
+      return Response.json(candleFixture);
+    }
+
+    if (body.type === "fundingHistory") {
+      return Response.json(fundingHistoryFixture);
+    }
+
+    return new Response("unexpected request", { status: 500 });
+  };
+
+  const histories = await fetchHyperliquidMarketHistory({
+    markets: ["ETH-PERP"],
+    startTimeMs: marketHistoryStartMs,
+    endTimeMs: marketHistoryEndMs,
+    interval: "1h",
+    fetchImpl: mockFetch,
+  });
+
+  assert.deepEqual(requests, [
+    {
+      type: "candleSnapshot",
+      req: {
+        coin: "ETH",
+        interval: "1h",
+        startTime: marketHistoryStartMs,
+        endTime: marketHistoryEndMs,
+      },
+    },
+    {
+      type: "fundingHistory",
+      coin: "ETH",
+      startTime: marketHistoryStartMs,
+      endTime: marketHistoryEndMs,
+    },
+  ]);
+  assert.equal(histories[0].market, "ETH-PERP");
+  assert.equal(histories[0].candles.length, 2);
 });
