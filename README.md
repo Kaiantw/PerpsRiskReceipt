@@ -9,6 +9,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - Three fixture accounts: safe ETH long, near-liquidation BTC short, and a mixed multi-position book.
 - Account-level risk metrics: account value, margin used, margin usage, total notional, minimum liquidation distance, daily funding, 30-day funding, risk score, source, freshness, and data timestamp.
 - Position-level risk notes for liquidation distance and funding direction.
+- Liquidation buffer ladder ranking positions by closest listed liquidation buffer.
 - Funding carry watch for net daily funding, 30-day estimate, funding burden, and largest cost/earn drivers.
 - Six scenario moves: `-10%`, `-5%`, `-2%`, `+2%`, `+5%`, and `+10%`.
 - Deterministic fixture receipt pages with snapshot hash verification.
@@ -31,6 +32,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/lib/perps/types.ts` defines the normalized snapshot, position, scenario, and receipt models.
 - `src/lib/perps/fixtures.ts` contains the demo account snapshots.
 - `src/lib/risk/risk-engine.ts` contains pure risk math.
+- `src/lib/liquidation/liquidation-buffer.ts` derives the dashboard liquidation buffer ladder.
 - `src/lib/funding/funding-watch.ts` derives funding carry labels, burden, and top funding drivers.
 - `src/lib/market/market-context.ts` derives plain-English saved-vs-current market context for receipt rechecks.
 - `src/lib/assistant/risk-assistant.ts` contains dependency-free assistant response logic and guardrails.
@@ -59,6 +61,7 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - EAS support is a fallback payload and manual Sepolia flow, not an in-app wallet transaction.
 - The EAS payload hashes account/protocol identifiers instead of placing raw account identifiers onchain.
 - The risk assistant is local and deterministic in this build; it does not call an LLM API.
+- Liquidation buffer ladder uses listed liquidation prices and does not compute exact Hyperliquid liquidation behavior.
 - Funding carry watch assumes current funding and notional stay unchanged and uses normalized mark-price notional as an estimate.
 - Market context uses mark price for saved-vs-current comparison and treats open interest as descriptive context, not a standalone direction signal.
 
@@ -89,7 +92,7 @@ Use `docs/demo-script.md` for the reviewer-facing script. The short version:
 
 1. Open the dashboard.
 2. Switch between fixture accounts.
-3. Explain account risk, position risk, funding carry watch, and scenarios.
+3. Explain account risk, liquidation buffer ladder, funding carry watch, and scenarios.
 4. Ask the risk assistant about liquidation, funding, and whether it can recommend a trade.
 5. Create a fixture receipt.
 6. Open the receipt page and show hash verification.
@@ -103,6 +106,7 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 - Live Hyperliquid receipts are stored in browser localStorage only and are not synced/shareable across devices.
 - Live receipt recheck compares the saved receipt to a fresh snapshot but is not an exact liquidation monitor.
 - Market context is descriptive and depends on a comparable saved/current position pair.
+- Liquidation buffer ladder ranks listed buffer only; actual liquidation behavior can change with cross margin, funding, and other open-position PnL.
 - Risk assistant responses are deterministic explanations of loaded fields, not financial advice or LLM reasoning.
 - Funding carry watch assumes current funding and notional stay unchanged and is not exact settlement accounting.
 - EAS schema registration and attestation transactions are not sent by the app.
@@ -121,4 +125,4 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 
 ## Resume Bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

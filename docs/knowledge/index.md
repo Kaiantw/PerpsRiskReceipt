@@ -10,6 +10,7 @@ informed it and forward to related feature ideas.
 - [[sources/financial-risk-guardrails]] - SEC/FINRA investor-risk references used to shape assistant refusal and education copy.
 - [[sources/perp-funding-mechanics]] - funding-rate mechanics and holding-cost assumptions.
 - [[sources/perp-market-context]] - mark price and open-interest context for current-market receipt checks.
+- [[sources/perp-liquidation-buffer]] - Hyperliquid liquidation, margining, and listed-buffer assumptions.
 
 ## implemented feature notes
 
@@ -17,6 +18,7 @@ informed it and forward to related feature ideas.
 - [[features/ai-risk-assistant]] - local guarded chat assistant for explaining the loaded snapshot.
 - [[features/funding-carry-watch]] - dashboard panel for net funding carry, burden, and top funding drivers.
 - [[features/mark-price-context]] - receipt recheck panel for saved-vs-current mark, liquidation, funding, and open-interest context.
+- [[features/liquidation-buffer-ladder]] - dashboard ladder for closest listed liquidation buffers.
 
 ## connected backlog ideas
 

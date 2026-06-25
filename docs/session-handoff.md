@@ -17,41 +17,42 @@
 - Post-t9 risk assistant is complete.
 - Post-t9 funding carry watch is complete.
 - Post-t9 market context is complete.
+- Post-t9 liquidation buffer ladder is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote state: `main` tracks `origin/main`.
-- Baseline before this slice: `1da12cd feat: add funding carry watch`.
-- Current work adds market context to local live receipt rechecks and updates the linked research/feature notes under `docs/knowledge/`.
+- Baseline before this slice: `934ac8a feat: add receipt market context`.
+- Current work adds a dashboard liquidation buffer ladder and updates the linked research/feature notes under `docs/knowledge/`.
 - Dev server was started on `http://localhost:3000` for smoke verification.
 
 ## files changed
 
-- `src/lib/market/market-context.ts`: derives receipt-vs-current market context labels, summaries, mark movement direction, funding deltas, and open-interest deltas.
-- `src/lib/market/market-context.test.ts`: tests long adverse moves, short favorable moves, funding-only changes, and position-state changes.
-- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: renders `Market context since receipt` inside local live receipt rechecks.
-- `package.json`: includes market-context tests.
-- `docs/knowledge/index.md`: links the market-context source note and implemented feature.
-- `docs/knowledge/features/mark-price-context.md`: marks the feature implemented and documents behavior.
-- `docs/knowledge/features/live-receipt-recheck.md`: links the market context into live recheck behavior.
-- `docs/knowledge/sources/perp-market-context.md`: source-backed market context note.
-- `docs/source-notes.md`: records mark-price/open-interest assumptions.
-- `README.md`: documents market-context rechecks.
-- `docs/demo-script.md`: adds the market-context walkthrough.
-- `docs/known-limitations.md`: adds market-context limitations.
+- `src/lib/liquidation/liquidation-buffer.ts`: derives listed liquidation buffer ladder labels, adverse move values, and closest-position ordering.
+- `src/lib/liquidation/liquidation-buffer.test.ts`: tests long, short, missing-liquidation, at-or-through liquidation, and no-position cases.
+- `src/app/liquidation-buffer-panel.tsx`: dashboard panel for the ladder.
+- `src/app/dashboard-client.tsx`: mounts the ladder before funding carry watch.
+- `package.json`: includes liquidation-buffer tests.
+- `docs/knowledge/index.md`: links the liquidation-buffer source and implemented feature.
+- `docs/knowledge/features/liquidation-buffer-ladder.md`: implemented feature note.
+- `docs/knowledge/sources/perp-liquidation-buffer.md`: source-backed liquidation buffer note.
+- `docs/source-notes.md`: records listed-buffer assumptions.
+- `README.md`: documents the ladder.
+- `docs/demo-script.md`: adds the ladder walkthrough.
+- `docs/known-limitations.md`: adds listed-buffer limitations.
 - `docs/ai-build-log.md`: records this post-t9 feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `npm test` passed: 41 tests, 41 passing.
+- `npm test` passed: 46 tests, 46 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
 - `npm run build` passed and listed `/receipt/local/[id]` as a dynamic route.
 - `git diff --check` passed.
-- Browser verification opened the dashboard, looked up `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created a local receipt, clicked `Recheck live account`, confirmed `Market context since receipt`, the no-open-positions context, the descriptive no-recommendation caveat, and zero console errors.
+- Browser verification selected `demo-near-liquidation-btc-short`, confirmed `Liquidation buffer ladder`, `thin buffer`, `BTC-PERP`, `3.57%`, `$2,000.00`, the listed-buffer caveat, and zero console errors.
 
 ## blockers
 
@@ -60,6 +61,7 @@
 - Live Hyperliquid receipts are browser-local only and are not synced/shareable across devices.
 - Live receipt recheck depends on Hyperliquid API availability and is not an exact liquidation monitor.
 - Market context requires comparable saved/current positions and treats open interest as descriptive context, not a standalone direction signal.
+- Liquidation buffer ladder ranks listed liquidation prices only and does not model cross-margin equity, funding changes, liquidity changes, or other open-position PnL.
 - Risk assistant is deterministic local explanation logic, not a connected LLM or financial adviser.
 - Funding carry watch assumes current funding and notional stay unchanged and estimates from normalized mark-price notional.
 - EAS schema registration and attestation transactions are documented fallback steps only.
@@ -67,4 +69,4 @@
 
 ## exact next recommended action
 
-Commit and push the market-context slice. The next product task should be account-value timeline: store multiple local receipts for the same account and show whether risk is persistently improving, worsening, or only briefly moving with the market.
+Commit and push the liquidation buffer ladder slice. The next product task should be account-value timeline: store multiple local receipts for the same account and show whether risk is persistently improving, worsening, or only briefly moving with the market.

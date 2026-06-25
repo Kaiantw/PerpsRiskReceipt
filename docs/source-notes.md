@@ -25,6 +25,10 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
   - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
   - https://www.britannica.com/money/futures-volume-open-interest
+- docs checked on 2026-06-25 for liquidation buffer ladder:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/margining
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -63,6 +67,11 @@ use this file for external protocol assumptions.
   - a long position moving down is treated as moving toward listed liquidation; a short position moving up is treated as moving toward listed liquidation.
   - open interest is displayed as descriptive participation context only, not as a standalone bullish or bearish signal.
   - position-state changes take priority over mark/funding interpretation because a closed, new, resized, or side-changed position is no longer the same risk object.
+- liquidation buffer ladder assumptions:
+  - the ladder uses the listed liquidation price in the normalized snapshot; it does not compute Hyperliquid's exact liquidation formula.
+  - listed buffer is sorted by `calculateLiquidationDistanceBps`; missing liquidation prices stay visible as unavailable.
+  - approximate PnL to listed liquidation is `abs(size) * adverse_move_usd`, so it is a position-level estimate and not account-level equity loss.
+  - the copy must say cross margin, funding, and other open-position PnL can change actual liquidation behavior.
 
 ## eas
 

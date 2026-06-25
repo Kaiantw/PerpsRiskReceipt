@@ -21,6 +21,8 @@ Open `http://localhost:3000`.
 
 3. Select `demo-near-liquidation-btc-short`.
    - Show the critical risk label.
+   - Show `Liquidation buffer ladder`.
+   - Point out that BTC-PERP has the closest listed buffer, the adverse move percent, and approximate PnL distance to listed liquidation.
    - Open the position row mentally: market, side, size, entry, mark, liquidation price, distance, unrealized PnL, funding, and plain-English note.
 
 4. Use the scenario simulator.
@@ -65,4 +67,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

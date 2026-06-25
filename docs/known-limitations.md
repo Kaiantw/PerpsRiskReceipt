@@ -8,6 +8,7 @@
 - eas attestation should store summary metadata and snapshot hash only, not full private trading state.
 - scenario results apply the same percentage move to every position and do not model exchange-specific cross-margin behavior.
 - liquidation distance uses the listed fixture liquidation price and should not be treated as an exact Hyperliquid liquidation calculation.
+- liquidation buffer ladder ranks listed liquidation prices only and does not model cross-margin equity, funding changes, liquidity changes, or other open-position PnL.
 - fixture receipt pages are deterministic routes; live receipts are stored only in the creating browser.
 - eas receipt fields remain placeholders until a wallet submits the documented Sepolia attestation.
 - live hyperliquid lookup depends on Hyperliquid API availability and may fail gracefully back to fixture mode.

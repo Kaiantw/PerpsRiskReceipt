@@ -421,3 +421,24 @@ Review the market-context label priority: position-state changes first, then thr
 - Browser verification opened the dashboard, looked up `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created a local receipt, clicked `Recheck live account`, confirmed `Market context since receipt`, the no-open-positions context, the descriptive no-recommendation caveat, and zero console errors.
 ### remaining risks:
 Market context depends on comparable saved/current positions, Hyperliquid API availability, and localStorage receipt persistence. It is descriptive and should not be treated as an exact liquidation monitor or trading signal.
+
+### task id: post-t9 liquidation buffer ladder
+### codex mode:
+product iteration + implementation
+### delegated work:
+Researched Hyperliquid liquidation and margining docs, then added a dashboard ladder that ranks open positions by listed liquidation buffer.
+### output accepted:
+Added a pure liquidation-buffer module with tests for safe long, near-liquidation short, mixed-book missing liquidation price, at-or-through liquidation, and no-position states. Added a dashboard `Liquidation buffer ladder` panel showing closest market, listed buffer, adverse move percent, adverse move dollars, approximate PnL to listed liquidation, and a caveat that actual liquidation behavior can change with cross margin, funding, and other open-position PnL. Updated README, demo script, limitations, source notes, handoff, and the knowledge graph.
+### output rejected or changed:
+No exact Hyperliquid liquidation formula, margin-tier modeling, trading endpoint, websocket, alerting system, chart dependency, or storage change was added. The feature intentionally ranks listed liquidation prices already present in the normalized snapshot.
+### human review notes:
+Review ladder thresholds: thin up to 5%, tight up to 10%, moderate up to 25%, and wide above 25%. Review whether approximate PnL to listed liquidation is a helpful label or should be renamed to avoid implying account-level loss.
+### tests/checks run:
+- `npm test` passed: 46 tests, 46 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed.
+- `git diff --check` passed.
+- Browser verification selected `demo-near-liquidation-btc-short`, confirmed `Liquidation buffer ladder`, `thin buffer`, `BTC-PERP`, `3.57%`, `$2,000.00`, the listed-buffer caveat, and zero console errors.
+### remaining risks:
+The ladder uses listed liquidation prices and existing normalized position fields only. It does not model cross-margin equity, funding changes, liquidity changes, maintenance tiers, or exact Hyperliquid liquidation behavior.
