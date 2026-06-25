@@ -13,7 +13,8 @@
 - eas receipt fields remain placeholders until a wallet submits the documented Sepolia attestation.
 - live hyperliquid lookup depends on Hyperliquid API availability and may fail gracefully back to fixture mode.
 - live account value history depends on Hyperliquid `portfolio` response availability and is sampled context, not complete accounting or a trade journal import.
-- live hyperliquid receipts are not synced to a backend or shareable across devices in this build.
+- live hyperliquid receipts are not synced to a backend; cross-device review requires an explicit portable receipt bundle import.
+- portable receipt bundles contain the full private snapshot and are not encrypted, access-controlled, redacted, or selectively disclosed.
 - live receipt recheck compares against a fresh read-only snapshot but is not an exact liquidation monitor or historical account audit.
 - receipt account-value context uses the nearest sampled Hyperliquid portfolio point, so the visible sample gap matters for interpretation.
 - receipt change summary is heuristic and prioritizes review cues; it is not a trading recommendation or exact risk monitor.

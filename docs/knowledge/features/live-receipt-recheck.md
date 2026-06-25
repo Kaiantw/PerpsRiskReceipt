@@ -37,6 +37,8 @@ claims:
 - It now includes [[receipt-risk-assistant]] so reviewers can ask cited
   questions about what changed, market context, funding, account history, and
   hash scope after the recheck.
+- It pairs with [[portable-receipt-bundle]] so local receipts can be moved into
+  another browser before running the same live recheck flow.
 
 ## related ideas
 
@@ -46,3 +48,5 @@ claims:
   account-history context.
 - [[receipt-risk-assistant]] translates a loaded comparison into cited
   plain-English receipt answers.
+- [[portable-receipt-bundle]] makes the local receipt review path portable
+  without adding backend persistence.

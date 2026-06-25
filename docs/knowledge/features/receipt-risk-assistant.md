@@ -42,3 +42,5 @@ than giving uncited trading advice.
 - [[receipt-change-summary]] is now the assistant's primary "what changed" source.
 - [[account-value-timeline]] could later add richer account-history citations if
   the app imports more complete portfolio history.
+- [[portable-receipt-bundle]] lets the same assistant workflow apply after a
+  reviewer imports a local receipt from another browser.

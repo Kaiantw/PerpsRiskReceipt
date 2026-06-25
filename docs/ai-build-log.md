@@ -526,3 +526,24 @@ Review the receipt assistant's keyword routing and refusal language. In particul
 - Browser verification used the existing dev server on `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_c010ad6fd463f5be`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Receipt risk assistant`, clicked `Review`, `Funding`, and `Hash`, asked `Should I increase leverage?`, confirmed the no-advice refusal, and saw zero console errors.
 ### remaining risks:
 Receipt risk assistant is deterministic local explanation logic over visible receipt and recheck fields. It is not a connected LLM, does not reason beyond keyword routing, depends on the local live receipt/recheck context, and must not be treated as financial advice.
+
+### task id: post-t9 portable receipt bundle
+### codex mode:
+product iteration + implementation
+### delegated work:
+Researched privacy-aware receipt sharing, then added a portable receipt bundle flow so browser-local live receipts can be reviewed outside the creating browser without backend sync or putting full private trading state onchain.
+### output accepted:
+Added a versioned portable bundle wrapper around the existing `risk_receipt`, strict local receipt shape validation, full-snapshot privacy preview metadata, and tests for bundle round-trip, invalid envelopes, invalid receipt snapshots, and post-import hash verification. Local live receipt pages now show a `Portable receipt bundle` panel with copy/download JSON actions and a full-snapshot warning. Added `/receipt/import`, which accepts pasted bundles, validates the envelope, recomputes the snapshot hash, previews account/risk/position metadata, and stores verified receipts into the existing local receipt route.
+### output rejected or changed:
+No backend receipt database, public share URL service, encryption, redacted bundle format, selective disclosure scheme, wallet/RPC flow, new Hyperliquid endpoint, trading endpoint, or new dependency was added. The implementation keeps full private snapshots user-controlled and leaves onchain/EAS fallback metadata minimal.
+### human review notes:
+Review whether the warning copy is strong enough: the bundle includes account, markets, position sizes, entry/mark/liquidation prices, funding estimates, and risk metrics. Review whether the next privacy step should be a redacted/selective-disclosure bundle instead of improving full-snapshot export.
+### tests/checks run:
+- `npm test` passed: 81 tests, 81 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/import` as a static route plus `/receipt/local/[id]` as dynamic.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, clicked `Lookup`, created `/receipt/local/rr_05dffdb4ef7f5354`, confirmed `Hash verified`, `Portable receipt bundle`, the full-export warning, copied the bundle, opened `/receipt/import`, pasted the bundle, confirmed `Import preview` and `Hash verified`, clicked `Import receipt`, landed back on `/receipt/local/rr_05dffdb4ef7f5354`, confirmed the portable panel and local-storage notice still rendered, and saw zero browser console errors.
+### remaining risks:
+Portable receipt bundles are explicit full-snapshot exports. They are not encrypted, access-controlled, redacted, or selectively disclosed. Imported receipts still live in browser localStorage and are not synced to a backend. The bundle hash verifies snapshot integrity, not the correctness of the original external Hyperliquid data.

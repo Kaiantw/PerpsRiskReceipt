@@ -13,6 +13,7 @@ import {
 import { verifyReceipt } from "@/lib/receipts/receipt.ts";
 import { ReceiptView } from "../../receipt-view.tsx";
 import { LiveRecheckPanel } from "./live-recheck-panel.tsx";
+import { PortableReceiptPanel } from "./portable-receipt-panel.tsx";
 import { ReceiptAccountValueContextPanel } from "./receipt-account-value-context-panel.tsx";
 
 type eas_payload = Awaited<ReturnType<typeof buildEasAttestationPayload>>;
@@ -105,7 +106,7 @@ export function LocalReceiptClient({ receiptId }: { receiptId: string }) {
     return (
       <ReceiptState
         title="Local receipt not found"
-        body="This live receipt was stored only in the browser that created it. Create a new live receipt from the dashboard."
+        body="This live receipt was stored only in the browser that created it. Create a new live receipt from the dashboard or import a portable receipt bundle."
       />
     );
   }
@@ -119,6 +120,7 @@ export function LocalReceiptClient({ receiptId }: { receiptId: string }) {
       easPayload={state.easPayload}
       extraSections={
         <>
+          <PortableReceiptPanel receipt={state.receipt} />
           <ReceiptAccountValueContextPanel
             onContextLoaded={handleReceiptAccountValueContextLoaded}
             receipt={state.receipt}
@@ -151,6 +153,12 @@ function ReceiptState({ title, body }: { title: string; body: string }) {
           href="/"
         >
           Back to dashboard
+        </Link>
+        <Link
+          className="ml-0 mt-3 inline-flex min-h-11 items-center rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-950 sm:ml-3"
+          href="/receipt/import"
+        >
+          Import bundle
         </Link>
       </section>
     </main>

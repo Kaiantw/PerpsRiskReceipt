@@ -14,6 +14,7 @@ informed it and forward to related feature ideas.
 - [[sources/perp-account-value-history]] - Hyperliquid portfolio history and drawdown context.
 - [[sources/perp-risk-review-checklist]] - liquidation, funding, leverage, and market-condition review framing.
 - [[sources/perp-receipt-review-assistant]] - receipt-question source notes for hash scope, live recheck review, funding, liquidation, and guardrails.
+- [[sources/portable-receipt-privacy]] - privacy framing for full receipt export, hash verification, offchain sharing, and minimal onchain metadata.
 
 ## implemented feature notes
 
@@ -26,8 +27,11 @@ informed it and forward to related feature ideas.
 - [[features/receipt-account-value-context]] - local receipt panel that positions the saved snapshot inside sampled account-value history.
 - [[features/receipt-change-summary]] - single live-recheck summary combining position, market, funding, and account-history signals.
 - [[features/receipt-risk-assistant]] - local receipt-page assistant that answers cited questions from the receipt summary and live recheck context.
+- [[features/portable-receipt-bundle]] - explicit full-snapshot export/import flow for reviewing local live receipts across browsers.
 
 ## connected backlog ideas
 
 - [[features/receipt-risk-assistant]] could later use a guarded server-side LLM
   once citations, refusal policy, and private-data boundaries are stronger.
+- [[features/portable-receipt-bundle]] could later support redacted or selective
+  disclosure bundles when the product needs safer public sharing.

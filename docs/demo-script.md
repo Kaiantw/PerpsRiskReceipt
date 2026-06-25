@@ -57,6 +57,10 @@ Open `http://localhost:3000`.
    - Point out sampled account value, period change, current drawdown, max drawdown, PnL history, and volume.
    - Click `Create local receipt`.
    - Show that the live receipt page has a snapshot hash, hash verification, and market summary.
+   - Show `Portable receipt bundle`.
+   - Point out that this is a full-snapshot JSON export for intentional review, not an encrypted or redacted share.
+   - Click `Copy bundle`, open `/receipt/import`, paste the bundle, and show the import preview with `Hash verified`.
+   - Click `Import receipt` and show that the app opens the same local receipt route in this browser.
    - Show `Receipt account-value context`.
    - Point out receipt value, nearest sampled account value, sample gap, latest sampled value, receipt drawdown, current drawdown, and max drawdown.
    - Click `Recheck live account`.
@@ -68,7 +72,7 @@ Open `http://localhost:3000`.
    - Show saved-vs-current risk score, margin usage, liquidation distance, funding, mark movement, and position-state comparison.
    - Show `Market context since receipt`.
    - Point out saved mark price vs current mark price, whether the move is toward or away from liquidation, 8-hour funding change, and open-interest change.
-   - Point out that live receipts are stored only in this browser, not synced to a backend.
+   - Point out that live receipts are stored locally and move across browsers only when the user explicitly exports/imports a portable bundle.
 
 10. Close with evidence.
    - Mention `npm test`, `npm run typecheck`, `npm run lint`, and `npm run build`.
@@ -76,4 +80,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, portable receipt bundles, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

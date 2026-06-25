@@ -50,6 +50,14 @@ use this file for external protocol assumptions.
   - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
   - https://www.kraken.com/learn/trading/perpetual-futures-contracts
   - https://metamask.io/news/leverage-margin-perpetual-futures-trading
+- docs checked on 2026-06-25 for portable receipt bundles:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
+  - https://attest.org/
+  - https://www.quicknode.com/guides/ethereum-development/smart-contracts/what-is-ethereum-attestation-service-and-how-to-use-it
+  - https://easscan.org/privacy
+  - https://w3c-ccg.github.io/data-minimization/
+  - https://www.w3.org/TR/vc-data-model-2.0/
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -118,6 +126,13 @@ use this file for external protocol assumptions.
   - hash answers explain snapshot integrity only; they do not claim that external Hyperliquid data was correct at capture time.
   - trade-intent questions are refused while still explaining the receipt signals.
   - account-value history answers are only available after the receipt account-value context panel has loaded sampled portfolio context.
+- portable receipt bundle assumptions:
+  - the bundle is a user-controlled JSON export/import path; it does not call new Hyperliquid endpoints.
+  - the bundle contains the full `risk_receipt` snapshot so another browser can recompute the same snapshot hash and render the same local receipt page.
+  - exporting the bundle is an explicit full disclosure of account, market, position size, price, liquidation, funding, and risk fields.
+  - importing stores the receipt in browser localStorage under the existing local receipt key and does not sync it to a backend.
+  - the import flow recomputes the snapshot hash before enabling import.
+  - EAS/onchain fallback remains minimal metadata plus snapshot hash; full private trading state is not put onchain by this feature.
 
 ## eas
 
