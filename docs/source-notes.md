@@ -17,6 +17,10 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/entry-price-and-pnl
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/portfolio-graphs
+- docs checked on 2026-06-25 for funding carry watch:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
+  - https://www.coinbase.com/learn/perpetual-futures/understanding-funding-rates-in-perpetual-futures
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -43,6 +47,12 @@ use this file for external protocol assumptions.
   - mark-price movement is a useful comparison because Hyperliquid uses mark price for margining, liquidations, TP/SL triggers, and unrealized pnl.
   - the recheck is not an exact liquidation monitor because listed liquidation prices can change with funding, cross-position pnl, and liquidity changes.
   - funding deltas are displayed as estimated holding-cost changes, not strategy recommendations.
+- funding carry watch assumptions:
+  - current funding comes from the existing `metaAndAssetCtxs` mapping.
+  - historical `userFunding`, `fundingHistory`, and `predictedFundings` endpoints exist but are not called in this slice.
+  - the watch assumes current funding and notional stay unchanged for daily and 30-day estimates.
+  - Hyperliquid actual funding uses position size and oracle price; this app estimates from normalized mark-price notional.
+  - positive user-perspective funding is shown as cost; negative is shown as earned funding.
 
 ## eas
 

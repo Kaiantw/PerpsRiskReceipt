@@ -2,24 +2,35 @@
 
 ## status
 
-Backlog.
+Implemented in this slice.
 
 ## product idea
 
-Show whether the account's expected funding cost or earned carry changed since
-receipt creation. This is useful for traders who save a receipt before holding a
-position overnight or sharing a risk state.
+Show the account's expected funding cost or earned carry as a first-class risk
+signal. This is useful for traders who hold positions across funding intervals
+or share a receipt before leaving a position open.
 
 ## source links
 
 - [[../sources/hyperliquid-live-risk-signals]]
+- [[../sources/perp-funding-mechanics]]
 - [[live-receipt-recheck]]
+- [[ai-risk-assistant]]
 
-## possible feature shape
+## implemented behavior
 
-- Show saved vs current daily funding.
-- Show saved vs current 30-day estimate.
-- Flag a material change when funding cost increases by a chosen percentage of
-  account value.
+- Shows net daily funding.
+- Shows 30-day estimate.
+- Shows daily funding as bps of account value.
+- Shows largest funding cost and largest funding earn positions.
+- Lists per-position notional, 8-hour user-perspective funding, daily funding,
+  and 30-day funding.
 - Keep the copy descriptive: "funding cost increased" instead of "close this
   position."
+
+## next connected feature
+
+Live receipt recheck already compares funding delta. A future version can join
+this panel with [[live-receipt-recheck]] so a receipt shows whether carrying the
+same position became materially more expensive or more favorable since the
+snapshot was saved.

@@ -4,9 +4,9 @@ import {
   formatSignedUsd,
   formatUsd,
 } from "../formatters.ts";
+import { calculateFundingCarryWatch } from "../funding/funding-watch.ts";
 import type { normalized_account_snapshot } from "../perps/types.ts";
 import {
-  calculateDailyFundingUsd,
   calculateLiquidationDistanceBps,
 } from "../risk/risk-engine.ts";
 
@@ -123,6 +123,8 @@ function buildLiquidationAnswer(
 function buildFundingAnswer(
   snapshot: normalized_account_snapshot,
 ): risk_assistant_response {
+  const fundingWatch = calculateFundingCarryWatch(snapshot);
+
   if (snapshot.positions.length === 0) {
     return {
       answer:
@@ -131,22 +133,27 @@ function buildFundingAnswer(
     };
   }
 
-  const positionFunding = snapshot.positions
+  const positionFunding = fundingWatch.positions
     .map((position) => {
-      const dailyFundingUsd = calculateDailyFundingUsd(position);
-      const direction = dailyFundingUsd >= 0 ? "cost" : "earned";
+      const direction =
+        position.direction === "neutral" ? "neutral" : position.direction;
 
-      return `${position.market}: ${formatSignedUsd(dailyFundingUsd)} daily ${direction}`;
+      return `${position.market}: ${formatSignedUsd(position.daily_funding_usd)} daily ${direction}`;
     })
     .join("; ");
+  const burdenCopy =
+    fundingWatch.daily_funding_bps_of_account_value === null
+      ? "account-value burden is unavailable"
+      : `${formatPercentFromBps(fundingWatch.daily_funding_bps_of_account_value)} of account value per day`;
 
   return {
-    answer: `Funding shows ${getFundingDirection(snapshot)} and ${formatSignedUsd(snapshot.aggregate.thirty_day_funding_usd)} over 30 days if rates and notional stay unchanged. By position: ${positionFunding}.`,
+    answer: `Funding shows ${getFundingDirection(snapshot)} and ${formatSignedUsd(snapshot.aggregate.thirty_day_funding_usd)} over 30 days if rates and notional stay unchanged. That is ${burdenCopy}. By position: ${positionFunding}.`,
     citations: [
       "snapshot.positions[].funding_8h_bps_user_perspective",
       "snapshot.positions[].notional_usd",
       "snapshot.aggregate.daily_funding_usd",
       "snapshot.aggregate.thirty_day_funding_usd",
+      "funding_carry_watch.daily_funding_bps_of_account_value",
     ],
   };
 }

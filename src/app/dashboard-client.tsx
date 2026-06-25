@@ -18,6 +18,7 @@ import {
 } from "@/lib/risk/risk-engine.ts";
 import { getLocalReceiptStorageKey } from "@/lib/receipts/local-receipts.ts";
 import { createRiskReceipt } from "@/lib/receipts/receipt.ts";
+import { FundingCarryWatchPanel } from "./funding-carry-watch-panel.tsx";
 import { RiskAssistantPanel } from "./risk-assistant-panel.tsx";
 
 const scenarioMoves = [-10, -5, -2, 2, 5, 10];
@@ -372,6 +373,8 @@ export function DashboardClient({
             </div>
           </div>
         </section>
+
+        <FundingCarryWatchPanel snapshot={selectedSnapshot} />
 
         <RiskAssistantPanel
           key={`${selectedSnapshot.account}-${selectedSnapshot.data_time_iso}`}

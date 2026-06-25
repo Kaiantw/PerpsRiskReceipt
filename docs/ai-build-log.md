@@ -380,3 +380,23 @@ Review the assistant's refusal language and keyword routing. The current guardra
 - Browser verification opened the dashboard, confirmed the `Risk assistant`, clicked `Liquidation`, confirmed an `ETH-PERP is closest` answer with citations, asked `Should I close this long?`, confirmed the assistant refused recommendations, and saw zero console errors.
 ### remaining risks:
 The assistant is not a connected LLM yet, does not reason beyond deterministic routing, and should remain limited to explaining visible snapshot fields until a server-side model path with stronger safety guardrails is added.
+
+### task id: post-t9 funding carry watch
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a funding carry watch so users can see net funding cost or earned funding as a first-class dashboard risk signal.
+### output accepted:
+Added a pure funding-watch module with tests for low cost, net earning, no-position, and heavy-cost cases. Added a dashboard `Funding carry watch` panel showing net daily funding, 30-day estimate, daily funding burden as bps of account value, largest cost driver, largest earning driver, and per-position funding rows. Updated the risk assistant's funding answer to use the same derived funding-watch model. Added a linked funding-mechanics source note and updated source assumptions, README, demo script, limitations, and handoff.
+### output rejected or changed:
+No historical funding endpoint, predicted funding endpoint, backend store, trading recommendation, or new dependency was added. This slice uses current funding already available through the read-only Hyperliquid `metaAndAssetCtxs` mapping.
+### human review notes:
+Review label thresholds: low cost below 5 bps/day of account value, elevated cost from 5 to under 25 bps/day, and heavy cost at 25 bps/day or when account-value burden is unavailable. Review whether daily burden should display signed bps or absolute bps in future UI.
+### tests/checks run:
+- `npm test` passed: 37 tests, 37 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed.
+- Browser verification selected `demo-mixed-book`, confirmed `Funding carry watch`, `net earning`, `BTC-PERP +$9.30` largest cost, `SOL-PERP -$18.00` largest earn, the unchanged-funding caveat, and zero console errors.
+### remaining risks:
+Funding carry watch assumes current funding and notional stay unchanged. Hyperliquid actual settlement uses oracle price, while this app estimates from normalized mark-price notional.

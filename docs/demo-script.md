@@ -30,6 +30,9 @@ Open `http://localhost:3000`.
 5. Select `demo-mixed-book`.
    - Show that long, short, and missing-liquidation positions can exist in one normalized snapshot.
    - Point out that missing liquidation price does not break aggregate risk calculation.
+   - Show `Funding carry watch`.
+   - Point out net daily funding, 30-day estimate, daily burden, largest cost, and largest earn.
+   - Explain that the estimate assumes current funding and notional stay unchanged.
 
 6. Use the risk assistant.
    - Click `Liquidation` and show the assistant explains the closest listed liquidation distance with snapshot-field citations.
@@ -60,4 +63,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, receipt live rechecks, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, funding carry watch, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, receipt live rechecks, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
