@@ -38,3 +38,4 @@ in latest sampled account value.
   the viewer sees both account-history drift and live market drift.
 - [[mark-price-context]] explains per-position market changes while this feature
   explains account-value changes.
+- [[receipt-change-summary]] consumes this context when it is available.

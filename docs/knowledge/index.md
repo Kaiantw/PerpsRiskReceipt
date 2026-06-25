@@ -12,6 +12,7 @@ informed it and forward to related feature ideas.
 - [[sources/perp-market-context]] - mark price and open-interest context for current-market receipt checks.
 - [[sources/perp-liquidation-buffer]] - Hyperliquid liquidation, margining, and listed-buffer assumptions.
 - [[sources/perp-account-value-history]] - Hyperliquid portfolio history and drawdown context.
+- [[sources/perp-risk-review-checklist]] - liquidation, funding, leverage, and market-condition review framing.
 
 ## implemented feature notes
 
@@ -22,8 +23,9 @@ informed it and forward to related feature ideas.
 - [[features/liquidation-buffer-ladder]] - dashboard ladder for closest listed liquidation buffers.
 - [[features/account-value-timeline]] - live dashboard account-value history, drawdown, and sampled PnL context.
 - [[features/receipt-account-value-context]] - local receipt panel that positions the saved snapshot inside sampled account-value history.
+- [[features/receipt-change-summary]] - single live-recheck summary combining position, market, funding, and account-history signals.
 
 ## connected backlog ideas
 
-- [[features/live-receipt-recheck]] could next combine account-value context,
-  market context, and position changes into a single printable reviewer summary.
+- [[features/ai-risk-assistant]] could cite [[features/receipt-change-summary]]
+  when answering questions on receipt pages.

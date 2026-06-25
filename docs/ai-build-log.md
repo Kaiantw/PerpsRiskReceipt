@@ -484,3 +484,24 @@ Review the receipt context thresholds: material latest-vs-receipt change at 2%, 
 - Browser verification used the existing dev server on `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_6ff6d84eeca07e7a`, confirmed `Receipt account-value context`, `Nearest sample`, `Sample gap`, `Latest vs receipt`, `Receipt drawdown`, `Portfolio history is sampled account-value context`, and `Hash verified`, then clicked `Recheck live account` and confirmed `Market context since receipt` still rendered with zero console errors.
 ### remaining risks:
 Receipt account-value context depends on Hyperliquid API availability and the `portfolio` response shape. It uses the nearest sampled portfolio point, so the sample gap matters. It is not exact accounting, causality analysis, a trade journal import, or financial advice.
+
+### task id: post-t9 receipt change summary
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a compact receipt recheck verdict that synthesizes account match, position state, live market context, sampled account-value context, funding deltas, and risk-score changes into one reviewer-readable summary.
+### output accepted:
+Added `src/lib/receipts/receipt-change-summary.ts` with deterministic priority rules and tests. Local live receipt rechecks now show `Receipt change summary` before the detailed market-context section, including a short headline, primary detail, review points, a severity label, and an explicit read-only/no-recommendation caveat. Added linked source and feature notes under `docs/knowledge/`, updated source assumptions, README, demo script, known limitations, and this handoff.
+### output rejected or changed:
+No trading endpoint, order placement, wallet/RPC flow, backend receipt persistence, LLM call, exact liquidation monitor, or new dependency was added. A synchronous state update in `local-receipt-client.tsx` was replaced with keyed receipt-context state after lint flagged the first approach.
+### human review notes:
+Review the summary priority order: account mismatch, position changes, liquidation watch, risk worsened/improved, account-history watch, funding watch, market moved, then little changed. Review whether the review-point copy is clear enough for hiring-manager demos and whether account-value context should stay optional when the portfolio history request is unavailable.
+### tests/checks run:
+- `npm test` passed: 67 tests, 67 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/api/hyperliquid/portfolio`, `/api/hyperliquid/snapshot`, `/receipt/[id]`, and `/receipt/local/[id]`.
+- `git diff --check` passed.
+- Browser verification used the existing dev server on `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_083fd5da1ef59cf7`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Receipt change summary`, `The receipt and live context are close.`, `Market context since receipt`, the sampled account-value review point, and zero console errors.
+### remaining risks:
+Receipt change summary is a heuristic review layer over other heuristic signals. It depends on live Hyperliquid API availability, localStorage receipt persistence, comparable saved/current snapshots, and optional sampled portfolio context. It is not financial advice, an exact liquidation monitor, or a proof that the saved market state was correct.

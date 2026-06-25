@@ -55,8 +55,10 @@ const labelTone: Record<receipt_account_value_context["label"], string> = {
 };
 
 export function ReceiptAccountValueContextPanel({
+  onContextLoaded,
   receipt,
 }: {
+  onContextLoaded?: (context: receipt_account_value_context | null) => void;
   receipt: risk_receipt;
 }) {
   const [state, setState] = useState<portfolio_history_state>({
@@ -73,6 +75,7 @@ export function ReceiptAccountValueContextPanel({
 
     async function loadPortfolioHistory() {
       setState({ status: "loading" });
+      onContextLoaded?.(null);
 
       try {
         const response = await fetch(
@@ -91,14 +94,17 @@ export function ReceiptAccountValueContextPanel({
         }
 
         if (isMounted) {
+          const context = buildReceiptAccountValueContext({
+            receipt_account_value_usd: receipt.snapshot.account_value_usd,
+            receipt_data_time_iso: receipt.snapshot.data_time_iso,
+            timelines: body.timelines,
+          });
+
           setState({
             status: "loaded",
-            context: buildReceiptAccountValueContext({
-              receipt_account_value_usd: receipt.snapshot.account_value_usd,
-              receipt_data_time_iso: receipt.snapshot.data_time_iso,
-              timelines: body.timelines,
-            }),
+            context,
           });
+          onContextLoaded?.(context);
         }
       } catch (error) {
         if (isMounted) {
@@ -109,6 +115,7 @@ export function ReceiptAccountValueContextPanel({
                 ? error.message
                 : "Hyperliquid portfolio history lookup failed.",
           });
+          onContextLoaded?.(null);
         }
       }
     }
@@ -120,6 +127,7 @@ export function ReceiptAccountValueContextPanel({
     };
   }, [
     canLoad,
+    onContextLoaded,
     receipt.snapshot.account,
     receipt.snapshot.account_value_usd,
     receipt.snapshot.data_time_iso,

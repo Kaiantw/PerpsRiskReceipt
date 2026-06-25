@@ -37,6 +37,11 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/portfolio-graphs
   - https://www.investopedia.com/terms/m/maximum-drawdown-mdd.asp
+- docs checked on 2026-06-25 for receipt change summary:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://www.investopedia.com/what-are-perpetual-futures-7494870
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -93,6 +98,12 @@ use this file for external protocol assumptions.
   - the receipt timestamp is compared to the nearest sampled account-value point, and the sample gap is shown because portfolio history is sampled.
   - receipt drawdown is measured against sampled highs up to the nearest receipt sample, while current and max drawdown come from the selected sampled window.
   - latest sampled account value is descriptive drift context, not proof of why the account changed.
+- receipt change summary assumptions:
+  - the summary is a synthesis layer over tested local signals; it does not call new endpoints.
+  - account mismatch and position-state changes take priority over market/funding interpretation.
+  - listed liquidation-buffer movement is summarized as review context, not exact liquidation monitoring.
+  - funding deltas are summarized as holding-cost changes, not strategy recommendations.
+  - account-value history is included only when the local receipt page has loaded sampled portfolio context.
 
 ## eas
 

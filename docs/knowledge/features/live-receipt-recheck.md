@@ -32,9 +32,13 @@ claims:
 - It now includes `Market context since receipt` so mark price, liquidation
   direction, funding, and open interest changes are easier to read before the
   raw metric grid.
+- It now includes `Receipt change summary` so the most important receipt-vs-live
+  change is visible before the detailed comparison tables.
 
 ## related ideas
 
 - [[funding-carry-watch]] can make the funding delta more useful.
 - [[mark-price-context]] can explain why mark movement is the right comparison.
+- [[receipt-change-summary]] combines live recheck, market context, and sampled
+  account-history context.
 - [[ai-risk-assistant]] can translate a loaded comparison into plain English.

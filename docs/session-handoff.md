@@ -20,48 +20,52 @@
 - Post-t9 liquidation buffer ladder is complete.
 - Post-t9 account value history is complete.
 - Post-t9 receipt account-value context is complete.
+- Post-t9 receipt change summary is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote state: `main` tracks `origin/main`.
-- Baseline before this slice: `c73f255 feat: add account value history`.
-- Current work adds local live receipt account-value context, reusing the read-only Hyperliquid `portfolio` route and updating the linked research/feature notes under `docs/knowledge/`.
+- Baseline before this slice: `076e659 feat: add receipt account value context`.
+- Current work adds a receipt change summary to browser-local live receipt rechecks. It combines snapshot comparison, live market context, optional sampled account-value context, funding deltas, and risk-score changes into one reviewer-readable verdict.
 - A Next dev server was already running on `http://localhost:3000` for smoke verification.
 
 ## files changed
 
-- `src/lib/history/receipt-account-value-context.ts`: derives the receipt's nearest sampled account-value point, sample gap, latest-vs-receipt drift, receipt drawdown, and label/headline.
-- `src/lib/history/receipt-account-value-context.test.ts`: tests no history, preferred windows, nearest sample, near-peak receipts, drawdown receipts, latest drift, sample-gap watch, and zero-account percentage safety.
-- `src/app/receipt/local/[id]/receipt-account-value-context-panel.tsx`: renders local live receipt account-value context from the read-only portfolio route.
-- `src/app/receipt/local/[id]/local-receipt-client.tsx`: adds the new receipt context panel before the existing live recheck panel.
-- `package.json`: includes receipt account-value context tests.
-- `docs/knowledge/features/receipt-account-value-context.md`: new feature note.
-- `docs/knowledge/features/account-value-timeline.md`: links the dashboard timeline to receipt-page reuse.
-- `docs/knowledge/index.md`: links the new implemented feature and updates the backlog.
-- `docs/knowledge/sources/perp-account-value-history.md`: links the new feature.
-- `docs/source-notes.md`: documents receipt account-value context assumptions.
-- `docs/known-limitations.md`: documents the nearest-sampled-point limitation.
-- `README.md`: documents receipt account-history context in the demo and architecture.
-- `docs/demo-script.md`: adds the receipt account-value context walkthrough.
+- `src/lib/receipts/receipt-change-summary.ts`: new pure summary model and priority rules.
+- `src/lib/receipts/receipt-change-summary.test.ts`: tests account mismatch, position changes, liquidation watch, risk worsening, account-history watch, funding changes, and little-changed receipts.
+- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: renders `Receipt change summary` above detailed market context.
+- `src/app/receipt/local/[id]/local-receipt-client.tsx`: passes loaded account-value context into the live recheck panel.
+- `src/app/receipt/local/[id]/receipt-account-value-context-panel.tsx`: reports loaded context back to the local receipt page.
+- `package.json`: includes the new receipt change summary tests.
+- `docs/knowledge/sources/perp-risk-review-checklist.md`: new source-backed review checklist note.
+- `docs/knowledge/features/receipt-change-summary.md`: new feature note.
+- `docs/knowledge/features/live-receipt-recheck.md`: links the receipt change summary to the existing live recheck feature.
+- `docs/knowledge/features/receipt-account-value-context.md`: links account-value context to the summary.
+- `docs/knowledge/index.md`: adds the new source and feature notes.
+- `docs/source-notes.md`: documents receipt change summary assumptions.
+- `docs/known-limitations.md`: documents that the summary is heuristic and not a trading recommendation.
+- `README.md`: documents receipt change summary in the demo and architecture.
+- `docs/demo-script.md`: adds receipt change summary to the optional live lookup walkthrough.
 - `docs/ai-build-log.md`: records this post-t9 feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `npm test` passed: 60 tests, 60 passing.
+- `npm test` passed: 67 tests, 67 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm run build` passed and listed `/api/hyperliquid/portfolio` plus `/receipt/local/[id]`.
+- `npm run build` passed and listed `/api/hyperliquid/portfolio`, `/api/hyperliquid/snapshot`, `/receipt/[id]`, and `/receipt/local/[id]`.
 - `git diff --check` passed.
-- Browser verification used the existing dev server on `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_6ff6d84eeca07e7a`, confirmed `Receipt account-value context`, `Nearest sample`, `Sample gap`, `Latest vs receipt`, `Receipt drawdown`, the sampled-history caveat, and `Hash verified`, then clicked `Recheck live account` and confirmed `Market context since receipt` still rendered with zero console errors.
+- Browser verification used the existing dev server on `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_083fd5da1ef59cf7`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Receipt change summary`, `The receipt and live context are close.`, `Market context since receipt`, the sampled account-value review point, and zero console errors.
 
 ## blockers
 
 - No hard blocker for this feature slice.
 - `npm audit --audit-level=moderate` still has the previously documented `postcss` advisory through `next`; it was not rerun or force-fixed in this slice.
 - Live Hyperliquid receipts are browser-local only and are not synced/shareable across devices.
+- Receipt change summary is heuristic and prioritizes review cues; it is not a trading recommendation or exact risk monitor.
 - Receipt account-value context depends on Hyperliquid `portfolio` response availability and is sampled context, not complete accounting or a historical account audit.
 - Live receipt recheck depends on Hyperliquid API availability and is not an exact liquidation monitor.
 - Market context requires comparable saved/current positions and treats open interest as descriptive context, not a standalone direction signal.
@@ -73,4 +77,4 @@
 
 ## exact next recommended action
 
-Commit and push the receipt account-value context slice. The next product task should be a receipt change summary that combines account-value context, live recheck status, market context, and position changes into one short reviewer-readable verdict.
+Commit and push the receipt change summary slice. The next product task should be a receipt-page risk assistant mode that can answer questions using the receipt change summary, market context, account-value context, funding watch, and the saved snapshot hash as cited sources.

@@ -8,6 +8,7 @@ import {
   formatSignedUsd,
   formatUsd,
 } from "@/lib/formatters.ts";
+import type { receipt_account_value_context } from "@/lib/history/receipt-account-value-context.ts";
 import {
   buildMarketContext,
   type market_context,
@@ -21,6 +22,10 @@ import type {
   metric_comparison,
   snapshot_comparison,
 } from "@/lib/receipts/snapshot-comparison.ts";
+import {
+  buildReceiptChangeSummary,
+  type receipt_change_summary,
+} from "@/lib/receipts/receipt-change-summary.ts";
 import { compareSnapshots } from "@/lib/receipts/snapshot-comparison.ts";
 
 type recheck_state =
@@ -81,7 +86,32 @@ const markMoveLabels: Record<
   not_comparable: "not comparable",
 };
 
-export function LiveRecheckPanel({ receipt }: { receipt: risk_receipt }) {
+const receiptSummaryLabels: Record<receipt_change_summary["label"], string> = {
+  account_mismatch: "account mismatch",
+  position_changed: "position changed",
+  liquidation_watch: "liquidation watch",
+  risk_worsened: "risk worsened",
+  risk_improved: "risk improved",
+  account_history_watch: "account history watch",
+  funding_watch: "funding watch",
+  market_moved: "market moved",
+  little_changed: "little changed",
+};
+
+const receiptSummaryTone: Record<receipt_change_summary["severity"], string> = {
+  critical: "border-red-200 bg-red-100 text-red-950",
+  changed: "border-amber-200 bg-amber-100 text-amber-950",
+  watch: "border-yellow-200 bg-yellow-100 text-yellow-950",
+  neutral: "border-emerald-200 bg-emerald-100 text-emerald-950",
+};
+
+export function LiveRecheckPanel({
+  receipt,
+  receiptAccountValueContext,
+}: {
+  receipt: risk_receipt;
+  receiptAccountValueContext?: receipt_account_value_context | null;
+}) {
   const [state, setState] = useState<recheck_state>({ status: "idle" });
   const canRecheck = receipt.snapshot.protocol === "hyperliquid";
 
@@ -156,7 +186,10 @@ export function LiveRecheckPanel({ receipt }: { receipt: risk_receipt }) {
       ) : null}
 
       {state.status === "loaded" ? (
-        <LiveRecheckResult comparison={state.comparison} />
+        <LiveRecheckResult
+          comparison={state.comparison}
+          receiptAccountValueContext={receiptAccountValueContext ?? null}
+        />
       ) : null}
     </section>
   );
@@ -164,10 +197,17 @@ export function LiveRecheckPanel({ receipt }: { receipt: risk_receipt }) {
 
 function LiveRecheckResult({
   comparison,
+  receiptAccountValueContext,
 }: {
   comparison: snapshot_comparison;
+  receiptAccountValueContext: receipt_account_value_context | null;
 }) {
   const marketContext = buildMarketContext(comparison);
+  const changeSummary = buildReceiptChangeSummary({
+    comparison,
+    marketContext,
+    accountValueContext: receiptAccountValueContext,
+  });
 
   return (
     <div className="mt-4 flex flex-col gap-4">
@@ -196,6 +236,7 @@ function LiveRecheckResult({
         </div>
       </div>
 
+      <ReceiptChangeSummaryResult summary={changeSummary} />
       <MarketContextResult context={marketContext} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -284,6 +325,47 @@ function LiveRecheckResult({
         </div>
       )}
     </div>
+  );
+}
+
+function ReceiptChangeSummaryResult({
+  summary,
+}: {
+  summary: receipt_change_summary;
+}) {
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-stone-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Receipt change summary</h3>
+          <p className="mt-1 text-sm font-medium text-stone-800">
+            {summary.headline}
+          </p>
+          <p className="mt-1 text-sm text-stone-600">
+            {summary.primary_detail}
+          </p>
+        </div>
+        <span
+          className={`rounded-lg border px-3 py-2 text-sm font-semibold ${receiptSummaryTone[summary.severity]}`}
+        >
+          {receiptSummaryLabels[summary.label]}
+        </span>
+      </div>
+
+      <ul className="space-y-2 p-4 text-sm text-stone-700">
+        {summary.review_points.map((point) => (
+          <li className="flex gap-2" key={point}>
+            <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 rounded-full bg-stone-400" />
+            <span>{point}</span>
+          </li>
+        ))}
+      </ul>
+
+      <p className="border-t border-stone-200 px-4 py-3 text-xs text-stone-500">
+        This summary is a read-only review aid. It does not recommend opening,
+        closing, increasing, or reducing any position.
+      </p>
+    </section>
   );
 }
 

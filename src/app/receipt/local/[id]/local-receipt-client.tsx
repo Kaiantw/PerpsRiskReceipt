@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { buildEasAttestationPayload } from "@/lib/eas/attestation.ts";
+import type { receipt_account_value_context } from "@/lib/history/receipt-account-value-context.ts";
 import type { receipt_verification, risk_receipt } from "@/lib/perps/types.ts";
 import {
   getLocalReceiptStorageKey,
@@ -31,6 +32,23 @@ export function LocalReceiptClient({ receiptId }: { receiptId: string }) {
   const [state, setState] = useState<local_receipt_state>({
     status: "loading",
   });
+  const [
+    receiptAccountValueContextState,
+    setReceiptAccountValueContextState,
+  ] = useState<{
+    receiptId: string;
+    context: receipt_account_value_context | null;
+  } | null>(null);
+  const handleReceiptAccountValueContextLoaded = useCallback(
+    (context: receipt_account_value_context | null) => {
+      setReceiptAccountValueContextState({ receiptId, context });
+    },
+    [receiptId],
+  );
+  const receiptAccountValueContext =
+    receiptAccountValueContextState?.receiptId === receiptId
+      ? receiptAccountValueContextState.context
+      : null;
 
   useEffect(() => {
     let isMounted = true;
@@ -101,8 +119,14 @@ export function LocalReceiptClient({ receiptId }: { receiptId: string }) {
       easPayload={state.easPayload}
       extraSections={
         <>
-          <ReceiptAccountValueContextPanel receipt={state.receipt} />
-          <LiveRecheckPanel receipt={state.receipt} />
+          <ReceiptAccountValueContextPanel
+            onContextLoaded={handleReceiptAccountValueContextLoaded}
+            receipt={state.receipt}
+          />
+          <LiveRecheckPanel
+            receipt={state.receipt}
+            receiptAccountValueContext={receiptAccountValueContext}
+          />
         </>
       }
       receipt={state.receipt}
