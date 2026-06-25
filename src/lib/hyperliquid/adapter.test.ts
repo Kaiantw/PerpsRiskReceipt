@@ -3,8 +3,10 @@ import test from "node:test";
 
 import {
   fetchHyperliquidPortfolioHistory,
+  fetchHyperliquidMarketContexts,
   fetchHyperliquidSnapshot,
   isHyperliquidAddress,
+  mapHyperliquidMarketContexts,
   mapHyperliquidPortfolioHistory,
   mapHyperliquidSnapshot,
   type hyperliquid_fetch,
@@ -176,6 +178,22 @@ test("maps portfolio response into account value timeline", () => {
   assert.equal(timeline.points.at(-1)?.pnl_usd, 100);
 });
 
+test("maps market-only asset context for disclosed redacted markets", () => {
+  const markets = mapHyperliquidMarketContexts({
+    markets: ["ETH-PERP", "BTC-PERP", "SOL-PERP"],
+    metaAndAssetContexts: metaAndAssetContextsFixture,
+  });
+
+  assert.equal(markets[0].market, "ETH-PERP");
+  assert.equal(markets[0].coin, "ETH");
+  assert.equal(markets[0].found, true);
+  assert.equal(markets[0].mark_price_usd, 3_200);
+  assert.equal(markets[0].funding_8h_bps, 2.5);
+  assert.equal(markets[0].open_interest_usd, 320_000);
+  assert.equal(markets[2].found, false);
+  assert.equal(markets[2].mark_price_usd, null);
+});
+
 test("fetches Hyperliquid portfolio with only the read-only info endpoint", async () => {
   const requests: unknown[] = [];
   const mockFetch: hyperliquid_fetch = async (_url, init) => {
@@ -196,4 +214,26 @@ test("fetches Hyperliquid portfolio with only the read-only info endpoint", asyn
 
   assert.deepEqual(requests, [{ type: "portfolio", user: exampleAddress }]);
   assert.equal(timelines[0].window_id, "perpWeek");
+});
+
+test("fetches Hyperliquid market contexts with only the read-only info endpoint", async () => {
+  const requests: unknown[] = [];
+  const mockFetch: hyperliquid_fetch = async (_url, init) => {
+    const body = JSON.parse(String(init.body));
+    requests.push(body);
+
+    if (body.type === "metaAndAssetCtxs") {
+      return Response.json(metaAndAssetContextsFixture);
+    }
+
+    return new Response("unexpected request", { status: 500 });
+  };
+
+  const markets = await fetchHyperliquidMarketContexts({
+    markets: ["ETH-PERP"],
+    fetchImpl: mockFetch,
+  });
+
+  assert.deepEqual(requests, [{ type: "metaAndAssetCtxs" }]);
+  assert.equal(markets[0].market, "ETH-PERP");
 });

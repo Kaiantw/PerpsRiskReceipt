@@ -7,9 +7,15 @@ import { useRef, useState } from "react";
 import {
   formatIsoDate,
   formatPercentFromBps,
+  formatSignedBps,
   formatUsd,
   truncateMiddle,
 } from "@/lib/formatters.ts";
+import {
+  buildRedactedMarketContext,
+  type redacted_market_context,
+} from "@/lib/market/redacted-market-context.ts";
+import type { hyperliquid_market_context } from "@/lib/hyperliquid/adapter.ts";
 import type { receipt_verification, risk_receipt } from "@/lib/perps/types.ts";
 import { getLocalReceiptStorageKey } from "@/lib/receipts/local-receipts.ts";
 import {
@@ -38,17 +44,33 @@ type import_state =
       preview: redacted_receipt_bundle_preview;
     };
 
+type redacted_market_context_state =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "loaded"; context: redacted_market_context }
+  | { status: "error"; message: string };
+
+type hyperliquid_markets_payload = {
+  fetched_at_iso: string;
+  markets: hyperliquid_market_context[];
+};
+
 export function ReceiptImportClient() {
   const router = useRouter();
   const [bundleText, setBundleText] = useState("");
   const [state, setState] = useState<import_state>({ status: "empty" });
+  const [redactedMarketContextState, setRedactedMarketContextState] =
+    useState<redacted_market_context_state>({ status: "idle" });
   const importPreviewRequestIdRef = useRef(0);
+  const redactedMarketContextRequestIdRef = useRef(0);
 
   async function updateBundleText(value: string) {
     const requestId = importPreviewRequestIdRef.current + 1;
 
     importPreviewRequestIdRef.current = requestId;
+    redactedMarketContextRequestIdRef.current += 1;
     setBundleText(value);
+    setRedactedMarketContextState({ status: "idle" });
 
     if (!value.trim()) {
       setState({ status: "empty" });
@@ -91,6 +113,75 @@ export function ReceiptImportClient() {
       preview: getPortableReceiptBundlePreview(parsed.bundle),
       verification,
     });
+  }
+
+  async function loadRedactedMarketContext(bundle: redacted_receipt_bundle) {
+    const requestId = redactedMarketContextRequestIdRef.current + 1;
+
+    redactedMarketContextRequestIdRef.current = requestId;
+
+    if (bundle.protocol !== "hyperliquid") {
+      setRedactedMarketContextState({
+        status: "error",
+        message: "Current market context is only available for Hyperliquid shares.",
+      });
+      return;
+    }
+
+    if (bundle.markets.length === 0) {
+      setRedactedMarketContextState({
+        status: "error",
+        message: "This redacted share does not disclose any markets.",
+      });
+      return;
+    }
+
+    setRedactedMarketContextState({ status: "loading" });
+
+    try {
+      const marketList = Array.from(
+        new Set(bundle.markets.map((market) => market.market)),
+      ).join(",");
+      const response = await fetch(
+        `/api/hyperliquid/markets?markets=${encodeURIComponent(marketList)}`,
+      );
+      const payload = (await response.json()) as
+        | hyperliquid_markets_payload
+        | { error?: string };
+
+      if (!response.ok || !("markets" in payload)) {
+        throw new Error(
+          "error" in payload && payload.error
+            ? payload.error
+            : "Hyperliquid market context lookup failed.",
+        );
+      }
+
+      if (redactedMarketContextRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setRedactedMarketContextState({
+        status: "loaded",
+        context: buildRedactedMarketContext({
+          bundle,
+          currentMarkets: payload.markets,
+          fetchedAtIso: payload.fetched_at_iso,
+        }),
+      });
+    } catch (error) {
+      if (redactedMarketContextRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setRedactedMarketContextState({
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Hyperliquid market context lookup failed.",
+      });
+    }
   }
 
   function importReceipt() {
@@ -330,11 +421,145 @@ export function ReceiptImportClient() {
               full receipt bundle if the reviewer needs hash recomputation, live
               recheck, EAS payload generation, or receipt assistant context.
             </div>
+
+            <RedactedMarketContextPanel
+              bundle={state.bundle}
+              marketContextState={redactedMarketContextState}
+              onLoadMarketContext={() => {
+                void loadRedactedMarketContext(state.bundle);
+              }}
+            />
           </section>
         ) : null}
       </div>
     </main>
   );
+}
+
+function RedactedMarketContextPanel({
+  bundle,
+  marketContextState,
+  onLoadMarketContext,
+}: {
+  bundle: redacted_receipt_bundle;
+  marketContextState: redacted_market_context_state;
+  onLoadMarketContext: () => void;
+}) {
+  const canLoadMarketContext =
+    bundle.protocol === "hyperliquid" && bundle.markets.length > 0;
+
+  return (
+    <div className="mt-4 rounded-lg border border-stone-300 bg-white p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Current market context</h3>
+          <p className="mt-1 text-sm text-stone-600">
+            Load public Hyperliquid mark, funding, and open-interest context for
+            the disclosed markets without using a raw account address.
+          </p>
+        </div>
+        <button
+          className="inline-flex min-h-11 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-stone-400"
+          disabled={!canLoadMarketContext || marketContextState.status === "loading"}
+          onClick={onLoadMarketContext}
+          type="button"
+        >
+          {marketContextState.status === "loading"
+            ? "Loading market context"
+            : "Load current markets"}
+        </button>
+      </div>
+
+      {!canLoadMarketContext ? (
+        <p className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-700">
+          Current market context is available for Hyperliquid redacted shares
+          with at least one disclosed market.
+        </p>
+      ) : null}
+
+      {marketContextState.status === "error" ? (
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-950">
+          {marketContextState.message}
+        </p>
+      ) : null}
+
+      {marketContextState.status === "loaded" ? (
+        <RedactedMarketContextResult context={marketContextState.context} />
+      ) : null}
+    </div>
+  );
+}
+
+function RedactedMarketContextResult({
+  context,
+}: {
+  context: redacted_market_context;
+}) {
+  return (
+    <div className="mt-4">
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+        <p className="text-sm font-semibold text-emerald-950">
+          {context.headline}
+        </p>
+        <p className="mt-1 text-sm text-emerald-900">{context.summary}</p>
+        <p className="mt-2 text-xs font-medium uppercase text-emerald-900">
+          Fetched {formatIsoDate(context.fetched_at_iso)} · matched{" "}
+          {context.matched_market_count}/{context.rows.length} markets
+        </p>
+      </div>
+
+      {context.rows.length > 0 ? (
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-[900px] w-full text-left text-sm">
+            <thead className="bg-stone-100 text-xs uppercase text-stone-600">
+              <tr>
+                <th className="px-4 py-3">Market</th>
+                <th className="px-4 py-3">Side</th>
+                <th className="px-4 py-3">Current mark</th>
+                <th className="px-4 py-3">Funding now</th>
+                <th className="px-4 py-3">Funding at receipt</th>
+                <th className="px-4 py-3">Open interest</th>
+                <th className="px-4 py-3">Read</th>
+              </tr>
+            </thead>
+            <tbody>
+              {context.rows.map((row) => (
+                <tr className="border-t border-stone-200" key={row.market}>
+                  <td className="px-4 py-3 font-mono">{row.market}</td>
+                  <td className="px-4 py-3 capitalize">{row.side}</td>
+                  <td className="px-4 py-3">
+                    {formatNullableUsd(row.current_mark_price_usd)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatNullableSignedBps(
+                      row.current_funding_8h_bps_user_perspective,
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatSignedBps(
+                      row.receipt_funding_8h_bps_user_perspective,
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatNullableUsd(row.current_open_interest_usd)}
+                  </td>
+                  <td className="px-4 py-3 text-stone-700">{row.summary}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function formatNullableUsd(value: number | null) {
+  return value === null ? "n/a" : formatUsd(value);
+}
+
+function formatNullableSignedBps(value: number | null) {
+  return value === null ? "n/a" : formatSignedBps(value);
 }
 
 function ImportMetric({ label, value }: { label: string; value: string }) {

@@ -16,6 +16,7 @@ informed it and forward to related feature ideas.
 - [[sources/perp-receipt-review-assistant]] - receipt-question source notes for hash scope, live recheck review, funding, liquidation, and guardrails.
 - [[sources/portable-receipt-privacy]] - privacy framing for full receipt export, hash verification, offchain sharing, and minimal onchain metadata.
 - [[sources/redacted-receipt-sharing]] - data-minimization and selective-disclosure source notes for redacted receipt sharing.
+- [[sources/redacted-market-context]] - market-only source notes for redacted share current context.
 
 ## implemented feature notes
 
@@ -30,6 +31,7 @@ informed it and forward to related feature ideas.
 - [[features/receipt-risk-assistant]] - local receipt-page assistant that answers cited questions from the receipt summary and live recheck context.
 - [[features/portable-receipt-bundle]] - explicit full-snapshot export/import flow for reviewing local live receipts across browsers.
 - [[features/redacted-receipt-share]] - minimized receipt share that hides raw account and exact position values while preserving a hash reference and risk summary.
+- [[features/redacted-market-context]] - current public Hyperliquid mark, funding, and open-interest context for redacted shares.
 
 ## connected backlog ideas
 
@@ -37,3 +39,5 @@ informed it and forward to related feature ideas.
   once citations, refusal policy, and private-data boundaries are stronger.
 - [[features/redacted-receipt-share]] could later evolve from minimized JSON to
   cryptographic selective disclosure using EAS private data or Merkle proofs.
+- [[features/redacted-market-context]] could later add market-only trend history
+  without requiring a raw account address.

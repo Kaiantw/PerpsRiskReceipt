@@ -26,11 +26,13 @@ export function formatSignedUsd(value: number) {
 }
 
 export function formatSignedBps(value: number) {
-  if (value === 0) {
+  const roundedValue = Math.round(value * 100) / 100;
+
+  if (roundedValue === 0) {
     return "0 bps";
   }
 
-  return `${value > 0 ? "+" : "-"}${Math.abs(value).toFixed(2)} bps`;
+  return `${roundedValue > 0 ? "+" : "-"}${Math.abs(roundedValue).toFixed(2)} bps`;
 }
 
 export function formatIsoDate(iso: string) {

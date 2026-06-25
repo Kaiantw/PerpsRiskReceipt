@@ -568,3 +568,24 @@ Review whether the disclosed fields are the right privacy line: risk score, risk
 - Browser verification used `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_866402e16069cc3f`, confirmed `Portable receipt bundle`, default `redacted summary`, `Copy redacted share`, and absence of the raw account in the redacted clipboard payload, opened `/receipt/import`, pasted the redacted bundle, confirmed `Redacted share preview`, `Snapshot hash reference`, the inspect-only warning, and no `Import receipt` button. Browser verification then switched to `Full receipt`, copied the full bundle, pasted it into `/receipt/import`, confirmed `Import preview` and `Hash verified`, clicked `Import receipt`, returned to `/receipt/local/rr_866402e16069cc3f`, confirmed `Hash verified` and the redacted default still rendered, and saw zero browser console errors.
 ### remaining risks:
 Redacted shares are minimized offchain JSON summaries, not cryptographic selective-disclosure proofs. They cannot recompute the original snapshot hash without the hidden full snapshot and cannot support live account recheck, EAS payload generation, full local import, or receipt assistant context by themselves. Full bundles still disclose private snapshot data and remain browser-local after import.
+
+### task id: post-t9 redacted market context
+### codex mode:
+product iteration + implementation
+### delegated work:
+Researched public Hyperliquid market context, then added a market-only comparison panel for imported redacted receipt shares so reviewers can inspect current mark, funding, open interest, and day-volume context without a raw account address or hidden full snapshot.
+### output accepted:
+Added a read-only `/api/hyperliquid/markets` route that only calls the Hyperliquid `metaAndAssetCtxs` info endpoint for disclosed markets. Extended the Hyperliquid adapter with market-context mapping and tests. Added `src/lib/market/redacted-market-context.ts` with deterministic funding-delta summaries and tests. `/receipt/import` now lets a redacted bundle load current public market context, shows matched-market count, current mark/oracle, funding now versus funding at receipt, funding delta, open interest, day notional volume, and an explicit note that saved mark, exact size, account, PnL, and exact funding dollars remain hidden. Fixed signed-bps formatting so rounded zero renders as `0 bps` instead of `-0.00 bps`. Updated README, demo script, source notes, known limitations, and knowledge docs.
+### output rejected or changed:
+No raw account lookup, full-snapshot import, backend receipt store, websocket, strategy recommendation, exchange/trading endpoint, wallet/RPC flow, new dependency, or exact saved-mark comparison was added for redacted shares.
+### human review notes:
+Review whether the 1 bps funding-delta threshold is the right bar for "more expensive" or "more favorable." Review the maximum of 20 requested markets, the `*-PERP` market validation, and whether showing exact current public open interest/day volume is acceptable for redacted-share demos.
+### tests/checks run:
+- `npm test` passed: 90 tests, 90 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/api/hyperliquid/markets`.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted a handcrafted redacted bundle with disclosed `ETH-PERP` and `BTC-PERP` rows, clicked `Load current markets`, confirmed `Current market context`, current mark, funding now, funding at receipt, open interest, matched `2/2 markets`, no raw account, no `Import receipt` button, and zero browser console errors.
+### remaining risks:
+Redacted market context depends on Hyperliquid API availability and the `metaAndAssetCtxs` response shape. It is current public market context only, not a proof of the hidden receipt state, exact account-equity comparison, PnL comparison, exact size comparison, live risk monitor, or financial advice.

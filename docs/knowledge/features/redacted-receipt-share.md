@@ -17,6 +17,7 @@ review while keeping the full bundle available for trusted verification.
 - [[../sources/redacted-receipt-sharing]]
 - [[../sources/portable-receipt-privacy]]
 - [[portable-receipt-bundle]]
+- [[redacted-market-context]]
 - docs/product-spec.md#4-receipt-page
 - docs/source-notes.md#hyperliquid
 
@@ -33,6 +34,8 @@ review while keeping the full bundle available for trusted verification.
 - Redacted bundles list the fields intentionally hidden.
 - `/receipt/import` can inspect redacted bundles and show a redacted preview,
   but does not import them as full local receipts.
+- Hyperliquid redacted previews can load current market context for disclosed
+  markets without sending a raw account address.
 - Full bundles remain available when a reviewer needs to recompute the snapshot
   hash, import the receipt, run live recheck, generate the EAS fallback payload,
   or use receipt assistant context.
@@ -40,5 +43,7 @@ review while keeping the full bundle available for trusted verification.
 ## related ideas
 
 - [[portable-receipt-bundle]] remains the full verification/import lane.
+- [[redacted-market-context]] adds current public mark, funding, and
+  open-interest context to redacted shares.
 - A future selective-disclosure proof could replace the current redacted JSON
   with EAS private data or Merkle-disclosure proofs.

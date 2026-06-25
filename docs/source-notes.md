@@ -64,6 +64,11 @@ use this file for external protocol assumptions.
   - https://w3c-ccg.github.io/data-minimization/
   - https://www.w3.org/TR/vc-data-model-2.0/
   - https://w3c-ccg.github.io/Merkle-Disclosure-2021/jwp/
+- docs checked on 2026-06-25 for redacted market context:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -145,6 +150,12 @@ use this file for external protocol assumptions.
   - redacted shares hide the raw account identifier, withdrawable value, exact account value, exact total notional, position sizes, entry prices, mark prices, liquidation prices, unrealized PnL, and exact funding dollars.
   - redacted shares keep protocol, data timestamp, freshness, risk score, aggregate bucketed values, disclosed market names, side, notional bucket, liquidation-distance bps, funding bps, and optional open-interest bucket.
   - redacted shares can support lightweight review or public portfolio evidence, but full bundles are still required for local receipt import, hash recomputation, live recheck, EAS payload generation, and receipt assistant context.
+- redacted market context assumptions:
+  - redacted market context calls only the read-only `metaAndAssetCtxs` info request and does not send a raw account address.
+  - the lookup is available only for Hyperliquid redacted shares with disclosed PERP market names.
+  - current mark price, oracle price, funding, open interest, and day volume are public market context; saved mark price, exact size, raw account, PnL, and exact funding dollars remain hidden.
+  - funding comparison is side-adjusted from the disclosed side and receipt funding bps; it is descriptive holding-cost context, not a strategy recommendation.
+  - open interest is displayed as market participation/liquidity context and not as a standalone bullish or bearish signal.
 
 ## eas
 

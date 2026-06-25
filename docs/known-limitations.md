@@ -17,6 +17,7 @@
 - full portable receipt bundles contain the private snapshot and are not encrypted, access-controlled, or selectively disclosed.
 - redacted receipt bundles are minimized summaries, not encrypted payloads, Merkle proofs, zero-knowledge proofs, Verifiable Credentials, JSON Web Proofs, or EAS private-data attestations.
 - redacted receipt bundles preserve the snapshot hash as a reference but cannot recompute or verify the original hash without the hidden full snapshot.
+- redacted market context uses current public Hyperliquid market data only and cannot compare saved mark price, exact size, exact notional, account equity, or PnL because those fields are intentionally hidden.
 - live receipt recheck compares against a fresh read-only snapshot but is not an exact liquidation monitor or historical account audit.
 - receipt account-value context uses the nearest sampled Hyperliquid portfolio point, so the visible sample gap matters for interpretation.
 - receipt change summary is heuristic and prioritizes review cues; it is not a trading recommendation or exact risk monitor.

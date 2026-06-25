@@ -13,9 +13,15 @@ export const HYPERLIQUID_INFO_ENDPOINT = "https://api.hyperliquid.xyz/info";
 const STALE_AFTER_MS = 5 * 60 * 1000;
 
 type hyperliquid_asset_context = {
+  dayBaseVlm?: string | null;
+  dayNtlVlm?: string | null;
   funding?: string | null;
   markPx?: string | null;
+  midPx?: string | null;
   openInterest?: string | null;
+  oraclePx?: string | null;
+  premium?: string | null;
+  prevDayPx?: string | null;
 };
 
 type hyperliquid_meta = {
@@ -28,6 +34,22 @@ export type hyperliquid_meta_and_asset_contexts = [
   hyperliquid_meta,
   hyperliquid_asset_context[],
 ];
+
+export type hyperliquid_market_context = {
+  market: string;
+  coin: string;
+  found: boolean;
+  mark_price_usd: number | null;
+  mid_price_usd: number | null;
+  oracle_price_usd: number | null;
+  previous_day_price_usd: number | null;
+  funding_8h_bps: number | null;
+  premium_bps: number | null;
+  open_interest_base: number | null;
+  open_interest_usd: number | null;
+  day_base_volume: number | null;
+  day_notional_volume_usd: number | null;
+};
 
 export type hyperliquid_position = {
   type?: string;
@@ -198,6 +220,20 @@ function getOpenInterestUsd(
   return Math.round(openInterestBase * markPriceUsd * 100) / 100;
 }
 
+function getMarketCoin(market: string) {
+  return market.endsWith("-PERP") ? market.slice(0, -"-PERP".length) : market;
+}
+
+function roundNullable(value: number | null, decimals = 2) {
+  if (value === null) {
+    return null;
+  }
+
+  const multiplier = 10 ** decimals;
+
+  return Math.round(value * multiplier) / multiplier;
+}
+
 function getFreshness(dataTimeMs: number, nowMs: number) {
   if (nowMs - dataTimeMs > STALE_AFTER_MS) {
     return {
@@ -285,6 +321,44 @@ export function mapHyperliquidPortfolioHistory(
   );
 }
 
+export function mapHyperliquidMarketContexts(input: {
+  markets: string[];
+  metaAndAssetContexts: hyperliquid_meta_and_asset_contexts;
+}): hyperliquid_market_context[] {
+  const contextsByCoin = getAssetContextsByCoin(input.metaAndAssetContexts);
+
+  return input.markets.map((market) => {
+    const coin = getMarketCoin(market);
+    const assetContext = contextsByCoin.get(coin);
+    const markPriceUsd = parseNumber(assetContext?.markPx);
+    const openInterestBase = parseNumber(assetContext?.openInterest);
+    const openInterestUsd =
+      openInterestBase === null || markPriceUsd === null
+        ? null
+        : roundNullable(openInterestBase * markPriceUsd);
+    const fundingRate = parseNumber(assetContext?.funding);
+    const premium = parseNumber(assetContext?.premium);
+
+    return {
+      market,
+      coin,
+      found: assetContext !== undefined,
+      mark_price_usd: markPriceUsd,
+      mid_price_usd: parseNumber(assetContext?.midPx),
+      oracle_price_usd: parseNumber(assetContext?.oraclePx),
+      previous_day_price_usd: parseNumber(assetContext?.prevDayPx),
+      funding_8h_bps:
+        fundingRate === null ? null : roundNullable(fundingRate * 10_000, 4),
+      premium_bps:
+        premium === null ? null : roundNullable(premium * 10_000, 4),
+      open_interest_base: openInterestBase,
+      open_interest_usd: openInterestUsd,
+      day_base_volume: parseNumber(assetContext?.dayBaseVlm),
+      day_notional_volume_usd: parseNumber(assetContext?.dayNtlVlm),
+    };
+  });
+}
+
 async function postHyperliquidInfo<T>(
   body: Record<string, unknown>,
   fetchImpl: hyperliquid_fetch,
@@ -351,4 +425,21 @@ export async function fetchHyperliquidPortfolioHistory(input: {
     );
 
   return mapHyperliquidPortfolioHistory(portfolioResponse);
+}
+
+export async function fetchHyperliquidMarketContexts(input: {
+  markets: string[];
+  fetchImpl?: hyperliquid_fetch;
+}) {
+  const fetchImpl = input.fetchImpl ?? fetch;
+  const metaAndAssetContexts =
+    await postHyperliquidInfo<hyperliquid_meta_and_asset_contexts>(
+      { type: "metaAndAssetCtxs" },
+      fetchImpl,
+    );
+
+  return mapHyperliquidMarketContexts({
+    markets: input.markets,
+    metaAndAssetContexts,
+  });
 }

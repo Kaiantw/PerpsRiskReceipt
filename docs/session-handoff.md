@@ -24,51 +24,56 @@
 - Post-t9 receipt risk assistant is complete.
 - Post-t9 portable receipt bundle is complete.
 - Post-t9 redacted receipt share is complete.
+- Post-t9 redacted market context is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote state: `main` tracks `origin/main`.
-- Baseline before this slice: `71c02db feat: add portable receipt bundles`.
-- Current work adds redacted receipt-share bundles for browser-local live receipts. The portable receipt panel now defaults to `Redacted share`, with `Full receipt` still available for hash recomputation/import.
-- Redacted bundles preserve receipt id, snapshot hash reference, protocol, source, freshness, timestamps, risk score, risk label, bucketed aggregate values, and disclosed market rows while hiding raw account and exact position values.
-- `/receipt/import` can inspect redacted bundles without importing them as full local receipts. Full bundles still recompute the hash and import into browser localStorage.
+- Baseline before this slice: `0f42103 feat: add redacted receipt shares`.
+- Current work adds a market-only context panel for imported redacted receipt shares.
+- Redacted imports can now fetch public Hyperliquid context for disclosed markets only, without sending a raw account address or importing the hidden full snapshot.
+- The panel shows matched-market count, current mark/oracle, funding now, funding at receipt, funding delta, open interest, day notional volume, and privacy-scope copy.
 - A Next dev server was already running on `http://localhost:3000` for smoke verification.
 
 ## files changed
 
-- `src/lib/receipts/portable-receipt-bundle.ts`: added the redacted bundle contract, redacted preview metadata, parser/type guards, USD bucketing helpers, and full/redacted stringification support.
-- `src/lib/receipts/portable-receipt-bundle.test.ts`: added redacted privacy, preview, parser round-trip, and malformed-bundle tests.
-- `src/app/receipt/local/[id]/portable-receipt-panel.tsx`: added `Redacted share` and `Full receipt` modes, defaulted to redacted sharing, and adjusted copy/download labels and warnings.
-- `src/app/receipt/import/receipt-import-client.tsx`: added inspect-only redacted previews while keeping full-bundle hash verification and import.
-- `docs/knowledge/sources/redacted-receipt-sharing.md`: new source-backed note for data minimization and selective-disclosure boundaries.
-- `docs/knowledge/features/redacted-receipt-share.md`: new implemented feature note.
-- `docs/knowledge/features/portable-receipt-bundle.md`: updated full-bundle feature note to point to redacted share mode.
-- `docs/knowledge/index.md`: linked the new redacted source and feature notes.
-- `docs/source-notes.md`: documented redacted share sources and assumptions.
-- `docs/known-limitations.md`: documented redacted-share verification and privacy limits.
-- `README.md`: documented redacted/full portable bundle behavior, architecture, assumptions, demo flow, limitations, and resume bullet.
-- `docs/demo-script.md`: updated the live receipt walkthrough to show redacted inspect-only sharing and full hash-verifying import.
+- `src/lib/hyperliquid/adapter.ts`: added market-only context types, mapping, and fetch support for `metaAndAssetCtxs`.
+- `src/lib/hyperliquid/adapter.test.ts`: covered market-only mapping and request body behavior.
+- `src/app/api/hyperliquid/markets/route.ts`: added a read-only market-context API route for disclosed `*-PERP` markets.
+- `src/lib/market/redacted-market-context.ts`: added deterministic redacted-share market context and funding-delta summaries.
+- `src/lib/market/redacted-market-context.test.ts`: covered loaded, unavailable, and favorable-funding cases.
+- `src/app/receipt/import/receipt-import-client.tsx`: added `Load current markets` behavior and the current-market context panel for redacted previews.
+- `src/lib/formatters.ts`: fixed signed-bps formatting for rounded zero values.
+- `package.json`: included the new redacted market-context test in `npm test`.
+- `docs/knowledge/sources/redacted-market-context.md`: new source-backed note for market-only redacted context.
+- `docs/knowledge/features/redacted-market-context.md`: new implemented feature note.
+- `docs/knowledge/features/redacted-receipt-share.md`: linked redacted-share market context.
+- `docs/knowledge/sources/perp-market-context.md`: added public market-context takeaways.
+- `docs/knowledge/index.md`: linked the new source and feature notes.
+- `docs/source-notes.md`: documented Hyperliquid market-context assumptions.
+- `docs/known-limitations.md`: documented redacted market-context limits.
+- `README.md`: documented the new redacted-share market-context behavior.
+- `docs/demo-script.md`: added the redacted import market-context step.
 - `docs/ai-build-log.md`: records this feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `npm test` passed: 85 tests, 85 passing.
+- `npm test` passed: 90 tests, 90 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm run build` passed and listed `/receipt/import` as a static route plus `/receipt/local/[id]` as dynamic.
+- `npm run build` passed and listed `/api/hyperliquid/markets`.
 - `git diff --check` passed.
-- Browser verification used `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_866402e16069cc3f`, confirmed `Portable receipt bundle`, default `redacted summary`, `Copy redacted share`, and that the redacted clipboard payload did not include the raw account.
-- Browser verification opened `/receipt/import`, pasted the redacted bundle, confirmed `Redacted share preview`, `Snapshot hash reference`, the inspect-only warning, and no `Import receipt` button.
-- Browser verification switched to `Full receipt`, copied the full bundle, pasted it into `/receipt/import`, confirmed `Import preview` and `Hash verified`, clicked `Import receipt`, returned to `/receipt/local/rr_866402e16069cc3f`, confirmed `Hash verified` and the redacted default still rendered, and saw zero browser console errors.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted a handcrafted redacted bundle with disclosed `ETH-PERP` and `BTC-PERP` rows, clicked `Load current markets`, confirmed `Current market context`, current mark, funding now, funding at receipt, open interest, matched `2/2 markets`, no raw account, no `Import receipt` button, and zero browser console errors.
 
 ## blockers
 
 - No hard blocker for this feature slice.
-- `npm audit --audit-level=moderate` still has the previously documented `postcss` advisory through `next`; it was not rerun or force-fixed in this slice.
-- Redacted receipt shares are minimized offchain JSON summaries, not encrypted payloads, Merkle proofs, zero-knowledge proofs, Verifiable Credentials, JSON Web Proofs, or EAS private-data attestations.
+- Redacted market context depends on Hyperliquid API availability and the `metaAndAssetCtxs` response shape.
+- Redacted market context is current public market context only. It cannot compare hidden saved mark prices, exact sizes, exact notional, exact account equity, PnL, or exact funding dollars.
+- Redacted shares remain minimized offchain JSON summaries, not encrypted payloads, Merkle proofs, zero-knowledge proofs, Verifiable Credentials, JSON Web Proofs, or EAS private-data attestations.
 - Redacted receipt shares preserve the snapshot hash as a reference but cannot recompute or verify it without the hidden full snapshot.
 - Full portable receipt bundles still disclose private snapshot data and are not encrypted, access-controlled, or selectively disclosed.
 - Imported full receipts remain browser-local and are not synced to a backend.
@@ -79,4 +84,4 @@
 
 ## exact next recommended action
 
-Add a market-only context panel for redacted shares: use Hyperliquid read-only market metadata to show current mark price, funding, and open-interest context for disclosed markets without requiring the raw account snapshot.
+Add a market-only trend/history panel for redacted shares: first research Hyperliquid read-only candle and funding-history endpoints, then show whether current funding and price context look transient or persistent for disclosed markets without requiring a raw account address.
