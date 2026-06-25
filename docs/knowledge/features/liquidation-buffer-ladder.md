@@ -14,7 +14,9 @@ ladder to know where to inspect first.
 ## source links
 
 - [[../sources/perp-liquidation-buffer]]
+- [[../sources/perp-position-risk-drivers]]
 - [[../sources/perp-market-context]]
+- [[position-risk-drivers]]
 - [[mark-price-context]]
 - [[live-receipt-recheck]]
 
@@ -33,5 +35,6 @@ ladder to know where to inspect first.
 
 ## next connected feature
 
-[[account-value-timeline]] can show whether the tightest buffer is repeatedly
-tight across receipts or only briefly tight during one market move.
+[[position-risk-drivers]] now summarizes listed-buffer pressure alongside
+notional, funding, and unrealized-loss drivers. [[account-value-timeline]] can
+show whether the tightest buffer is paired with recent account drawdown.

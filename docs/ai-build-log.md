@@ -631,3 +631,25 @@ Review the watchlist thresholds: thin disclosed liquidation distance `<= 500` bp
 - Browser verification used `http://localhost:3000/receipt/import`, pasted a redacted bundle with disclosed `ETH-PERP` and `BTC-PERP`, clicked `Load current markets`, clicked `Load 24h trends`, confirmed `Review watchlist`, high/watch/info counts, high ETH cues, no raw account, no `Import receipt` button, and zero browser console errors.
 ### remaining risks:
 The watchlist is heuristic public-context triage over disclosed redacted fields. It cannot prove hidden receipt state, recompute the snapshot hash, compare hidden saved marks or exact sizes, monitor exact liquidation state, or replace a full trusted receipt bundle/live recheck.
+
+### task id: post-t9 position risk drivers
+### codex mode:
+product iteration + implementation
+### delegated work:
+Researched liquidation, leverage, funding, mark-price, and perp risk-management sources, then added a dashboard triage panel that explains which open positions are driving account risk.
+### output accepted:
+Added `src/lib/risk/position-risk-drivers.ts` with transparent component scoring for listed liquidation buffer, notional exposure/concentration, positive funding burden, and unrealized loss. Added tests for near-liquidation ranking, gross exposure/concentration, largest positive funding cost, no-position state, and zero-account-value safety. Added `src/app/position-risk-drivers-panel.tsx` and mounted it on the dashboard before the detailed liquidation/funding panels. The panel shows top driver, gross exposure, largest position share, directional bias, net directional notional, top driver cards, component scores, and a no-advice caveat. Updated source notes, limitations, knowledge graph, README, demo script, and this handoff.
+### output rejected or changed:
+No new endpoint, trading/exchange endpoint, wallet/RPC flow, exact Hyperliquid liquidation formula, margin-tier model, backend persistence, alerting, chart dependency, or strategy recommendation was added. The first scoring implementation accidentally let component scores exceed their documented weights; tests exposed that and the component caps were fixed.
+### human review notes:
+Review the component weights: listed liquidation buffer up to 45 points, notional exposure/concentration up to 25 points, positive daily funding burden up to 20 points, and unrealized loss burden up to 10 points. Review whether single-position accounts should show notional concentration as strongly as multi-position books.
+### tests/checks run:
+- `node --test src/lib/risk/position-risk-drivers.test.ts` passed: 5 tests, 5 passing.
+- `npm test` passed: 105 tests, 105 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/` plus existing API/receipt routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000`, selected `demo-near-liquidation-btc-short`, confirmed `Position risk drivers`, `BTC-PERP · 77`, gross exposure `2.24x`, directional bias `net short`, components `L 42 · N 25 · F 0 · PnL 10`, the no-advice caveat, and zero browser console errors.
+### remaining risks:
+Position risk drivers are heuristic triage over the loaded snapshot. They do not prove protocol-official risk attribution, exact liquidation state, cross-margin behavior, maintenance tiers, liquidity effects, funding settlement, or what a trader should do next.

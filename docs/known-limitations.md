@@ -9,6 +9,7 @@
 - scenario results apply the same percentage move to every position and do not model exchange-specific cross-margin behavior.
 - liquidation distance uses the listed fixture liquidation price and should not be treated as an exact Hyperliquid liquidation calculation.
 - liquidation buffer ladder ranks listed liquidation prices only and does not model cross-margin equity, funding changes, liquidity changes, or other open-position PnL.
+- position risk drivers are heuristic triage scores over listed liquidation buffer, notional exposure, positive funding burden, and unrealized loss; they are not protocol-official risk attribution.
 - fixture receipt pages are deterministic routes; live receipts are stored only in the creating browser.
 - eas receipt fields remain placeholders until a wallet submits the documented Sepolia attestation.
 - live hyperliquid lookup depends on Hyperliquid API availability and may fail gracefully back to fixture mode.

@@ -10,6 +10,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - Account-level risk metrics: account value, margin used, margin usage, total notional, minimum liquidation distance, daily funding, 30-day funding, risk score, source, freshness, and data timestamp.
 - Live account value history for Hyperliquid lookups with sampled PnL, period change, and drawdown context.
 - Position-level risk notes for liquidation distance and funding direction.
+- Position risk drivers that rank positions by listed liquidation buffer, notional exposure, positive funding burden, and unrealized loss.
 - Liquidation buffer ladder ranking positions by closest listed liquidation buffer.
 - Funding carry watch for net daily funding, 30-day estimate, funding burden, and largest cost/earn drivers.
 - Six scenario moves: `-10%`, `-5%`, `-2%`, `+2%`, `+5%`, and `+10%`.
@@ -49,6 +50,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/lib/perps/types.ts` defines the normalized snapshot, position, scenario, and receipt models.
 - `src/lib/perps/fixtures.ts` contains the demo account snapshots.
 - `src/lib/risk/risk-engine.ts` contains pure risk math.
+- `src/lib/risk/position-risk-drivers.ts` derives transparent position-level risk-driver scores.
 - `src/lib/history/account-value-timeline.ts` derives account-value change and drawdown timelines.
 - `src/lib/history/receipt-account-value-context.ts` positions a receipt inside sampled account-value history.
 - `src/lib/liquidation/liquidation-buffer.ts` derives the dashboard liquidation buffer ladder.
@@ -86,6 +88,7 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - The EAS payload hashes account/protocol identifiers instead of placing raw account identifiers onchain.
 - The risk assistant is local and deterministic in this build; it does not call an LLM API.
 - The receipt risk assistant is local and deterministic in this build; it answers only from receipt, hash, live recheck, market, funding, and sampled account-value context.
+- Position risk drivers are heuristic triage scores over listed liquidation buffer, notional exposure, positive funding burden, and unrealized loss.
 - Liquidation buffer ladder uses listed liquidation prices and does not compute exact Hyperliquid liquidation behavior.
 - Funding carry watch assumes current funding and notional stay unchanged and uses normalized mark-price notional as an estimate.
 - Market context uses mark price for saved-vs-current comparison and treats open interest as descriptive context, not a standalone direction signal.
@@ -127,7 +130,7 @@ Use `docs/demo-script.md` for the reviewer-facing script. The short version:
 
 1. Open the dashboard.
 2. Switch between fixture accounts.
-3. Explain account risk, liquidation buffer ladder, funding carry watch, and scenarios.
+3. Explain account risk, position risk drivers, liquidation buffer ladder, funding carry watch, and scenarios.
 4. Ask the risk assistant about liquidation, funding, and whether it can recommend a trade.
 5. Create a fixture receipt.
 6. Open the receipt page and show hash verification.
@@ -144,6 +147,7 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 - Redacted market context is current public market context only; it cannot compare hidden saved mark price, exact size, account equity, or PnL.
 - Redacted market trend is public 24h market history only and cannot prove the hidden receipt state.
 - Redacted market watchlist is heuristic public-context triage only and cannot prove hidden state, recompute hashes, or monitor exact liquidation state.
+- Position risk drivers are heuristic and do not prove protocol-official risk attribution.
 - Account value history is sampled from Hyperliquid portfolio windows and is not complete accounting.
 - Receipt account-value context uses a nearest sampled point, not an exact historical account audit.
 - Receipt change summary is heuristic and descriptive; it is not a trading recommendation.
@@ -169,4 +173,4 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 
 ## Resume Bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

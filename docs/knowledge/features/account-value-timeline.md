@@ -14,6 +14,8 @@ the current risk state is unusual for the account.
 
 - [[../sources/hyperliquid-live-risk-signals]]
 - [[../sources/perp-account-value-history]]
+- [[../sources/perp-position-risk-drivers]]
+- [[position-risk-drivers]]
 - [[live-receipt-recheck]]
 
 ## implemented behavior
@@ -35,5 +37,6 @@ the current risk state is unusual for the account.
 ## next connected feature
 
 [[receipt-account-value-context]] now handles receipt-page account-history
-context. A later slice could combine this with [[mark-price-context]] into a
-single receipt-change summary.
+context. [[position-risk-drivers]] shows which current positions explain the
+loaded account risk, while this timeline shows whether account equity has
+recently improved or drawn down around that state.

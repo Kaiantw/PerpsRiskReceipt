@@ -24,6 +24,7 @@ import {
 } from "./account-value-history-panel.tsx";
 import { FundingCarryWatchPanel } from "./funding-carry-watch-panel.tsx";
 import { LiquidationBufferPanel } from "./liquidation-buffer-panel.tsx";
+import { PositionRiskDriversPanel } from "./position-risk-drivers-panel.tsx";
 import { RiskAssistantPanel } from "./risk-assistant-panel.tsx";
 
 const scenarioMoves = [-10, -5, -2, 2, 5, 10];
@@ -416,6 +417,8 @@ export function DashboardClient({
         {isLiveSnapshotSelected ? (
           <AccountValueHistoryPanel state={accountValueHistoryState} />
         ) : null}
+
+        <PositionRiskDriversPanel snapshot={selectedSnapshot} />
 
         <LiquidationBufferPanel snapshot={selectedSnapshot} />
 

@@ -14,6 +14,8 @@ or share a receipt before leaving a position open.
 
 - [[../sources/hyperliquid-live-risk-signals]]
 - [[../sources/perp-funding-mechanics]]
+- [[../sources/perp-position-risk-drivers]]
+- [[position-risk-drivers]]
 - [[live-receipt-recheck]]
 - [[ai-risk-assistant]]
 
@@ -30,7 +32,7 @@ or share a receipt before leaving a position open.
 
 ## next connected feature
 
-Live receipt recheck already compares funding delta. A future version can join
-this panel with [[live-receipt-recheck]] so a receipt shows whether carrying the
-same position became materially more expensive or more favorable since the
-snapshot was saved.
+[[position-risk-drivers]] now shows positive funding burden as one component in
+the account-level driver ranking. Live receipt recheck already compares funding
+delta, so a future version can show whether carrying the same position became
+materially more expensive or more favorable since the snapshot was saved.

@@ -81,6 +81,13 @@ use this file for external protocol assumptions.
   - https://www.coinbase.com/learn/perpetual-futures/understanding-funding-rates-in-perpetual-futures
   - https://www.coinbase.com/advanced-perpetuals
   - https://www.kraken.com/learn/trading/perpetual-futures-contracts
+- docs checked on 2026-06-25 for position risk drivers:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://www.investopedia.com/what-are-perpetual-futures-7494870
+  - https://metamask.io/news/leverage-margin-perpetual-futures-trading
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -183,6 +190,13 @@ use this file for external protocol assumptions.
   - watch thresholds are heuristic: thin disclosed liquidation distance is `<= 500` bps, tight disclosed liquidation distance is `<= 1000` bps, material adverse price move is `>= 2%`, material funding cost/delta is `>= 1` bps, and high public range is `>= 8%` or at least half of disclosed liquidation distance.
   - high-attention cues are used when tight buffers overlap adverse trend, persistent funding cost becomes more expensive, or public range is large versus a tight disclosed buffer.
   - the watchlist is a review checklist only; it cannot prove hidden receipt fields, recompute the snapshot hash, or monitor exact liquidation state.
+- position risk driver assumptions:
+  - position risk drivers are derived entirely from the loaded normalized snapshot; no new endpoint is called.
+  - the driver score is heuristic and intentionally decomposed into visible components: listed liquidation buffer up to 45 points, notional exposure/concentration up to 25 points, positive daily funding burden up to 20 points, and unrealized loss burden up to 10 points.
+  - notional exposure is shown as gross notional versus account value, largest position share, long/short notional totals, net directional notional, and directional bias.
+  - listed liquidation price remains an input, not an exact Hyperliquid liquidation calculation; cross margin, other open-position PnL, and funding can change actual liquidation behavior.
+  - positive funding burden is treated as a holding-cost driver; earned funding does not increase the funding-cost component.
+  - the panel is a triage view for inspection, not a recommendation to change leverage, close, hedge, or resize a position.
 
 ## eas
 
