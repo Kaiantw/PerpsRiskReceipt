@@ -19,6 +19,12 @@ import {
   buildRedactedMarketTrend,
   type redacted_market_trend,
 } from "@/lib/market/redacted-market-trend.ts";
+import {
+  buildRedactedMarketWatchlist,
+  type redacted_market_watch_item,
+  type redacted_market_watchlist,
+  type redacted_market_watch_severity,
+} from "@/lib/market/redacted-market-watchlist.ts";
 import type {
   hyperliquid_market_context,
   hyperliquid_market_history,
@@ -535,6 +541,12 @@ export function ReceiptImportClient() {
                 void loadRedactedMarketTrend(state.bundle);
               }}
             />
+
+            <RedactedMarketWatchlistPanel
+              bundle={state.bundle}
+              marketContextState={redactedMarketContextState}
+              marketTrendState={redactedMarketTrendState}
+            />
           </section>
         ) : null}
       </div>
@@ -782,6 +794,152 @@ function RedactedMarketTrendResult({
       ) : null}
     </div>
   );
+}
+
+function RedactedMarketWatchlistPanel({
+  bundle,
+  marketContextState,
+  marketTrendState,
+}: {
+  bundle: redacted_receipt_bundle;
+  marketContextState: redacted_market_context_state;
+  marketTrendState: redacted_market_trend_state;
+}) {
+  const marketContext =
+    marketContextState.status === "loaded"
+      ? marketContextState.context
+      : undefined;
+  const marketTrend =
+    marketTrendState.status === "loaded" ? marketTrendState.trend : undefined;
+  const watchlist = buildRedactedMarketWatchlist({
+    bundle,
+    marketContext,
+    marketTrend,
+  });
+
+  return (
+    <div className="mt-4 rounded-lg border border-stone-300 bg-white p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Review watchlist</h3>
+          <p className="mt-1 text-sm text-stone-600">
+            Synthesizes the disclosed redacted fields with loaded public market
+            context so the reviewer can see what deserves attention first.
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center text-xs font-semibold sm:min-w-64">
+          <WatchlistCount label="High" value={watchlist.high_count} />
+          <WatchlistCount label="Watch" value={watchlist.watch_count} />
+          <WatchlistCount label="Info" value={watchlist.info_count} />
+        </div>
+      </div>
+
+      <div
+        className={`mt-4 rounded-lg border p-3 ${getWatchlistSummaryClassName(
+          watchlist,
+        )}`}
+      >
+        <p className="text-sm font-semibold">{watchlist.headline}</p>
+        <p className="mt-1 text-sm">{watchlist.summary}</p>
+      </div>
+
+      {watchlist.items.length > 0 ? (
+        <div className="mt-4 grid gap-3">
+          {watchlist.items.map((item) => (
+            <WatchlistItemCard item={item} key={item.id} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function WatchlistCount({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
+      <p className="text-stone-500">{label}</p>
+      <p className="mt-1 font-mono text-sm text-stone-950">{value}</p>
+    </div>
+  );
+}
+
+function WatchlistItemCard({ item }: { item: redacted_market_watch_item }) {
+  return (
+    <article className="rounded-lg border border-stone-200 bg-stone-50 p-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-md border px-2 py-1 text-xs font-semibold uppercase ${getWatchlistSeverityClassName(
+                item.severity,
+              )}`}
+            >
+              {item.severity}
+            </span>
+            <span className="font-mono text-sm font-semibold text-stone-950">
+              {item.market}
+            </span>
+            <span className="text-sm capitalize text-stone-600">
+              {item.side}
+            </span>
+          </div>
+          <h4 className="mt-3 text-sm font-semibold text-stone-950">
+            {item.title}
+          </h4>
+        </div>
+        <span className="rounded-md bg-white px-2 py-1 text-xs font-medium text-stone-600">
+          {formatWatchlistCategory(item.category)}
+        </span>
+      </div>
+
+      <p className="mt-2 text-sm text-stone-700">{item.detail}</p>
+
+      {item.review_points.length > 0 ? (
+        <ul className="mt-3 grid gap-2 text-sm text-stone-700">
+          {item.review_points.map((reviewPoint) => (
+            <li
+              className="rounded-md border border-stone-200 bg-white px-3 py-2"
+              key={reviewPoint}
+            >
+              {reviewPoint}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </article>
+  );
+}
+
+function getWatchlistSummaryClassName(watchlist: redacted_market_watchlist) {
+  switch (watchlist.label) {
+    case "high_attention":
+      return "border-red-200 bg-red-50 text-red-950";
+    case "watch_items_loaded":
+      return "border-amber-200 bg-amber-50 text-amber-950";
+    case "no_watch_items":
+      return "border-emerald-200 bg-emerald-50 text-emerald-950";
+    case "no_loaded_context":
+      return "border-stone-200 bg-stone-50 text-stone-700";
+  }
+}
+
+function getWatchlistSeverityClassName(
+  severity: redacted_market_watch_severity,
+) {
+  switch (severity) {
+    case "high":
+      return "border-red-200 bg-red-100 text-red-950";
+    case "watch":
+      return "border-amber-200 bg-amber-100 text-amber-950";
+    case "info":
+      return "border-sky-200 bg-sky-100 text-sky-950";
+  }
+}
+
+function formatWatchlistCategory(
+  category: redacted_market_watch_item["category"],
+) {
+  return category.replaceAll("_", " ");
 }
 
 function MarketTrendSparkline({ values }: { values: number[] }) {

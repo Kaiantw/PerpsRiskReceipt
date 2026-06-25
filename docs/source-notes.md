@@ -73,6 +73,14 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
   - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
   - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits
+- docs checked on 2026-06-25 for redacted market watchlist:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://www.coinbase.com/learn/perpetual-futures/understanding-funding-rates-in-perpetual-futures
+  - https://www.coinbase.com/advanced-perpetuals
+  - https://www.kraken.com/learn/trading/perpetual-futures-contracts
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -169,6 +177,12 @@ use this file for external protocol assumptions.
   - candle close prices are public market context; they do not reveal saved mark price or exact receipt entry state.
   - funding history is side-adjusted from the disclosed side and summarized as average/latest 8-hour bps.
   - a 24-hour adverse price trend or persistent funding cost is a review cue only, not a recommendation to trade or change leverage.
+- redacted market watchlist assumptions:
+  - the watchlist is a synthesis layer over already-loaded redacted market context, redacted 24-hour trend rows, and disclosed redacted receipt fields.
+  - it does not call a new endpoint and does not send a raw account address.
+  - watch thresholds are heuristic: thin disclosed liquidation distance is `<= 500` bps, tight disclosed liquidation distance is `<= 1000` bps, material adverse price move is `>= 2%`, material funding cost/delta is `>= 1` bps, and high public range is `>= 8%` or at least half of disclosed liquidation distance.
+  - high-attention cues are used when tight buffers overlap adverse trend, persistent funding cost becomes more expensive, or public range is large versus a tight disclosed buffer.
+  - the watchlist is a review checklist only; it cannot prove hidden receipt fields, recompute the snapshot hash, or monitor exact liquidation state.
 
 ## eas
 

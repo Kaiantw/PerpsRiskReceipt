@@ -13,8 +13,10 @@ one-off print, or has price/funding looked like this recently?"
 ## source links
 
 - [[../sources/redacted-market-trend]]
+- [[../sources/redacted-market-watchlist]]
 - [[../sources/redacted-market-context]]
 - [[redacted-market-context]]
+- [[redacted-market-watchlist]]
 - [[redacted-receipt-share]]
 - docs/source-notes.md#hyperliquid
 
@@ -36,6 +38,6 @@ one-off print, or has price/funding looked like this recently?"
 ## related ideas
 
 - [[redacted-market-context]] shows current public market state.
+- [[redacted-market-watchlist]] combines loaded current and 24-hour context into
+  reviewer-facing cues.
 - [[redacted-receipt-share]] defines the privacy boundary this panel respects.
-- A later version could add market-only alert/watch thresholds for redacted
-  bundles without importing the full account snapshot.

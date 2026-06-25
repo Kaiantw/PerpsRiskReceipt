@@ -610,3 +610,24 @@ Review the thresholds: adverse price trend at 2% in the disclosed side's liquida
 - Browser verification used `http://localhost:3000/receipt/import`, pasted a redacted bundle with disclosed `ETH-PERP` and `BTC-PERP`, clicked `Load current markets`, confirmed current market context matched `2/2` markets, clicked `Load 24h trends`, confirmed `24h close path`, `24h price`, `Avg funding`, `Latest funding`, matched `2/2` markets, no raw account, no `Import receipt` button, and zero browser console errors.
 ### remaining risks:
 Redacted market trend depends on Hyperliquid API availability and the `candleSnapshot` / `fundingHistory` response shapes. It is public market history only, not proof of the hidden receipt state, exact saved mark, exact account equity, exact liquidation behavior, or financial advice.
+
+### task id: post-t9 redacted market watchlist
+### codex mode:
+product iteration + implementation
+### delegated work:
+Turned the "what is valuable in the current market?" product question into a redacted-share review watchlist that synthesizes disclosed receipt fields with loaded public current-market and 24h trend context.
+### output accepted:
+Added `src/lib/market/redacted-market-watchlist.ts` with deterministic high/watch/info cues for thin or tight disclosed liquidation distance, adverse 24h trend for the disclosed side, persistent side-adjusted funding cost, current funding that is more expensive than the receipt, public high/low range versus disclosed buffer, missing current market context, and missing 24h history. Added focused tests covering tight-buffer adverse trends, combined persistent/current funding cost, missing public data, and pre-load empty state. `/receipt/import` now renders a `Review watchlist` panel for redacted shares with counts, severity labels, details, and review points. Updated source notes, knowledge graph, README, demo script, limitations, and handoff.
+### output rejected or changed:
+No new endpoint, raw account lookup, trading/exchange endpoint, websocket, alerting system, strategy recommendation, chart dependency, wallet/RPC flow, backend store, exact liquidation monitor, or cryptographic proof was added. The first test expectation overcounted high-severity cues by treating a tight liquidation buffer as high instead of watch; it was corrected to match the intended threshold contract.
+### human review notes:
+Review the watchlist thresholds: thin disclosed liquidation distance `<= 500` bps, tight disclosed liquidation distance `<= 1000` bps, material adverse 24h move at `2%`, material funding cost/delta at `1` bps, and high public range at `8%` or at least half of disclosed liquidation distance. Review whether the panel copy should say "trading recommendation" or use softer "not an instruction" wording for demos.
+### tests/checks run:
+- `npm test` passed: 100 tests, 100 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/import`, `/api/hyperliquid/markets`, and `/api/hyperliquid/market-history`.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted a redacted bundle with disclosed `ETH-PERP` and `BTC-PERP`, clicked `Load current markets`, clicked `Load 24h trends`, confirmed `Review watchlist`, high/watch/info counts, high ETH cues, no raw account, no `Import receipt` button, and zero browser console errors.
+### remaining risks:
+The watchlist is heuristic public-context triage over disclosed redacted fields. It cannot prove hidden receipt state, recompute the snapshot hash, compare hidden saved marks or exact sizes, monitor exact liquidation state, or replace a full trusted receipt bundle/live recheck.

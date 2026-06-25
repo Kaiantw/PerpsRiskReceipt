@@ -19,6 +19,7 @@ review while keeping the full bundle available for trusted verification.
 - [[portable-receipt-bundle]]
 - [[redacted-market-context]]
 - [[redacted-market-trend]]
+- [[redacted-market-watchlist]]
 - docs/product-spec.md#4-receipt-page
 - docs/source-notes.md#hyperliquid
 
@@ -39,6 +40,8 @@ review while keeping the full bundle available for trusted verification.
   markets without sending a raw account address.
 - Hyperliquid redacted previews can load 24h public candle and funding-history
   context for disclosed markets without sending a raw account address.
+- Hyperliquid redacted previews synthesize loaded current/trend context into a
+  review watchlist without sending a raw account address.
 - Full bundles remain available when a reviewer needs to recompute the snapshot
   hash, import the receipt, run live recheck, generate the EAS fallback payload,
   or use receipt assistant context.
@@ -50,5 +53,7 @@ review while keeping the full bundle available for trusted verification.
   open-interest context to redacted shares.
 - [[redacted-market-trend]] adds 24h public price and funding regime context to
   redacted shares.
+- [[redacted-market-watchlist]] turns loaded redacted market context into
+  reviewer-facing cues.
 - A future selective-disclosure proof could replace the current redacted JSON
   with EAS private data or Merkle-disclosure proofs.

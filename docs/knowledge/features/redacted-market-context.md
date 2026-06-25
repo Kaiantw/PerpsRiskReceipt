@@ -15,10 +15,12 @@ market metadata.
 ## source links
 
 - [[../sources/redacted-market-context]]
+- [[../sources/redacted-market-watchlist]]
 - [[../sources/redacted-market-trend]]
 - [[../sources/redacted-receipt-sharing]]
 - [[redacted-receipt-share]]
 - [[redacted-market-trend]]
+- [[redacted-market-watchlist]]
 - [[mark-price-context]]
 - docs/source-notes.md#hyperliquid
 
@@ -43,3 +45,5 @@ market metadata.
   once the private account snapshot is available.
 - [[redacted-market-trend]] adds a small public market trend sparkline using
   read-only market endpoints, still without an account address.
+- [[redacted-market-watchlist]] synthesizes loaded current market context and
+  trend history into reviewer-facing cues.

@@ -19,6 +19,7 @@
 - redacted receipt bundles preserve the snapshot hash as a reference but cannot recompute or verify the original hash without the hidden full snapshot.
 - redacted market context uses current public Hyperliquid market data only and cannot compare saved mark price, exact size, exact notional, account equity, or PnL because those fields are intentionally hidden.
 - redacted market trend uses public 24-hour candle and funding history only; it cannot prove the hidden receipt state and is capped to five disclosed markets to keep read-only history requests bounded.
+- redacted market watchlist is heuristic public-context triage over disclosed redacted fields; it cannot prove hidden receipt state, recompute the snapshot hash, or monitor exact liquidation state.
 - live receipt recheck compares against a fresh read-only snapshot but is not an exact liquidation monitor or historical account audit.
 - receipt account-value context uses the nearest sampled Hyperliquid portfolio point, so the visible sample gap matters for interpretation.
 - receipt change summary is heuristic and prioritizes review cues; it is not a trading recommendation or exact risk monitor.

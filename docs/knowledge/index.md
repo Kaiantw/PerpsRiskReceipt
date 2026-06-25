@@ -18,6 +18,7 @@ informed it and forward to related feature ideas.
 - [[sources/redacted-receipt-sharing]] - data-minimization and selective-disclosure source notes for redacted receipt sharing.
 - [[sources/redacted-market-context]] - market-only source notes for redacted share current context.
 - [[sources/redacted-market-trend]] - candle and funding-history source notes for redacted share 24h public market trends.
+- [[sources/redacted-market-watchlist]] - liquidation, funding, volatility, and review-cue source notes for redacted share watchlists.
 
 ## implemented feature notes
 
@@ -34,6 +35,7 @@ informed it and forward to related feature ideas.
 - [[features/redacted-receipt-share]] - minimized receipt share that hides raw account and exact position values while preserving a hash reference and risk summary.
 - [[features/redacted-market-context]] - current public Hyperliquid mark, funding, and open-interest context for redacted shares.
 - [[features/redacted-market-trend]] - 24h public candle and funding-history context for redacted shares.
+- [[features/redacted-market-watchlist]] - synthesized review cues over redacted fields plus loaded public market context.
 
 ## connected backlog ideas
 
@@ -41,5 +43,5 @@ informed it and forward to related feature ideas.
   once citations, refusal policy, and private-data boundaries are stronger.
 - [[features/redacted-receipt-share]] could later evolve from minimized JSON to
   cryptographic selective disclosure using EAS private data or Merkle proofs.
-- [[features/redacted-market-trend]] could later add market-only alert/watch
+- [[features/redacted-market-watchlist]] could later add configurable market-only
   thresholds without requiring a raw account address.

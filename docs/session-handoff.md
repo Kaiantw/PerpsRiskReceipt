@@ -26,64 +26,65 @@
 - Post-t9 redacted receipt share is complete.
 - Post-t9 redacted market context is complete.
 - Post-t9 redacted market trend history is complete.
+- Post-t9 redacted market watchlist is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote state: `main` tracks `origin/main`.
-- Baseline before this slice: `96afd6d feat: add redacted market context`.
-- Current work adds 24h public market trend history for imported redacted receipt shares.
-- Redacted imports can now fetch public Hyperliquid one-hour candles and funding history for disclosed markets only, without sending a raw account address or importing the hidden full snapshot.
-- The new panel shows matched-market count, close-price sparkline, 24h price change, high/low range, average side-adjusted funding, latest side-adjusted funding, and privacy-scope copy.
-- The trend lookup is capped at five disclosed markets and uses a fixed 24h/1h window because the underlying endpoints have response-size rate weights.
+- Baseline before this slice: `ccc6508 feat: add redacted market trend history`.
+- Current work adds a redacted-share `Review watchlist` on `/receipt/import`.
+- The watchlist uses disclosed redacted receipt fields plus already-loaded current market context and 24h trend context.
+- No new API endpoint was added. The feature reuses existing redacted market context/trend outputs.
+- The watchlist surfaces high/watch/info cues for disclosed liquidation buffer, adverse public 24h price move, persistent or more expensive funding, public high/low range versus disclosed buffer, and missing public data.
+- The feature does not send a raw account address, import redacted bundles as full receipts, recompute hidden snapshot hashes, or recommend trades.
 - A Next dev server was already running on `http://localhost:3000` for smoke verification.
 
 ## files changed
 
-- `src/lib/hyperliquid/adapter.ts`: added candle/funding-history response mapping and read-only market-history fetch support.
-- `src/lib/hyperliquid/adapter.test.ts`: covered market-history mapping and exact `candleSnapshot` / `fundingHistory` request bodies.
-- `src/app/api/hyperliquid/market-history/route.ts`: added a read-only 24h market-history API route for disclosed `*-PERP` markets.
-- `src/lib/market/redacted-market-trend.ts`: added deterministic redacted-share 24h trend context and labels.
-- `src/lib/market/redacted-market-trend.test.ts`: covered hidden-snapshot-safe trend context, short side-adjusted funding, no-history state, and persistent funding cost.
-- `src/app/receipt/import/receipt-import-client.tsx`: added `Load 24h trends` behavior and the trend-history panel for redacted previews.
-- `package.json`: included the new redacted market-trend test in `npm test`.
-- `docs/knowledge/sources/redacted-market-trend.md`: new source-backed note for candle/funding-history context.
-- `docs/knowledge/features/redacted-market-trend.md`: new implemented feature note.
-- `docs/knowledge/features/redacted-market-context.md`: linked the implemented trend feature.
-- `docs/knowledge/features/redacted-receipt-share.md`: linked redacted-share trend behavior.
+- `src/lib/market/redacted-market-watchlist.ts`: new pure watchlist builder and threshold contract.
+- `src/lib/market/redacted-market-watchlist.test.ts`: new tests for adverse trend plus tight buffer, combined funding cost, missing public context/history, and no-loaded-context state.
+- `src/app/receipt/import/receipt-import-client.tsx`: added the `Review watchlist` panel, high/watch/info counts, severity cards, and review points for redacted previews.
+- `package.json`: included the new watchlist test in `npm test`.
+- `docs/knowledge/sources/redacted-market-watchlist.md`: new source-backed note for liquidation, funding, volatility, and review-cue assumptions.
+- `docs/knowledge/features/redacted-market-watchlist.md`: new implemented feature note.
+- `docs/knowledge/features/redacted-market-context.md`: linked the watchlist.
+- `docs/knowledge/features/redacted-market-trend.md`: linked the watchlist.
+- `docs/knowledge/features/redacted-receipt-share.md`: documented watchlist behavior.
 - `docs/knowledge/index.md`: linked the new source and feature notes.
-- `docs/source-notes.md`: documented Hyperliquid market-history assumptions and request bodies.
-- `docs/known-limitations.md`: documented redacted market-trend limits.
-- `README.md`: documented the new redacted-share 24h trend behavior.
-- `docs/demo-script.md`: added the redacted import trend-history demo step.
+- `docs/source-notes.md`: documented watchlist sources, thresholds, and assumptions.
+- `docs/known-limitations.md`: documented redacted watchlist limits.
+- `README.md`: documented the redacted watchlist in demo, architecture, assumptions, limitations, and resume bullet.
+- `docs/demo-script.md`: added the redacted watchlist demo step and updated the resume bullet.
 - `docs/ai-build-log.md`: records this feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `npm test` passed: 96 tests, 96 passing.
+- `node --test src/lib/market/redacted-market-watchlist.test.ts` passed: 4 tests, 4 passing.
+- `npm test` passed: 100 tests, 100 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm run build` passed and listed `/api/hyperliquid/market-history`.
+- `npm run build` passed and listed `/receipt/import`, `/api/hyperliquid/markets`, and `/api/hyperliquid/market-history`.
 - `git diff --check` passed.
-- Browser verification used `http://localhost:3000/receipt/import`, pasted a redacted bundle with disclosed `ETH-PERP` and `BTC-PERP`, clicked `Load current markets`, confirmed current market context matched `2/2` markets, clicked `Load 24h trends`, confirmed `24h close path`, `24h price`, `Avg funding`, `Latest funding`, matched `2/2` markets, no raw account, no `Import receipt` button, and zero browser console errors.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted a redacted bundle with disclosed `ETH-PERP` and `BTC-PERP`, clicked `Load current markets`, clicked `Load 24h trends`, confirmed `Review watchlist`, high/watch/info counts, high ETH cues, no raw account, no `Import receipt` button, and zero browser console errors.
 
 ## blockers
 
 - No hard blocker for this feature slice.
-- Redacted market trend depends on Hyperliquid API availability and the `candleSnapshot` / `fundingHistory` response shapes.
-- Redacted market trend is current public market history only. It cannot prove the hidden receipt state, exact saved mark prices, exact sizes, exact notional, exact account equity, PnL, or exact funding dollars.
-- The trend lookup is capped at five disclosed markets and uses a fixed 24h/1h window to keep read-only history requests bounded.
-- Redacted shares remain minimized offchain JSON summaries, not encrypted payloads, Merkle proofs, zero-knowledge proofs, Verifiable Credentials, JSON Web Proofs, or EAS private-data attestations.
+- Redacted market watchlist depends on the loaded current market context and/or 24h trend context. Before either panel is loaded, it can only prompt the reviewer to load public context.
+- The watchlist depends on Hyperliquid API availability and the existing `metaAndAssetCtxs`, `candleSnapshot`, and `fundingHistory` response shapes.
+- It is heuristic public-context triage, not a proof of hidden receipt state, exact saved mark price, exact size, account equity, PnL, or exact liquidation state.
+- Redacted receipt shares remain minimized offchain JSON summaries, not encrypted payloads, Merkle proofs, zero-knowledge proofs, Verifiable Credentials, JSON Web Proofs, or EAS private-data attestations.
 - Redacted receipt shares preserve the snapshot hash as a reference but cannot recompute or verify it without the hidden full snapshot.
 - Full portable receipt bundles still disclose private snapshot data and are not encrypted, access-controlled, or selectively disclosed.
 - Imported full receipts remain browser-local and are not synced to a backend.
 - Receipt hash verification proves snapshot integrity, not correctness of the original external Hyperliquid data.
 - Live receipt recheck depends on Hyperliquid API availability and is not an exact liquidation monitor.
 - EAS schema registration and attestation transactions are documented fallback steps only.
-- Risk score, liquidation distance, and scenario math remain heuristic and should not be described as official protocol risk.
+- Risk score, liquidation distance, scenario math, and watchlist cues remain heuristic and should not be described as official protocol risk.
 
 ## exact next recommended action
 
-Add market-only watch thresholds for redacted shares: use the existing current-context and 24h trend outputs to produce a compact "review watchlist" for disclosed markets, such as adverse trend plus thin liquidation bucket, persistent funding cost, high volatility range, or missing public history, still without requiring a raw account address.
+Commit and push `post-t9 redacted market watchlist`, then do a reviewer pass on the watchlist thresholds/copy from the perspective of a hiring manager who does not know perps: confirm whether the high/watch/info labels make the redacted receipt easier to inspect without sounding like trade advice.
