@@ -360,3 +360,23 @@ Review the material-change thresholds: 10 risk-score points, 500 bps margin usag
 - Browser verification loaded the dashboard, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, clicked `Lookup`, created a local receipt, opened `/receipt/local/rr_a86900e3d2096b24`, clicked `Recheck live account`, confirmed `little changed`, comparison metrics, empty-position comparison, and zero console errors.
 ### remaining risks:
 Live recheck depends on Hyperliquid API availability, localStorage receipt persistence, and current snapshot comparability. It is not an exact liquidation monitor, does not prove historical market correctness, and does not create a shareable cross-device live receipt.
+
+### task id: post-t9 risk assistant
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a guarded assistant-style chat to the dashboard so users can ask plain-English questions about the loaded risk snapshot.
+### output accepted:
+Added dependency-free assistant response logic with tests for snapshot summaries, liquidation explanations, funding explanations, no-position suggestions, and trade-recommendation refusal. Added a dashboard `Risk assistant` panel with quick prompts, free-form questions, assistant/user messages, and snapshot-field citations. Updated README, demo script, limitations, and knowledge notes.
+### output rejected or changed:
+No LLM API, API key, backend chat persistence, financial advice, or trade recommendation path was added. The assistant is local deterministic explanation logic for this build.
+### human review notes:
+Review the assistant's refusal language and keyword routing. The current guardrail refuses explicit trade-intent questions like buying, selling, opening, closing, increasing, reducing, or leverage requests, while still summarizing current risk signals.
+### tests/checks run:
+- `npm test` passed: 33 tests, 33 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed after replacing effect-based state reset with keyed component remount.
+- `npm run build` passed.
+- Browser verification opened the dashboard, confirmed the `Risk assistant`, clicked `Liquidation`, confirmed an `ETH-PERP is closest` answer with citations, asked `Should I close this long?`, confirmed the assistant refused recommendations, and saw zero console errors.
+### remaining risks:
+The assistant is not a connected LLM yet, does not reason beyond deterministic routing, and should remain limited to explaining visible snapshot fields until a server-side model path with stronger safety guardrails is added.

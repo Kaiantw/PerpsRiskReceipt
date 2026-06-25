@@ -14,40 +14,40 @@
 - `t9` review + evidence is complete.
 - Post-t9 live receipt UX fix is complete.
 - Post-t9 live receipt recheck is complete.
+- Post-t9 risk assistant is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote state: `main` tracks `origin/main`.
-- Baseline before this slice: `328c972 fix: create local receipts for live lookup`.
-- Current work adds live recheck to browser-local Hyperliquid receipts and adds linked research/feature notes under `docs/knowledge/`.
+- Baseline before this slice: `425e200 feat: add live receipt recheck`.
+- Current work adds a guarded local risk assistant chat on the dashboard and updates the linked research/feature notes under `docs/knowledge/`.
 - Dev server was started on `http://localhost:3000` for smoke verification.
 
 ## files changed
 
-- `src/lib/receipts/snapshot-comparison.ts`: pure saved-vs-current snapshot comparison logic.
-- `src/lib/receipts/snapshot-comparison.test.ts`: comparison tests for unchanged state, risk worsening, position changes, closed/new positions, and account mismatch.
-- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: local receipt UI for fetching and displaying the live recheck.
-- `src/app/receipt/local/[id]/local-receipt-client.tsx`: injects the live recheck panel into local receipt pages.
-- `src/app/receipt/receipt-view.tsx`: adds an optional extra section slot for receipt-specific content.
-- `package.json`: includes the snapshot comparison test.
-- `docs/knowledge/`: Obsidian-style source and feature notes for live risk signals, live recheck, funding carry watch, mark price context, account value timeline, and AI risk assistant.
-- `docs/source-notes.md`: records Hyperliquid docs checked for live recheck and the recheck assumptions.
-- `README.md`: documents live receipt recheck in the demo/architecture/limitations.
-- `docs/demo-script.md`: adds the live recheck walkthrough.
-- `docs/known-limitations.md`: adds the live recheck limitation.
+- `src/lib/assistant/risk-assistant.ts`: deterministic assistant response logic and no-advice guardrails.
+- `src/lib/assistant/risk-assistant.test.ts`: tests for summary, liquidation, funding, refusal, and suggestions.
+- `src/app/risk-assistant-panel.tsx`: dashboard assistant chat UI with quick prompts, free-form question input, and citations.
+- `src/app/dashboard-client.tsx`: mounts the assistant for the selected snapshot.
+- `package.json`: includes the assistant tests.
+- `docs/knowledge/index.md`: links the new financial guardrail source note.
+- `docs/knowledge/features/ai-risk-assistant.md`: marks the assistant implemented and documents behavior.
+- `docs/knowledge/sources/financial-risk-guardrails.md`: SEC/FINRA risk sources used for assistant guardrails.
+- `README.md`: documents the guarded local assistant.
+- `docs/demo-script.md`: adds the assistant walkthrough.
+- `docs/known-limitations.md`: adds the deterministic-assistant limitation.
 - `docs/ai-build-log.md`: records this post-t9 feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `npm test` passed: 28 tests, 28 passing.
+- `npm test` passed: 33 tests, 33 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
 - `npm run build` passed and listed `/receipt/local/[id]` as a dynamic route.
-- `git diff --check` passed.
-- Browser verification loaded the dashboard, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, clicked `Lookup`, created a local receipt, landed on `/receipt/local/rr_a86900e3d2096b24`, clicked `Recheck live account`, and confirmed `little changed`, comparison metrics, empty-position comparison, and zero console errors.
+- Browser verification opened the dashboard, confirmed the `Risk assistant`, clicked `Liquidation`, confirmed an `ETH-PERP is closest` answer with citations, asked `Should I close this long?`, confirmed the assistant refused recommendations, and saw zero console errors.
 
 ## blockers
 
@@ -55,9 +55,10 @@
 - `npm audit --audit-level=moderate` still reports the known `postcss` advisory through `next`.
 - Live Hyperliquid receipts are browser-local only and are not synced/shareable across devices.
 - Live receipt recheck depends on Hyperliquid API availability and is not an exact liquidation monitor.
+- Risk assistant is deterministic local explanation logic, not a connected LLM or financial adviser.
 - EAS schema registration and attestation transactions are documented fallback steps only.
 - Risk score, liquidation distance, and scenario math remain heuristic and should not be described as official protocol risk.
 
 ## exact next recommended action
 
-Commit and push the live receipt recheck slice. The next product task should be the AI risk assistant, wired to the loaded dashboard/receipt/recheck data with strict no-financial-advice guardrails and source-field citations.
+Commit and push the risk assistant slice. The next product task should be funding carry watch: highlight saved-vs-current funding deltas and explain whether carrying the same position became materially more expensive or more favorable.

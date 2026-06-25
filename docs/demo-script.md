@@ -31,16 +31,21 @@ Open `http://localhost:3000`.
    - Show that long, short, and missing-liquidation positions can exist in one normalized snapshot.
    - Point out that missing liquidation price does not break aggregate risk calculation.
 
-6. Create a fixture receipt.
+6. Use the risk assistant.
+   - Click `Liquidation` and show the assistant explains the closest listed liquidation distance with snapshot-field citations.
+   - Ask `Should I close this long?` and show that the assistant refuses trade recommendations while still explaining the current signals.
+   - Point out that this is a local deterministic assistant in this build, not a connected LLM.
+
+7. Create a fixture receipt.
    - Click `Create receipt`.
    - Show receipt id, account, protocol, timestamps, risk score, summary metrics, and market summary.
    - Show `Snapshot hash`, expected hash, recomputed hash, and `Hash verified`.
 
-7. Show EAS fallback.
+8. Show EAS fallback.
    - Show Sepolia chain id, EAS contract, SchemaRegistry contract, schema, encoded data, and manual steps.
    - Explain that this is the fallback path, not a submitted transaction.
 
-8. Optional live lookup.
+9. Optional live lookup.
    - Paste a valid Hyperliquid address.
    - Show loading, live/stale freshness, source, no-open-positions handling if applicable, and graceful API error behavior if the endpoint is unavailable.
    - Click `Create local receipt`.
@@ -49,10 +54,10 @@ Open `http://localhost:3000`.
    - Show saved-vs-current risk score, margin usage, liquidation distance, funding, mark movement, and position-state comparison.
    - Point out that live receipts are stored only in this browser, not synced to a backend.
 
-9. Close with evidence.
+10. Close with evidence.
    - Mention `npm test`, `npm run typecheck`, `npm run lint`, and `npm run build`.
    - Open `docs/ai-build-log.md` to show the task-by-task build evidence and human review points.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, scenario simulation, deterministic snapshot hashing, receipt live rechecks, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, receipt live rechecks, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
