@@ -12,6 +12,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - Six scenario moves: `-10%`, `-5%`, `-2%`, `+2%`, `+5%`, and `+10%`.
 - Deterministic fixture receipt pages with snapshot hash verification.
 - Browser-local receipt pages for live Hyperliquid lookups.
+- Live receipt recheck that compares a saved receipt against a fresh read-only Hyperliquid snapshot.
 - Read-only Hyperliquid address lookup through `POST /info`.
 - EAS Sepolia fallback payload and manual attestation steps.
 
@@ -21,11 +22,12 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/app/dashboard-client.tsx` renders the dashboard, address lookup states, position table, scenario simulator, and fixture receipt link.
 - `src/app/api/hyperliquid/snapshot/route.ts` validates addresses and calls the read-only Hyperliquid adapter.
 - `src/app/receipt/[id]/page.tsx` renders deterministic fixture receipts, recomputes the snapshot hash, and shows the EAS fallback payload.
-- `src/app/receipt/local/[id]/page.tsx` renders browser-local live receipts created from pasted Hyperliquid addresses.
+- `src/app/receipt/local/[id]/page.tsx` renders browser-local live receipts created from pasted Hyperliquid addresses and supports live rechecks.
 - `src/lib/perps/types.ts` defines the normalized snapshot, position, scenario, and receipt models.
 - `src/lib/perps/fixtures.ts` contains the demo account snapshots.
 - `src/lib/risk/risk-engine.ts` contains pure risk math.
 - `src/lib/receipts/receipt.ts` contains canonical JSON serialization, hashing, deterministic IDs, and verification.
+- `src/lib/receipts/snapshot-comparison.ts` compares saved receipt snapshots against fresh live snapshots.
 - `src/lib/hyperliquid/adapter.ts` maps Hyperliquid `info` responses into the normalized model.
 - `src/lib/eas/attestation.ts` builds the minimal EAS Sepolia fallback payload.
 
@@ -80,13 +82,14 @@ Use `docs/demo-script.md` for the reviewer-facing script. The short version:
 4. Create a fixture receipt.
 5. Open the receipt page and show hash verification.
 6. Show the EAS fallback payload and documented manual attestation steps.
-7. Optionally paste a Hyperliquid address, create a local live receipt, and show that hash verification still works.
+7. Optionally paste a Hyperliquid address, create a local live receipt, run `Recheck live account`, and show that hash verification still works while the app compares the saved receipt with current live state.
 
 ## Known Limitations
 
 See `docs/known-limitations.md` for the current list. The major limitations are:
 
 - Live Hyperliquid receipts are stored in browser localStorage only and are not synced/shareable across devices.
+- Live receipt recheck compares the saved receipt to a fresh snapshot but is not an exact liquidation monitor.
 - EAS schema registration and attestation transactions are not sent by the app.
 - Scenario results apply the same percentage move to every position.
 - Liquidation distance and risk score are heuristic and not exchange-official.

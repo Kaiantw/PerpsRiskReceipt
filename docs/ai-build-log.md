@@ -339,3 +339,24 @@ Review whether browser-local persistence is enough for the portfolio demo. A pro
 - `npm audit --audit-level=moderate` reported the known `postcss` advisory through `next`; no force fix applied.
 ### remaining risks:
 Live receipt URLs only work in the browser that created them because the snapshot is stored in localStorage.
+
+### task id: post-t9 live receipt recheck
+### codex mode:
+product iteration + implementation
+### delegated work:
+Researched Hyperliquid live risk signals and added a receipt live recheck flow so browser-local Hyperliquid receipts can be compared against a fresh read-only account snapshot.
+### output accepted:
+Added a pure snapshot comparison module with tests for unchanged snapshots, risk worsening, position changes, closed/new positions, and account mismatch. Added a `Live recheck` panel to local live receipt pages that fetches the current Hyperliquid snapshot, compares saved vs current risk score, margin usage, liquidation distance, account value, notional, funding, mark movement, and position state, then labels the result. Added `docs/knowledge/` as an Obsidian-style idea graph with source notes and linked feature ideas.
+### output rejected or changed:
+No trading endpoints, order placement, private keys, wallet/RPC flow, backend receipt persistence, or new dependencies were added. The recheck is intentionally descriptive and does not recommend trades.
+### human review notes:
+Review the material-change thresholds: 10 risk-score points, 500 bps margin usage, 500 bps liquidation distance, and 2% mark-price movement. Review whether the `little changed`, `market moved`, `risk worsened`, and `position state changed` labels are the right product language for traders.
+### tests/checks run:
+- `npm test` passed: 28 tests, 28 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]` as a dynamic route.
+- `git diff --check` passed.
+- Browser verification loaded the dashboard, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, clicked `Lookup`, created a local receipt, opened `/receipt/local/rr_a86900e3d2096b24`, clicked `Recheck live account`, confirmed `little changed`, comparison metrics, empty-position comparison, and zero console errors.
+### remaining risks:
+Live recheck depends on Hyperliquid API availability, localStorage receipt persistence, and current snapshot comparability. It is not an exact liquidation monitor, does not prove historical market correctness, and does not create a shareable cross-device live receipt.

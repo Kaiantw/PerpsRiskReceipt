@@ -12,56 +12,52 @@
 - `t7` Hyperliquid read-only adapter is complete with graceful error states.
 - `t8` EAS attestation fallback path is complete; no transaction was sent.
 - `t9` review + evidence is complete.
+- Post-t9 live receipt UX fix is complete.
+- Post-t9 live receipt recheck is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote state: `main` tracks `origin/main`.
-- Baseline before the live receipt UX fix: `9d651e0 docs: finalize review evidence`.
-- Current work fixes the post-t9 demo trap where live Hyperliquid lookups could not create a receipt.
+- Baseline before this slice: `328c972 fix: create local receipts for live lookup`.
+- Current work adds live recheck to browser-local Hyperliquid receipts and adds linked research/feature notes under `docs/knowledge/`.
 - Dev server was started on `http://localhost:3000` for smoke verification.
 
 ## files changed
 
-- `README.md`: product README with architecture, assumptions, risk score weights, checks, demo flow, known limitations, source-of-truth docs, and resume bullet.
-- `docs/demo-script.md`: concrete reviewer walkthrough for fixtures, scenarios, receipts, EAS fallback, optional live lookup, and build evidence.
-- `src/app/dashboard-client.tsx`: live lookups now show `Create local receipt` and store the receipt in browser localStorage.
-- `src/app/receipt/local/[id]/page.tsx`: local live receipt route.
-- `src/app/receipt/local/[id]/local-receipt-client.tsx`: client loader for browser-local receipts.
-- `src/app/receipt/receipt-view.tsx`: shared receipt renderer used by fixture and local live receipts.
-- `src/lib/receipts/local-receipts.ts`: local receipt storage key and parser.
-- `src/lib/receipts/local-receipts.test.ts`: local receipt storage/parser tests.
-- `package.json`: test command includes local receipt storage tests.
-- `src/app/receipt/[id]/page.tsx`: receipt market-summary rows now use per-position liquidation distance and daily funding.
-- `docs/known-limitations.md`: removed the stale receipt market-summary row limitation after fixing it.
-- `docs/ai-build-log.md`: t9 review/evidence entry with accepted output, rejected scope, human review points, checks, and remaining risks.
+- `src/lib/receipts/snapshot-comparison.ts`: pure saved-vs-current snapshot comparison logic.
+- `src/lib/receipts/snapshot-comparison.test.ts`: comparison tests for unchanged state, risk worsening, position changes, closed/new positions, and account mismatch.
+- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: local receipt UI for fetching and displaying the live recheck.
+- `src/app/receipt/local/[id]/local-receipt-client.tsx`: injects the live recheck panel into local receipt pages.
+- `src/app/receipt/receipt-view.tsx`: adds an optional extra section slot for receipt-specific content.
+- `package.json`: includes the snapshot comparison test.
+- `docs/knowledge/`: Obsidian-style source and feature notes for live risk signals, live recheck, funding carry watch, mark price context, account value timeline, and AI risk assistant.
+- `docs/source-notes.md`: records Hyperliquid docs checked for live recheck and the recheck assumptions.
+- `README.md`: documents live receipt recheck in the demo/architecture/limitations.
+- `docs/demo-script.md`: adds the live recheck walkthrough.
+- `docs/known-limitations.md`: adds the live recheck limitation.
+- `docs/ai-build-log.md`: records this post-t9 feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `npm test` passed: 23 tests, 23 passing.
+- `npm test` passed: 28 tests, 28 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
 - `npm run build` passed and listed `/receipt/local/[id]` as a dynamic route.
 - `git diff --check` passed.
-- Browser verification loaded the dashboard, pasted the user-tested Hyperliquid address, clicked `Lookup`, confirmed `Create local receipt`, clicked it, and landed on `/receipt/local/rr_91e46949fe4afbe2`.
-- Browser verification confirmed `Hash verified`, local-browser storage notice, `EAS fallback payload`, `No open positions.`, and zero console errors.
-- `npm audit --audit-level=moderate` reported the known `postcss` advisory through `next`; no force fix was applied because npm recommends a breaking Next downgrade path.
-- Smoke checks:
-  - `curl /` confirmed the dashboard, create-receipt link, and Hyperliquid address input render.
-  - `curl /api/hyperliquid/snapshot?address=0x123` returned the invalid-address JSON state.
-  - `curl /receipt/rr_a4a4f3f7ced8d437` confirmed `Hash verified`, `EAS fallback payload`, `Encoded data`, `Sepolia`, and `Market summary`.
-  - `curl /receipt/rr_65d4187e8a65d6e0` confirmed mixed-book per-position receipt values: `22.58%`, `40.00%`, `n/a`, `+$9.30`, `-$18.00`, and `+$4.35`.
+- Browser verification loaded the dashboard, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, clicked `Lookup`, created a local receipt, landed on `/receipt/local/rr_a86900e3d2096b24`, clicked `Recheck live account`, and confirmed `little changed`, comparison metrics, empty-position comparison, and zero console errors.
 
 ## blockers
 
 - No hard blocker for merging the one-day MVP.
 - `npm audit --audit-level=moderate` still reports the known `postcss` advisory through `next`.
 - Live Hyperliquid receipts are browser-local only and are not synced/shareable across devices.
+- Live receipt recheck depends on Hyperliquid API availability and is not an exact liquidation monitor.
 - EAS schema registration and attestation transactions are documented fallback steps only.
 - Risk score, liquidation distance, and scenario math remain heuristic and should not be described as official protocol risk.
 
 ## exact next recommended action
 
-Commit and push the live receipt UX fix, then use `README.md` plus `docs/demo-script.md` for the portfolio walkthrough. The next product task should be backend live receipt persistence or a wallet-backed EAS Sepolia attestation flow.
+Commit and push the live receipt recheck slice. The next product task should be the AI risk assistant, wired to the loaded dashboard/receipt/recheck data with strict no-financial-advice guardrails and source-field citations.

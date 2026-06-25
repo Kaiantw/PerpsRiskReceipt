@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import {
   formatIsoDate,
@@ -21,6 +22,7 @@ type ReceiptViewProps = {
   verification: receipt_verification;
   easPayload: eas_payload;
   storageNote?: string;
+  extraSections?: ReactNode;
 };
 
 export function ReceiptView({
@@ -28,6 +30,7 @@ export function ReceiptView({
   verification,
   easPayload,
   storageNote,
+  extraSections,
 }: ReceiptViewProps) {
   const snapshot = receipt.snapshot;
   const aggregate = snapshot.aggregate;
@@ -144,6 +147,8 @@ export function ReceiptView({
             </div>
           )}
         </section>
+
+        {extraSections}
 
         <section className="rounded-lg border border-stone-300 bg-white p-4">
           <h2 className="text-lg font-semibold">Attestation</h2>

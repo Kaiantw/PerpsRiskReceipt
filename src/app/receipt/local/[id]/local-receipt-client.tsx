@@ -11,6 +11,7 @@ import {
 } from "@/lib/receipts/local-receipts.ts";
 import { verifyReceipt } from "@/lib/receipts/receipt.ts";
 import { ReceiptView } from "../../receipt-view.tsx";
+import { LiveRecheckPanel } from "./live-recheck-panel.tsx";
 
 type eas_payload = Awaited<ReturnType<typeof buildEasAttestationPayload>>;
 
@@ -97,6 +98,7 @@ export function LocalReceiptClient({ receiptId }: { receiptId: string }) {
   return (
     <ReceiptView
       easPayload={state.easPayload}
+      extraSections={<LiveRecheckPanel receipt={state.receipt} />}
       receipt={state.receipt}
       storageNote="This live receipt is stored in this browser only. The URL will work here, but it is not synced to a backend or shared across devices."
       verification={state.verification}

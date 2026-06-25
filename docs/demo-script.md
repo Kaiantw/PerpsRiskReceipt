@@ -45,6 +45,8 @@ Open `http://localhost:3000`.
    - Show loading, live/stale freshness, source, no-open-positions handling if applicable, and graceful API error behavior if the endpoint is unavailable.
    - Click `Create local receipt`.
    - Show that the live receipt page has a snapshot hash, hash verification, and market summary.
+   - Click `Recheck live account`.
+   - Show saved-vs-current risk score, margin usage, liquidation distance, funding, mark movement, and position-state comparison.
    - Point out that live receipts are stored only in this browser, not synced to a backend.
 
 9. Close with evidence.
@@ -53,4 +55,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, scenario simulation, deterministic snapshot hashing, shareable receipt pages, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, scenario simulation, deterministic snapshot hashing, receipt live rechecks, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

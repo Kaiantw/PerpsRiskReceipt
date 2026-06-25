@@ -11,6 +11,12 @@ use this file for external protocol assumptions.
 - docs checked on 2026-06-24:
   - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
   - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
+- docs checked on 2026-06-25 for live receipt recheck:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/entry-price-and-pnl
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/portfolio-graphs
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -31,6 +37,12 @@ use this file for external protocol assumptions.
   - asset context `openInterest * markPx` -> `open_interest_usd`
 - stale rule:
   - live responses older than five minutes are marked `stale`.
+- live receipt recheck assumptions:
+  - a saved receipt remains a historical snapshot even when live market data changes.
+  - live recheck compares the receipt account against a fresh read-only Hyperliquid snapshot.
+  - mark-price movement is a useful comparison because Hyperliquid uses mark price for margining, liquidations, TP/SL triggers, and unrealized pnl.
+  - the recheck is not an exact liquidation monitor because listed liquidation prices can change with funding, cross-position pnl, and liquidity changes.
+  - funding deltas are displayed as estimated holding-cost changes, not strategy recommendations.
 
 ## eas
 
