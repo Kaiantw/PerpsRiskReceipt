@@ -16,6 +16,7 @@ claims:
 ## source links
 
 - [[../sources/hyperliquid-live-risk-signals]]
+- [[../sources/perp-market-context]]
 - docs/product-spec.md#4-receipt-page
 - docs/source-notes.md#hyperliquid
 
@@ -28,6 +29,9 @@ claims:
   distance, daily funding, risk score, position state, and mark-price movement.
 - It labels the comparison as account mismatch, position state changed, risk
   worsened, risk improved, market moved, or little changed.
+- It now includes `Market context since receipt` so mark price, liquidation
+  direction, funding, and open interest changes are easier to read before the
+  raw metric grid.
 
 ## related ideas
 

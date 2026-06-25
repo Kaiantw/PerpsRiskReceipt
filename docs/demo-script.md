@@ -55,6 +55,8 @@ Open `http://localhost:3000`.
    - Show that the live receipt page has a snapshot hash, hash verification, and market summary.
    - Click `Recheck live account`.
    - Show saved-vs-current risk score, margin usage, liquidation distance, funding, mark movement, and position-state comparison.
+   - Show `Market context since receipt`.
+   - Point out saved mark price vs current mark price, whether the move is toward or away from liquidation, 8-hour funding change, and open-interest change.
    - Point out that live receipts are stored only in this browser, not synced to a backend.
 
 10. Close with evidence.
@@ -63,4 +65,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, funding carry watch, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, receipt live rechecks, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

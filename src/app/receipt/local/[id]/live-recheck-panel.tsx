@@ -4,9 +4,15 @@ import { useState } from "react";
 
 import {
   formatPercentFromBps,
+  formatSignedBps,
   formatSignedUsd,
   formatUsd,
 } from "@/lib/formatters.ts";
+import {
+  buildMarketContext,
+  type market_context,
+  type market_context_position,
+} from "@/lib/market/market-context.ts";
 import type {
   normalized_account_snapshot,
   risk_receipt,
@@ -41,6 +47,38 @@ const positionStatusLabels = {
   position_changed: "position changed",
   closed: "closed",
   new: "new",
+};
+
+const marketContextLabels: Record<market_context["label"], string> = {
+  no_positions: "no positions",
+  position_state_changed: "position state changed",
+  through_liquidation: "through liquidation",
+  toward_liquidation: "toward liquidation",
+  market_moved: "market moved",
+  funding_more_expensive: "funding more expensive",
+  funding_more_favorable: "funding more favorable",
+  little_changed: "little changed",
+};
+
+const marketContextTone: Record<market_context["label"], string> = {
+  no_positions: "border-stone-300 bg-white text-stone-700",
+  position_state_changed: "border-amber-200 bg-amber-100 text-amber-950",
+  through_liquidation: "border-red-200 bg-red-100 text-red-950",
+  toward_liquidation: "border-red-200 bg-red-100 text-red-950",
+  market_moved: "border-yellow-200 bg-yellow-100 text-yellow-950",
+  funding_more_expensive: "border-amber-200 bg-amber-100 text-amber-950",
+  funding_more_favorable: "border-emerald-200 bg-emerald-100 text-emerald-950",
+  little_changed: "border-emerald-200 bg-emerald-100 text-emerald-950",
+};
+
+const markMoveLabels: Record<
+  market_context_position["mark_move_direction"],
+  string
+> = {
+  toward_liquidation: "toward liq.",
+  away_from_liquidation: "away from liq.",
+  flat: "flat",
+  not_comparable: "not comparable",
 };
 
 export function LiveRecheckPanel({ receipt }: { receipt: risk_receipt }) {
@@ -129,6 +167,8 @@ function LiveRecheckResult({
 }: {
   comparison: snapshot_comparison;
 }) {
+  const marketContext = buildMarketContext(comparison);
+
   return (
     <div className="mt-4 flex flex-col gap-4">
       <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
@@ -155,6 +195,8 @@ function LiveRecheckResult({
           </dl>
         </div>
       </div>
+
+      <MarketContextResult context={marketContext} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <ComparisonMetric
@@ -245,6 +287,118 @@ function LiveRecheckResult({
   );
 }
 
+function MarketContextResult({ context }: { context: market_context }) {
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-stone-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Market context since receipt</h3>
+          <p className="mt-1 text-sm font-medium text-stone-800">
+            {context.headline}
+          </p>
+          <p className="mt-1 text-sm text-stone-600">{context.summary}</p>
+        </div>
+        <span
+          className={`rounded-lg border px-3 py-2 text-sm font-semibold ${marketContextTone[context.label]}`}
+        >
+          {marketContextLabels[context.label]}
+        </span>
+      </div>
+
+      <dl className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MiniMetric
+          label="Focus market"
+          value={context.most_relevant_position?.market ?? "n/a"}
+        />
+        <MiniMetric
+          label="Max mark move"
+          value={formatAbsPercent(context.max_abs_mark_price_change_percent)}
+        />
+        <MiniMetric
+          label="Daily funding delta"
+          value={formatSignedNullableUsd(
+            context.total_daily_funding_delta_usd,
+          )}
+        />
+        <MiniMetric
+          label="Open interest delta"
+          value={formatSignedNullableUsd(
+            context.total_open_interest_delta_usd,
+          )}
+        />
+      </dl>
+
+      {context.positions.length === 0 ? (
+        <p className="border-t border-stone-200 px-4 py-3 text-sm text-stone-600">
+          No market rows are available for this comparison.
+        </p>
+      ) : (
+        <div className="overflow-x-auto border-t border-stone-200">
+          <table className="w-full min-w-[1120px] text-left text-sm">
+            <thead className="bg-stone-100 text-xs uppercase text-stone-600">
+              <tr>
+                <th className="px-4 py-3">Market</th>
+                <th className="px-4 py-3">Read</th>
+                <th className="px-4 py-3">Mark price</th>
+                <th className="px-4 py-3">Mark move</th>
+                <th className="px-4 py-3">Current liq. distance</th>
+                <th className="px-4 py-3">Funding 8h</th>
+                <th className="px-4 py-3">Open interest</th>
+              </tr>
+            </thead>
+            <tbody>
+              {context.positions.map((position) => (
+                <tr className="border-t border-stone-200" key={position.market}>
+                  <td className="px-4 py-3 font-mono">{position.market}</td>
+                  <td className="px-4 py-3">
+                    <span className="font-medium text-stone-950">
+                      {markMoveLabels[position.mark_move_direction]}
+                    </span>
+                    <p className="mt-1 max-w-72 text-xs leading-5 text-stone-600">
+                      {position.summary}
+                    </p>
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatMetricPair(position.mark_price_usd, formatNullableUsd)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatNullableSignedPercent(
+                      position.mark_price_change_percent,
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatPercentFromBps(
+                      position.liquidation_distance_bps.current_value,
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatMetricPair(
+                      position.funding_8h_bps_user_perspective,
+                      formatNullableSignedBps,
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatMetricPair(
+                      position.open_interest_usd,
+                      formatNullableUsd,
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <p className="border-t border-stone-200 px-4 py-3 text-xs text-stone-500">
+        Market context compares the saved receipt with the latest read-only
+        Hyperliquid snapshot. It is descriptive and does not recommend changing
+        a position.
+      </p>
+    </section>
+  );
+}
+
 function ComparisonMetric({
   comparison,
   label,
@@ -301,6 +455,14 @@ function formatSignedNullableUsd(value: number | null) {
   }
 
   return formatSignedUsd(value);
+}
+
+function formatNullableSignedBps(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return formatSignedBps(value);
 }
 
 function formatSignedPercentFromBps(value: number | null) {

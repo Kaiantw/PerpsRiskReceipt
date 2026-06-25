@@ -13,6 +13,7 @@
 - live hyperliquid lookup depends on Hyperliquid API availability and may fail gracefully back to fixture mode.
 - live hyperliquid receipts are not synced to a backend or shareable across devices in this build.
 - live receipt recheck compares against a fresh read-only snapshot but is not an exact liquidation monitor or historical account audit.
+- market context requires comparable saved/current positions and treats open interest as descriptive context, not a standalone direction signal.
 - risk assistant is deterministic local explanation logic, not a connected LLM, and it must not be treated as financial advice.
 - funding carry watch assumes current funding and notional stay unchanged and estimates from normalized mark-price notional rather than Hyperliquid oracle-price settlement.
 - eas fallback payload is generated, but no schema registration or attestation transaction is sent by the app.

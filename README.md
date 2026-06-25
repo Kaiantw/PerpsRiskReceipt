@@ -14,6 +14,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - Deterministic fixture receipt pages with snapshot hash verification.
 - Browser-local receipt pages for live Hyperliquid lookups.
 - Live receipt recheck that compares a saved receipt against a fresh read-only Hyperliquid snapshot.
+- Market context since receipt: saved-vs-current mark price, liquidation direction, funding change, and open-interest change for live rechecks.
 - Guarded local risk assistant chat that explains the loaded snapshot and refuses trade recommendations.
 - Read-only Hyperliquid address lookup through `POST /info`.
 - EAS Sepolia fallback payload and manual attestation steps.
@@ -31,6 +32,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/lib/perps/fixtures.ts` contains the demo account snapshots.
 - `src/lib/risk/risk-engine.ts` contains pure risk math.
 - `src/lib/funding/funding-watch.ts` derives funding carry labels, burden, and top funding drivers.
+- `src/lib/market/market-context.ts` derives plain-English saved-vs-current market context for receipt rechecks.
 - `src/lib/assistant/risk-assistant.ts` contains dependency-free assistant response logic and guardrails.
 - `src/lib/receipts/receipt.ts` contains canonical JSON serialization, hashing, deterministic IDs, and verification.
 - `src/lib/receipts/snapshot-comparison.ts` compares saved receipt snapshots against fresh live snapshots.
@@ -58,6 +60,7 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - The EAS payload hashes account/protocol identifiers instead of placing raw account identifiers onchain.
 - The risk assistant is local and deterministic in this build; it does not call an LLM API.
 - Funding carry watch assumes current funding and notional stay unchanged and uses normalized mark-price notional as an estimate.
+- Market context uses mark price for saved-vs-current comparison and treats open interest as descriptive context, not a standalone direction signal.
 
 ## Run Locally
 
@@ -91,7 +94,7 @@ Use `docs/demo-script.md` for the reviewer-facing script. The short version:
 5. Create a fixture receipt.
 6. Open the receipt page and show hash verification.
 7. Show the EAS fallback payload and documented manual attestation steps.
-8. Optionally paste a Hyperliquid address, create a local live receipt, run `Recheck live account`, and show that hash verification still works while the app compares the saved receipt with current live state.
+8. Optionally paste a Hyperliquid address, create a local live receipt, run `Recheck live account`, and show that hash verification still works while the app compares the saved receipt with current live market context.
 
 ## Known Limitations
 
@@ -99,6 +102,7 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 
 - Live Hyperliquid receipts are stored in browser localStorage only and are not synced/shareable across devices.
 - Live receipt recheck compares the saved receipt to a fresh snapshot but is not an exact liquidation monitor.
+- Market context is descriptive and depends on a comparable saved/current position pair.
 - Risk assistant responses are deterministic explanations of loaded fields, not financial advice or LLM reasoning.
 - Funding carry watch assumes current funding and notional stay unchanged and is not exact settlement accounting.
 - EAS schema registration and attestation transactions are not sent by the app.
@@ -117,4 +121,4 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 
 ## Resume Bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, funding carry watch, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

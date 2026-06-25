@@ -21,6 +21,10 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
   - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
   - https://www.coinbase.com/learn/perpetual-futures/understanding-funding-rates-in-perpetual-futures
+- docs checked on 2026-06-25 for market context:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
+  - https://www.britannica.com/money/futures-volume-open-interest
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -53,6 +57,12 @@ use this file for external protocol assumptions.
   - the watch assumes current funding and notional stay unchanged for daily and 30-day estimates.
   - Hyperliquid actual funding uses position size and oracle price; this app estimates from normalized mark-price notional.
   - positive user-perspective funding is shown as cost; negative is shown as earned funding.
+- market context assumptions:
+  - market context compares saved receipt positions to a fresh read-only snapshot after a local live receipt recheck.
+  - mark price is the comparison price because Hyperliquid uses mark price for margining, liquidations, TP/SL triggers, and unrealized PnL.
+  - a long position moving down is treated as moving toward listed liquidation; a short position moving up is treated as moving toward listed liquidation.
+  - open interest is displayed as descriptive participation context only, not as a standalone bullish or bearish signal.
+  - position-state changes take priority over mark/funding interpretation because a closed, new, resized, or side-changed position is no longer the same risk object.
 
 ## eas
 

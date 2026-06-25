@@ -400,3 +400,24 @@ Review label thresholds: low cost below 5 bps/day of account value, elevated cos
 - Browser verification selected `demo-mixed-book`, confirmed `Funding carry watch`, `net earning`, `BTC-PERP +$9.30` largest cost, `SOL-PERP -$18.00` largest earn, the unchanged-funding caveat, and zero console errors.
 ### remaining risks:
 Funding carry watch assumes current funding and notional stay unchanged. Hyperliquid actual settlement uses oracle price, while this app estimates from normalized mark-price notional.
+
+### task id: post-t9 market context
+### codex mode:
+product iteration + implementation
+### delegated work:
+Researched mark-price and open-interest market context, then added a live receipt market-context layer so saved receipts can be compared against the current market in plain English.
+### output accepted:
+Added a pure market-context module with tests for long adverse moves, short favorable moves, funding-only changes, and position-state changes. Local live receipt rechecks now include `Market context since receipt`, showing saved-vs-current mark price, whether the move is toward or away from listed liquidation, current liquidation distance, 8-hour funding change, open-interest change, focus market, and descriptive caveats. Updated README, demo script, source notes, known limitations, and the knowledge graph.
+### output rejected or changed:
+No trading endpoint, strategy recommendation, backend store, websocket, chart dependency, or additional Hyperliquid endpoint was added. Open interest is displayed as descriptive context only, not as a direction signal.
+### human review notes:
+Review the market-context label priority: position-state changes first, then through/toward liquidation, then material mark move, then funding deltas. Review whether a 2% mark move and $1 daily funding delta are the right thresholds for the demo.
+### tests/checks run:
+- `npm test` passed: 41 tests, 41 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]` as a dynamic route.
+- `git diff --check` passed.
+- Browser verification opened the dashboard, looked up `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created a local receipt, clicked `Recheck live account`, confirmed `Market context since receipt`, the no-open-positions context, the descriptive no-recommendation caveat, and zero console errors.
+### remaining risks:
+Market context depends on comparable saved/current positions, Hyperliquid API availability, and localStorage receipt persistence. It is descriptive and should not be treated as an exact liquidation monitor or trading signal.
