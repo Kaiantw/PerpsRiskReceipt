@@ -785,6 +785,14 @@ function buildRecheckHistoryAnswer(
     historySummary.oldest_risk_score === null
       ? "Oldest saved risk score is n/a."
       : `Oldest saved risk score is ${historySummary.oldest_risk_score} (${historySummary.oldest_risk_label ?? "n/a"}).`;
+  const latestDriftRead =
+    historySummary.latest_snapshot_drift_score === null
+      ? "Latest saved snapshot drift is n/a."
+      : `Latest saved snapshot drift is ${historySummary.latest_snapshot_drift_score}/100 (${historySummary.latest_snapshot_drift_label ?? "n/a"}).`;
+  const oldestDriftRead =
+    historySummary.oldest_snapshot_drift_score === null
+      ? "Oldest saved snapshot drift is n/a."
+      : `Oldest saved snapshot drift is ${historySummary.oldest_snapshot_drift_score}/100 (${historySummary.oldest_snapshot_drift_label ?? "n/a"}).`;
   const reviewPoints = historySummary.review_points
     .map((point) => `- ${point}`)
     .join(" ");
@@ -796,6 +804,9 @@ function buildRecheckHistoryAnswer(
       latestRiskRead,
       oldestRiskRead,
       `Risk-score delta: ${formatSignedRiskScoreDelta(historySummary.risk_score_delta)}.`,
+      latestDriftRead,
+      oldestDriftRead,
+      `Snapshot-drift delta: ${formatSignedRiskScoreDelta(historySummary.snapshot_drift_score_delta)}.`,
       `Latest regime: ${historySummary.latest_regime_label ?? "n/a"}. Oldest regime: ${historySummary.oldest_regime_label ?? "n/a"}.`,
       repeatedFocusMarket,
       `Latest watchlist counts: ${historySummary.latest_watchlist_high_count} high, ${historySummary.latest_watchlist_watch_count} watch, ${historySummary.latest_watchlist_info_count} info.`,
@@ -812,6 +823,11 @@ function buildRecheckHistoryAnswer(
       "receipt_recheck_history.oldest_risk_score",
       "receipt_recheck_history.oldest_risk_label",
       "receipt_recheck_history.risk_score_delta",
+      "receipt_recheck_history.latest_snapshot_drift_score",
+      "receipt_recheck_history.latest_snapshot_drift_label",
+      "receipt_recheck_history.oldest_snapshot_drift_score",
+      "receipt_recheck_history.oldest_snapshot_drift_label",
+      "receipt_recheck_history.snapshot_drift_score_delta",
       "receipt_recheck_history.latest_regime_label",
       "receipt_recheck_history.oldest_regime_label",
       "receipt_recheck_history.most_repeated_focus_market",

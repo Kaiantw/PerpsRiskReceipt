@@ -1182,3 +1182,24 @@ Review whether the default drift thresholds are intuitive: 4h watch age, 24h sta
 - Browser verification used `http://localhost:3000/receipt/local/rr_2f6b3a2ad298c698`, clicked `Recheck live account`, confirmed the `Snapshot drift` panel rendered with a not-comparable read, drift score, receipt age, focus market, max mark move, current minimum buffer, funding delta, and high/watch cue counts, confirmed the review packet textarea included `## snapshot drift` and `drift score:`, and captured 0 browser console errors.
 ### remaining risks:
 Snapshot drift is heuristic freshness context only. It cannot prove exact liquidation state, recompute protocol-official risk, decide whether a trader should change a position, certify external market data correctness at capture time, or replace a full portable bundle for cross-browser hash recomputation.
+
+### task id: post-t9 receipt recheck drift history
+### codex mode:
+product iteration + implementation
+### delegated work:
+Persisted snapshot-drift freshness fields into compact browser-local receipt recheck history so repeated live checks can show whether a receipt is becoming more or less stale versus current market context.
+### output accepted:
+Extended `receipt-recheck-history` entries with optional snapshot-drift label, score, age, and focus market while preserving older rows that do not have those fields. Added latest/oldest snapshot-drift label and score plus drift-score delta to the local history summary. Wired the local receipt page to save the already-computed drift read, render drift score and drift delta in `Local recheck history`, include drift movement in the `Rechecks` assistant answer, and add latest/oldest snapshot drift to the review packet's local-history section. Added tests for row creation, migration-friendly parsing, summary drift deltas, and packet output. Updated README, demo script, source notes, known limitations, session handoff, and the knowledge graph with linked feature/source notes.
+### output rejected or changed:
+No new endpoint, dependency, backend store, synced history, raw snapshot archive, alert system, packet format, receipt/hash data model change, wallet/RPC flow, trading/exchange endpoint, exact Hyperliquid liquidation formula, protocol-official freshness proof, or advice surface was added. Existing local history rows without drift fields are kept readable instead of being invalidated.
+### human review notes:
+Review whether drift-score delta should compare newest versus oldest saved row, as implemented, or newest versus previous saved row for a shorter-term view. Review whether the history panel should later expose a tiny sparkline or filter when there are many saved checks. Review whether old rows missing drift fields should display an explicit "saved before drift history" note instead of `n/a`.
+### tests/checks run:
+- `node --test src/lib/receipts/receipt-recheck-history.test.ts src/lib/receipts/receipt-review-packet.test.ts` passed: 8 tests, 8 passing.
+- `npm run typecheck` passed.
+- `npm test` passed: 190 tests, 190 passing.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/`, `/receipt/import`, `/receipt/local/[id]`, `/api/hyperliquid/markets`, `/api/hyperliquid/market-history`, `/api/hyperliquid/portfolio`, `/api/hyperliquid/snapshot`, and the fixture receipt routes.
+- Browser verification used `http://localhost:3000/receipt/local/rr_2f6b3a2ad298c698`, cleared that receipt's local history for the test, clicked `Recheck live account` twice, confirmed `Local recheck history` showed saved checks, drift score, drift delta, and snapshot age, confirmed the review packet included `latest snapshot drift` and `snapshot-drift delta`, clicked the assistant `Rechecks` prompt, confirmed the answer included latest snapshot drift and snapshot-drift delta, and captured 0 browser console errors.
+### remaining risks:
+Recheck drift history is compact browser-local freshness context only. It is not synced, exported as raw history, encrypted, a complete account-history import, a live alert feed, exact liquidation monitoring, proof that a stale receipt is current, or a recommendation to change a position.

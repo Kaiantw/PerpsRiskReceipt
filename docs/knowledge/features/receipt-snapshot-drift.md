@@ -18,6 +18,7 @@ watchlist cues make it stale for review?
 - [[mark-price-context]]
 - [[receipt-change-summary]]
 - [[receipt-recheck-watchlist]]
+- [[receipt-recheck-drift-history]]
 - [[receipt-market-regime]]
 - [[receipt-review-packet]]
 
@@ -34,6 +35,8 @@ watchlist cues make it stale for review?
 - Shows a `Snapshot drift` panel near the top of local live recheck results.
 - Adds the same snapshot-drift section to copied/downloaded full receipt review
   packets.
+- Feeds drift label and score into new local recheck-history rows so repeated
+  checks can show freshness movement over time.
 - Uses existing live recheck objects and does not call a new endpoint or change
   the receipt/hash model.
 
@@ -48,3 +51,5 @@ watchlist cues make it stale for review?
 - [[receipt-market-regime]] remains the broader current-environment read.
 - [[receipt-review-packet]] carries the drift label and score into markdown
   evidence.
+- [[receipt-recheck-drift-history]] stores the drift label and score in compact
+  local rows for latest-versus-oldest freshness review.

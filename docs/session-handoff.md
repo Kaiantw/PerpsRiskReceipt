@@ -3,55 +3,108 @@
 ## completed task
 
 - `t0` through `t9` are complete.
-- Post-t9 live receipt UX, live recheck, risk assistant, funding carry watch, market context, liquidation buffer ladder, account-value context, receipt summaries, portable bundles, redacted shares, redacted public market/trend/watchlist/freshness/review/assistant flows, position drivers, driver comparison, full-recheck watchlists, thresholds, volatility buffer, market regime, regime drilldown, local recheck history, review-packet history summaries, redacted two-snapshot compare, redacted comparison assistant/packet, redacted review thresholds, compact redacted packet mode, and markdown packet downloads are complete.
-- Post-t9 receipt snapshot drift is complete.
+- Post-t9 live receipt UX, live recheck, risk assistant, funding carry watch,
+  market context, liquidation buffer ladder, account-value context, receipt
+  summaries, portable bundles, redacted shares, redacted public
+  market/trend/watchlist/freshness/review/assistant flows, position drivers,
+  driver comparison, full-recheck watchlists, thresholds, volatility buffer,
+  market regime, regime drilldown, local recheck history, review-packet history
+  summaries, redacted two-snapshot compare, redacted comparison
+  assistant/packet, redacted review thresholds, compact redacted packet mode,
+  markdown packet downloads, and receipt snapshot drift are complete.
+- Post-t9 receipt recheck drift history is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote tracking: `main` tracks `origin/main`.
-- Baseline before this slice: `693a20e`.
-- Current work adds a local `Snapshot drift` read for Hyperliquid receipt live rechecks.
-- Snapshot drift classifies a verified saved receipt as close, drifted, stale versus current market context, or not comparable after a live recheck.
-- The drift read uses existing live recheck fields only: receipt age, max mark move, current minimum listed buffer, daily funding delta, and recheck watchlist high/watch counts.
-- No endpoint, dependency, backend store, receipt/hash data model change, wallet/RPC flow, trading endpoint, exact liquidation formula, protocol-official freshness claim, live alert, or advice surface was added.
+- Baseline before this slice: `78c5399`.
+- Current work stores snapshot-drift freshness fields in compact browser-local
+  recheck history rows.
+- The local history summary now compares latest versus oldest snapshot-drift
+  label/score and exposes a drift-score delta.
+- The receipt page shows drift score/delta in `Local recheck history`.
+- The `Rechecks` assistant answer and full receipt review packet include the
+  same compact drift-history trend.
+- Existing browser-local history rows without drift fields remain readable and
+  report drift trend as unavailable instead of being dropped.
+- No endpoint, dependency, backend store, synced history, raw snapshot archive,
+  alert feed, receipt/hash model change, wallet/RPC flow, trading endpoint,
+  exact liquidation formula, protocol-official freshness proof, or advice
+  surface was added.
 
 ## files changed
 
-- `src/lib/receipts/receipt-snapshot-drift.ts`: new pure snapshot-drift classifier and 0-100 drift score.
-- `src/lib/receipts/receipt-snapshot-drift.test.ts`: covers close, stale, drift-watch, and not-comparable cases.
-- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: adds the `Snapshot drift` panel after live recheck and passes drift context into review packets.
-- `src/lib/receipts/receipt-review-packet.ts`: adds a `## snapshot drift` section to full receipt review packets.
-- `src/lib/receipts/receipt-review-packet.test.ts`: verifies packet inclusion of snapshot drift.
-- `package.json`: registers the new drift test in `npm test`.
-- `README.md`: documents the feature, architecture, assumptions, limitations, demo flow, and resume bullet.
-- `docs/demo-script.md`: adds snapshot-drift demo steps.
-- `docs/source-notes.md`: records external sources and snapshot-drift assumptions.
-- `docs/known-limitations.md`: documents drift limitations.
-- `docs/ai-build-log.md`: records this slice, verification, review points, and remaining risks.
-- `docs/session-handoff.md`: records this completed task, repo state, checks, blockers, and next recommended action.
-- `docs/knowledge/index.md`: links snapshot-drift source and feature notes.
-- `docs/knowledge/sources/perp-snapshot-drift.md`: adds source-backed drift rationale.
-- `docs/knowledge/features/receipt-snapshot-drift.md`: documents implemented behavior and related feature links.
-- `docs/knowledge/features/receipt-change-summary.md`, `docs/knowledge/features/receipt-market-regime.md`, `docs/knowledge/features/receipt-recheck-watchlist.md`, `docs/knowledge/features/receipt-review-packet.md`, and `docs/knowledge/features/mark-price-context.md`: connect snapshot drift to related ideas.
+- `src/lib/receipts/receipt-recheck-history.ts`: adds optional snapshot-drift
+  fields to history rows, summarizes latest/oldest drift score and delta, and
+  accepts older rows without those fields.
+- `src/lib/receipts/receipt-recheck-history.test.ts`: covers drift row fields,
+  migration-friendly parsing, single-row summaries, and latest-versus-oldest
+  drift movement.
+- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: saves snapshot drift into
+  local history and renders drift score, drift delta, and snapshot age in the
+  local history panel.
+- `src/lib/assistant/receipt-risk-assistant.ts`: adds latest/oldest snapshot
+  drift and drift delta to the local-history assistant answer.
+- `src/lib/receipts/receipt-review-packet.ts`: adds latest/oldest snapshot drift
+  and drift delta to the packet's local-history section.
+- `src/lib/receipts/receipt-review-packet.test.ts`: verifies drift-history
+  fields appear in review packet markdown.
+- `docs/knowledge/sources/perp-recheck-drift-history.md`: new source-backed
+  research note for drift history.
+- `docs/knowledge/features/receipt-recheck-drift-history.md`: new implemented
+  feature note linked to snapshot drift, history, assistant, and packet notes.
+- `docs/knowledge/index.md`: links the new source and feature notes and removes
+  the now-implemented backlog item.
+- `docs/knowledge/features/receipt-recheck-history.md`,
+  `docs/knowledge/features/receipt-snapshot-drift.md`,
+  `docs/knowledge/features/receipt-assistant-recheck-history.md`,
+  `docs/knowledge/features/receipt-review-packet-history-summary.md`, and
+  `docs/knowledge/features/receipt-review-packet.md`: connect the new drift
+  history feature to related notes.
+- `docs/source-notes.md`: records external sources and protocol/product
+  assumptions for drift history.
+- `README.md`: documents the feature, architecture, demo flow, assumptions,
+  limitations, and resume bullet.
+- `docs/demo-script.md`: adds drift score/delta to the live receipt demo steps.
+- `docs/known-limitations.md`: adds the drift-history limitation.
+- `docs/ai-build-log.md`: records this slice, verification, human review
+  points, and remaining risks.
+- `docs/session-handoff.md`: this current handoff.
 
 ## tests/checks run
 
-- `node --test src/lib/receipts/receipt-snapshot-drift.test.ts src/lib/receipts/receipt-review-packet.test.ts` passed: 7 tests, 7 passing.
-- `npm test` passed: 190 tests, 190 passing.
+- `node --test src/lib/receipts/receipt-recheck-history.test.ts src/lib/receipts/receipt-review-packet.test.ts` passed: 8 tests, 8 passing.
 - `npm run typecheck` passed.
+- `npm test` passed: 190 tests, 190 passing.
 - `npm run lint` passed.
-- `npm run build` passed and listed `/`, `/receipt/import`, `/receipt/local/[id]`, `/api/hyperliquid/markets`, `/api/hyperliquid/market-history`, `/api/hyperliquid/portfolio`, `/api/hyperliquid/snapshot`, and the fixture receipt routes.
-- Browser verification used `http://localhost:3000/receipt/local/rr_2f6b3a2ad298c698`, clicked `Recheck live account`, confirmed the `Snapshot drift` panel rendered with a not-comparable read, drift score, receipt age, focus market, max mark move, current minimum buffer, funding delta, and high/watch cue counts, confirmed the review packet textarea included `## snapshot drift` and `drift score:`, and captured 0 browser console errors.
+- `npm run build` passed and listed `/`, `/receipt/import`,
+  `/receipt/local/[id]`, `/api/hyperliquid/markets`,
+  `/api/hyperliquid/market-history`, `/api/hyperliquid/portfolio`,
+  `/api/hyperliquid/snapshot`, and the fixture receipt routes.
+- Browser verification used
+  `http://localhost:3000/receipt/local/rr_2f6b3a2ad298c698`, cleared that
+  receipt's local history for the test, clicked `Recheck live account` twice,
+  confirmed `Local recheck history` showed saved checks, drift score, drift
+  delta, and snapshot age, confirmed the review packet included `latest snapshot
+  drift` and `snapshot-drift delta`, clicked the assistant `Rechecks` prompt,
+  confirmed the answer included latest snapshot drift and snapshot-drift delta,
+  and captured 0 browser console errors.
 
 ## blockers
 
 - No hard blocker for this slice.
-- Snapshot drift is heuristic freshness context only.
-- It does not change hash verification, prove exact liquidation state, certify external market data correctness at capture time, forecast price, monitor live liquidation, or recommend a trade.
-- EAS schema registration and attestation transactions are still documented fallback steps only.
+- Recheck drift history is compact browser-local freshness context only.
+- It is not synced, exported as raw history, encrypted, a complete account
+  history import, a live alert feed, exact liquidation monitoring, proof that a
+  stale receipt is current, or a recommendation to change a position.
+- EAS schema registration and attestation transactions are still documented
+  fallback steps only.
 
 ## exact next recommended action
 
-Store the snapshot-drift label and score in compact local recheck history so repeated checks can show whether receipt freshness is improving or worsening over time.
+Add a funding-window read that estimates the next funding payment and recent
+funding direction for each open position, so a trader can distinguish current
+funding burden from the next near-term carry event without placing trades or
+receiving strategy advice.

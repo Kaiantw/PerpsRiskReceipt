@@ -18,6 +18,8 @@ turning the app into a backend account journal.
 - [[receipt-market-regime-drilldown]]
 - [[receipt-recheck-watchlist]]
 - [[receipt-volatility-buffer]]
+- [[receipt-snapshot-drift]]
+- [[receipt-recheck-drift-history]]
 - [[receipt-review-packet]]
 
 ## implemented behavior
@@ -32,6 +34,8 @@ turning the app into a backend account journal.
   focus market, watchlist counts, top per-market drilldown row, top cue,
   current listed buffer, funding burden, and whether public volatility context
   was loaded.
+- Stores snapshot-drift label, score, age, and focus market for new rows while
+  keeping older rows without drift fields readable.
 - Parses local history defensively, filters malformed rows, dedupes by
   generated entry id, sorts newest-first, and caps each receipt at 12 rows.
 - Renders the local timeline on the receipt page with clear local-only and
@@ -49,3 +53,5 @@ turning the app into a backend account journal.
   local history is deliberately not exported or synced in this version.
 - [[receipt-assistant-recheck-history]] explains the saved local rows without
   turning them into a live alert or trading recommendation.
+- [[receipt-recheck-drift-history]] adds latest-versus-oldest freshness drift
+  on top of the same compact local rows.

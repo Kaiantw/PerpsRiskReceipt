@@ -17,6 +17,7 @@ risk movement without exporting raw history rows or full private snapshots.
 - [[../sources/perp-receipt-review-packet-history-summary]]
 - [[receipt-review-packet]]
 - [[receipt-recheck-history]]
+- [[receipt-recheck-drift-history]]
 - [[receipt-assistant-recheck-history]]
 - [[portable-receipt-bundle]]
 
@@ -25,8 +26,9 @@ risk movement without exporting raw history rows or full private snapshots.
 - Adds a `local recheck history` markdown section to the review packet only when
   at least one local history row is available.
 - Includes trend label, headline, compact summary, saved-check count, latest and
-  oldest risk score, risk-score delta, regime movement, repeated focus market,
-  latest watchlist counts, and volatility-loaded coverage.
+  oldest risk score, risk-score delta, latest and oldest snapshot-drift score,
+  drift-score delta, regime movement, repeated focus market, latest watchlist
+  counts, and volatility-loaded coverage.
 - Includes capped review points from the local history summary.
 - Explicitly says the packet includes a compact browser-local trend only, not
   raw history rows or full private snapshots.
@@ -36,6 +38,8 @@ risk movement without exporting raw history rows or full private snapshots.
 ## related ideas
 
 - [[receipt-recheck-history]] supplies the compact local rows and trend summary.
+- [[receipt-recheck-drift-history]] adds snapshot-drift trend fields to that
+  compact summary.
 - [[receipt-assistant-recheck-history]] explains the same trend conversationally.
 - [[receipt-review-packet]] is the communication artifact that now carries the
   compact trend.

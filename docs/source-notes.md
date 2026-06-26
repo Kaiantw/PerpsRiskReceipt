@@ -194,6 +194,13 @@ use this file for external protocol assumptions.
   - https://www.dextools.io/tutorials/perpetual-futures-funding-mark-price-liquidations
   - https://chain.link/article/what-are-perpetual-futures
   - https://www.investopedia.com/what-are-perpetual-futures-7494870
+- docs checked on 2026-06-26 for receipt recheck drift history:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
+  - https://docs.chainstack.com/reference/hyperliquid-info-portfolio
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://www.coinbase.com/learn/perpetual-futures/understanding-funding-rates-in-perpetual-futures
+  - https://www.chainalysis.com/blog/perpetual-futures/
+  - https://www.coinapi.io/blog/historical-data-for-perpetual-futures
 - docs checked on 2026-06-26 for receipt review packet local-history section:
   - https://www.binance.com/en/academy/articles/what-is-a-trading-journal-and-how-to-use-one
   - https://www.ecfr.gov/current/title-17/chapter-I/part-38
@@ -439,6 +446,12 @@ use this file for external protocol assumptions.
   - current listed liquidation distance is still the app's listed-buffer input, not exact Hyperliquid liquidation logic.
   - funding delta is descriptive holding-cost context over normalized notional, not exact settlement accounting or a strategy recommendation.
   - open interest remains participation context only and is not a standalone stale/current decision.
+- receipt recheck drift history assumptions:
+  - recheck drift history stores compact derived fields from the already-computed snapshot-drift read: label, score, age, and focus market.
+  - existing browser-local rows may not have drift fields; the parser keeps those rows readable and treats drift movement as unavailable for those checks.
+  - latest-versus-oldest drift-score movement is a freshness-review cue only. It does not certify a saved receipt as current, change hash verification, prove exact liquidation state, or recommend a position change.
+  - the history remains browser-local, capped, and unsynced. It is not a raw snapshot archive, complete account-history import, trading journal, alert feed, or protocol-official market monitor.
+  - funding, liquidation, mark, and participation context can move quickly in perps, so user-facing history summaries keep no-advice language near the saved fields.
 - receipt volatility buffer assumptions:
   - local Hyperliquid receipt pages use the existing read-only `market-history` route after a live recheck.
   - the lookup calls public `candleSnapshot` and `fundingHistory` info requests for comparable current PERP markets only.

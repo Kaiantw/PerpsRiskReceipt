@@ -34,6 +34,7 @@
 - receipt market regime is heuristic synthesis over already-loaded recheck, volatility, funding, sampled account-value, and market-context fields; it cannot forecast price, detect exact liquidation, prove protocol-official market state, or decide what a trader should do next.
 - receipt market regime drilldown explains the account-level regime with per-market local rows, but it is still heuristic review context and not protocol-official risk attribution, liquidation proof, or live order-book/liquidity analysis.
 - receipt recheck history is browser-local, capped, compact, and derived; it is not synced, exported, encrypted, a trade journal, precise account history, alert feed, or full-snapshot archive.
+- receipt recheck drift history stores compact freshness labels and score deltas only; it is not a synced monitor, alert feed, exact liquidation tracker, or proof that a stale receipt is current.
 - configurable recheck thresholds are local UI sensitivity settings and are not saved, synced, or protocol-official.
 - receipt volatility buffer uses public 24-hour candle history and listed liquidation distance only; it is not exact liquidation monitoring, order-book depth analysis, a forecast, or advice.
 - receipt review packet is a markdown communication summary, not a full private snapshot, encrypted share, access-controlled artifact, or hash-recomputable portable bundle.

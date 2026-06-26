@@ -20,6 +20,7 @@ import {
   upsertReceiptRecheckHistoryEntry,
 } from "./receipt-recheck-history.ts";
 import { buildReceiptRecheckWatchlist } from "./receipt-recheck-watchlist.ts";
+import { buildReceiptSnapshotDrift } from "./receipt-snapshot-drift.ts";
 import { buildReceiptVolatilityBuffer } from "./receipt-volatility-buffer.ts";
 import { compareSnapshots } from "./snapshot-comparison.ts";
 
@@ -124,6 +125,13 @@ function buildHistoryEntry(input?: {
     riskDriverComparison,
     volatilityBuffer,
   });
+  const snapshotDrift = buildReceiptSnapshotDrift({
+    comparison,
+    currentDataTimeIso: currentSnapshot.data_time_iso,
+    marketContext,
+    receiptDataTimeIso: receiptSnapshot.data_time_iso,
+    watchlist,
+  });
   const marketRegime = buildReceiptMarketRegime({
     comparison,
     marketContext,
@@ -147,6 +155,7 @@ function buildHistoryEntry(input?: {
     receiptId: "rr_history_test",
     recheckedAtIso:
       input?.recheckedAtIso ?? "2026-06-26T00:01:00.000Z",
+    snapshotDrift,
     volatilityLoaded: input?.volatilityLoaded ?? false,
     watchlist,
   });
@@ -163,6 +172,9 @@ test("creates compact recheck history entries from live recheck context", () => 
   assert.equal(entry.watchlist_high_count > 0, true);
   assert.equal(entry.top_drilldown_market, "ETH-PERP");
   assert.equal(entry.top_drilldown_severity, "high");
+  assert.equal(entry.snapshot_drift_label, "stale_snapshot");
+  assert.equal(entry.snapshot_drift_score !== null, true);
+  assert.equal(entry.snapshot_drift_focus_market, "ETH-PERP");
   assert.match(
     entry.top_drilldown_primary_cue ?? "",
     /public 24h range exceeds current listed buffer/i,
@@ -208,10 +220,19 @@ test("parses stored history defensively and filters malformed rows", () => {
     entry,
     { ...entry, id: 42 },
   ]);
+  const oldEntryWithoutDriftFields = { ...entry };
+
+  delete oldEntryWithoutDriftFields.snapshot_drift_age_minutes;
+  delete oldEntryWithoutDriftFields.snapshot_drift_focus_market;
+  delete oldEntryWithoutDriftFields.snapshot_drift_label;
+  delete oldEntryWithoutDriftFields.snapshot_drift_score;
 
   assert.deepEqual(parseStoredReceiptRecheckHistory("not json"), []);
   assert.deepEqual(parseReceiptRecheckHistory({ rows: [entry] }), []);
   assert.deepEqual(parseStoredReceiptRecheckHistory(storedValue), [entry]);
+  assert.deepEqual(parseReceiptRecheckHistory([oldEntryWithoutDriftFields]), [
+    oldEntryWithoutDriftFields,
+  ]);
 });
 
 test("summarizes empty and single-row recheck history", () => {
@@ -232,6 +253,8 @@ test("summarizes empty and single-row recheck history", () => {
   assert.equal(singleSummary.latest_entry?.id, singleEntry.id);
   assert.equal(singleSummary.risk_score_delta, null);
   assert.equal(singleSummary.latest_risk_score, 30);
+  assert.equal(singleSummary.latest_snapshot_drift_label, "stale_snapshot");
+  assert.equal(singleSummary.snapshot_drift_score_delta, null);
   assert.equal(singleSummary.volatility_loaded_count, 1);
   assert.match(singleSummary.summary, /Run another live recheck/);
 });
@@ -246,6 +269,8 @@ test("summarizes local recheck history trends newest to oldest", () => {
     market_regime_label: "active",
     market_regime_severity: "info",
     market_regime_focus_market: "ETH-PERP",
+    snapshot_drift_label: "close_snapshot",
+    snapshot_drift_score: 20,
     watchlist_high_count: 0,
     top_drilldown_primary_cue: "Listed buffer stayed comfortable",
   } satisfies ReturnType<typeof buildHistoryEntry>;
@@ -259,6 +284,8 @@ test("summarizes local recheck history trends newest to oldest", () => {
     market_regime_label: "stress",
     market_regime_severity: "high",
     market_regime_focus_market: "ETH-PERP",
+    snapshot_drift_label: "stale_snapshot",
+    snapshot_drift_score: 88,
     watchlist_high_count: 2,
     top_drilldown_primary_cue: "Public 24h range exceeds current buffer",
   } satisfies ReturnType<typeof buildHistoryEntry>;
@@ -283,6 +310,11 @@ test("summarizes local recheck history trends newest to oldest", () => {
   assert.equal(summary.latest_risk_score, 76);
   assert.equal(summary.oldest_risk_score, 30);
   assert.equal(summary.risk_score_delta, 46);
+  assert.equal(summary.latest_snapshot_drift_label, "stale_snapshot");
+  assert.equal(summary.oldest_snapshot_drift_label, "close_snapshot");
+  assert.equal(summary.latest_snapshot_drift_score, 88);
+  assert.equal(summary.oldest_snapshot_drift_score, 20);
+  assert.equal(summary.snapshot_drift_score_delta, 68);
   assert.equal(summary.latest_regime_label, "stress");
   assert.equal(summary.oldest_regime_label, "active");
   assert.equal(summary.most_repeated_focus_market, "ETH-PERP");
@@ -291,9 +323,14 @@ test("summarizes local recheck history trends newest to oldest", () => {
   assert.equal(summary.latest_watchlist_high_count, 2);
   assert.match(summary.headline, /risk score is higher/i);
   assert.match(summary.summary, /Latest risk score is 76/);
+  assert.match(summary.summary, /Snapshot drift moved 20/);
   assert.match(summary.summary, /ETH-PERP appeared as focus market/);
   assert.match(
     summary.review_points.join(" "),
     /higher than the oldest local recheck/i,
+  );
+  assert.match(
+    summary.review_points.join(" "),
+    /Snapshot drift score is higher/i,
   );
 });

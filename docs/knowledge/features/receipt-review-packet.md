@@ -20,6 +20,7 @@ recipient to inspect every panel manually.
 - [[receipt-recheck-watchlist]]
 - [[configurable-recheck-thresholds]]
 - [[receipt-snapshot-drift]]
+- [[receipt-recheck-drift-history]]
 - [[receipt-volatility-buffer]]
 - [[receipt-market-regime]]
 - [[receipt-market-regime-drilldown]]
@@ -42,8 +43,9 @@ recipient to inspect every panel manually.
   counted as a watchlist cue.
 - Includes loaded volatility-buffer context when the reviewer has fetched public
   24h market history on the receipt page.
-- Includes compact local recheck-history trend context when saved browser-local
-  history rows exist.
+- Includes compact local recheck-history trend context, including
+  latest-versus-oldest snapshot drift, when saved browser-local history rows
+  exist.
 - Limits watchlist and market-context rows to five items each for a readable
   first packet.
 - Renders a `Review packet` panel with copy-to-clipboard, `.md` download, and
@@ -65,6 +67,8 @@ recipient to inspect every panel manually.
   account-level regime label.
 - [[receipt-review-packet-history-summary]] adds the latest-versus-oldest local
   recheck trend to the packet.
+- [[receipt-recheck-drift-history]] adds freshness-score movement to that local
+  history section.
 - [[markdown-packet-download]] preserves the generated packet as a local file.
 - [[redacted-review-packet]] is the data-minimized sibling for imported redacted
   shares.

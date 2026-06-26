@@ -150,6 +150,8 @@ async function buildPacket(input?: {
 function buildHistoryEntry(input: {
   currentRiskLabel?: receipt_recheck_history_entry["current_risk_label"];
   currentRiskScore: number;
+  driftLabel?: receipt_recheck_history_entry["snapshot_drift_label"];
+  driftScore?: number;
   focusMarket?: string;
   id: string;
   marketRegimeLabel?: receipt_recheck_history_entry["market_regime_label"];
@@ -194,6 +196,10 @@ function buildHistoryEntry(input: {
     top_drilldown_summary: "Compact row summary for packet test.",
     top_drilldown_current_liquidation_distance_bps: 850,
     top_drilldown_current_funding_burden_bps: 6,
+    snapshot_drift_age_minutes: 120,
+    snapshot_drift_focus_market: input.focusMarket ?? "ETH-PERP",
+    snapshot_drift_label: input.driftLabel ?? "drift_watch",
+    snapshot_drift_score: input.driftScore ?? 44,
     volatility_loaded: input.volatilityLoaded ?? false,
   } satisfies receipt_recheck_history_entry;
 }
@@ -254,6 +260,8 @@ test("includes compact local recheck history when a summary is provided", async 
       id: "older",
       marketRegimeLabel: "active",
       marketRegimeSeverity: "watch",
+      driftLabel: "close_snapshot",
+      driftScore: 22,
       recheckedAtIso: "2026-06-26T00:01:00.000Z",
     }),
     buildHistoryEntry({
@@ -262,6 +270,8 @@ test("includes compact local recheck history when a summary is provided", async 
       id: "newer",
       marketRegimeLabel: "stress",
       marketRegimeSeverity: "high",
+      driftLabel: "stale_snapshot",
+      driftScore: 81,
       recheckedAtIso: "2026-06-26T00:03:00.000Z",
       topCue: "Public 24h range exceeds current buffer",
       volatilityLoaded: true,
@@ -276,6 +286,9 @@ test("includes compact local recheck history when a summary is provided", async 
   assert.match(packet.markdown, /latest risk: 72 \(high\)/);
   assert.match(packet.markdown, /oldest risk: 34 \(medium\)/);
   assert.match(packet.markdown, /risk-score delta: \+38/);
+  assert.match(packet.markdown, /latest snapshot drift: 81\/100/);
+  assert.match(packet.markdown, /oldest snapshot drift: 22\/100/);
+  assert.match(packet.markdown, /snapshot-drift delta: \+59/);
   assert.match(packet.markdown, /regime: active -> stress/);
   assert.match(packet.markdown, /repeated focus market: ETH-PERP \(2\/2 saved checks\)/);
   assert.match(packet.markdown, /latest watchlist counts: 2 high, 1 watch, 0 info/);

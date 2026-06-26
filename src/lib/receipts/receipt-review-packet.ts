@@ -250,6 +250,9 @@ function formatRecheckHistorySection(
     `- latest risk: ${formatNullableRiskScore(historySummary.latest_risk_score, historySummary.latest_risk_label)}`,
     `- oldest risk: ${formatNullableRiskScore(historySummary.oldest_risk_score, historySummary.oldest_risk_label)}`,
     `- risk-score delta: ${formatSignedRiskScoreDelta(historySummary.risk_score_delta)}`,
+    `- latest snapshot drift: ${formatNullableDriftScore(historySummary.latest_snapshot_drift_score, historySummary.latest_snapshot_drift_label)}`,
+    `- oldest snapshot drift: ${formatNullableDriftScore(historySummary.oldest_snapshot_drift_score, historySummary.oldest_snapshot_drift_label)}`,
+    `- snapshot-drift delta: ${formatSignedRiskScoreDelta(historySummary.snapshot_drift_score_delta)}`,
     `- regime: ${historySummary.oldest_regime_label ?? "n/a"} -> ${historySummary.latest_regime_label ?? "n/a"}`,
     `- repeated focus market: ${repeatedFocusMarket}`,
     `- latest watchlist counts: ${historySummary.latest_watchlist_high_count} high, ${historySummary.latest_watchlist_watch_count} watch, ${historySummary.latest_watchlist_info_count} info`,
@@ -413,6 +416,17 @@ function formatNullableRiskScore(
   }
 
   return `${score} (${label ?? "n/a"})`;
+}
+
+function formatNullableDriftScore(
+  score: number | null,
+  label: string | null,
+) {
+  if (score === null) {
+    return "n/a";
+  }
+
+  return `${score}/100 (${label?.replaceAll("_", " ") ?? "n/a"})`;
 }
 
 function formatAgeMinutes(value: number | null) {

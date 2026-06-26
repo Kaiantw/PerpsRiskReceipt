@@ -20,6 +20,7 @@ informed it and forward to related feature ideas.
 - [[sources/perp-receipt-assistant-watchlist-citations]] - source notes for assistant answers that cite ranked recheck watchlist items.
 - [[sources/perp-receipt-review-packet]] - source notes for copyable markdown receipt review packets after live recheck.
 - [[sources/perp-snapshot-drift]] - source notes for classifying whether a verified receipt is stale versus current market context.
+- [[sources/perp-recheck-drift-history]] - source notes for carrying snapshot-drift freshness into repeated local recheck history.
 - [[sources/markdown-packet-export]] - browser-local markdown download and durable review-artifact notes.
 - [[sources/perp-receipt-review-packet-history-summary]] - source notes for adding compact local recheck-history trends to review packets.
 - [[sources/perp-configurable-recheck-thresholds]] - source notes for local threshold controls over live receipt review cues.
@@ -65,6 +66,7 @@ informed it and forward to related feature ideas.
 - [[features/receipt-assistant-watchlist-citations]] - receipt assistant inspect-first answers from ranked watchlist cues.
 - [[features/receipt-review-packet]] - copyable markdown summary of receipt hash, recheck, watchlist, assistant, driver, and market context.
 - [[features/receipt-snapshot-drift]] - labels whether the verified saved snapshot is close, drifted, stale, or not comparable after live recheck.
+- [[features/receipt-recheck-drift-history]] - stores and summarizes snapshot-drift score movement across compact local recheck history.
 - [[features/markdown-packet-download]] - downloadable `.md` files for full receipt packets and compact/full redacted packets.
 - [[features/receipt-review-packet-history-summary]] - compact local recheck-history trend inside the copyable review packet.
 - [[features/configurable-recheck-thresholds]] - local threshold controls for what counts as meaningful current-market movement.
@@ -101,9 +103,6 @@ informed it and forward to related feature ideas.
   per-market recheck checklist with configurable thresholds.
 - [[features/receipt-assistant-watchlist-citations]] could later expand into a
   redacted-share assistant that uses public-only watchlist citations.
-- [[features/receipt-snapshot-drift]] could later persist drift snapshots in the
-  local recheck history so reviewers can see whether freshness is improving or
-  worsening across repeated checks.
 - [[features/markdown-packet-download]] could later support a local packet
   archive if reviewers want to keep several generated notes inside the app.
 - [[features/redacted-share-assistant]] could later support a compressed answer

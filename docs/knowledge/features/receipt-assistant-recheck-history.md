@@ -16,6 +16,7 @@ focus market, watchlist counts, and volatility context changed across checks.
 
 - [[../sources/perp-receipt-assistant-recheck-history]]
 - [[receipt-recheck-history]]
+- [[receipt-recheck-drift-history]]
 - [[receipt-risk-assistant]]
 - [[receipt-market-regime]]
 - [[receipt-market-regime-drilldown]]
@@ -27,8 +28,8 @@ focus market, watchlist counts, and volatility context changed across checks.
 - Labels the saved-row trend as no history, single check, risk higher, risk
   lower, or risk unchanged.
 - Summarizes latest versus oldest risk score, regime movement, most repeated
-  focus market, latest watchlist counts, and how many saved rows included
-  loaded 24h volatility context.
+  focus market, latest watchlist counts, snapshot-drift movement, and how many
+  saved rows included loaded 24h volatility context.
 - Adds a `Rechecks` assistant prompt when local history exists.
 - Routes local-history questions separately from sampled account-value history.
 - Shows the same trend headline and summary in the `Local recheck history`
@@ -41,3 +42,5 @@ focus market, watchlist counts, and volatility context changed across checks.
   refusal boundaries.
 - [[receipt-review-packet]] could later include this trend if reviewers want to
   export local recheck history into a communication artifact.
+- [[receipt-recheck-drift-history]] adds the freshness trend used in the
+  assistant's local-history answer.

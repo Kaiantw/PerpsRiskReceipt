@@ -619,6 +619,7 @@ function LiveRecheckResult({
     marketRegimeDrilldown,
     receiptId: receipt.id,
     recheckedAtIso,
+    snapshotDrift,
     volatilityLoaded: marketHistoryState.status === "loaded",
     watchlist: recheckWatchlist,
   });
@@ -1407,6 +1408,16 @@ function ReceiptRecheckHistoryResult({
                 latestEntry.current_min_liquidation_distance_bps,
               )}
             />
+            <MiniMetric
+              label="Drift score"
+              value={formatHistoryDriftScore(latestEntry)}
+            />
+            <MiniMetric
+              label="Drift delta"
+              value={formatSignedNullableNumber(
+                summary.snapshot_drift_score_delta,
+              )}
+            />
           </dl>
         </>
       ) : null}
@@ -1456,6 +1467,10 @@ function ReceiptRecheckHistoryResult({
                   value={formatHistoryWatchCounts(entry)}
                 />
                 <MiniMetric
+                  label="Drift"
+                  value={formatHistoryDriftScore(entry)}
+                />
+                <MiniMetric
                   label="Volatility"
                   value={entry.volatility_loaded ? "loaded" : "not loaded"}
                 />
@@ -1478,6 +1493,8 @@ function ReceiptRecheckHistoryResult({
                 )}{" "}
                 · max mark move{" "}
                 {formatAbsPercent(entry.max_abs_mark_price_change_percent)}
+                {" "}· snapshot age{" "}
+                {formatDriftAge(entry.snapshot_drift_age_minutes ?? null)}
               </p>
             </article>
           ))}
@@ -2231,6 +2248,17 @@ function formatDrilldownWatchCounts(
 
 function formatHistoryWatchCounts(entry: receipt_recheck_history_entry) {
   return `${entry.watchlist_high_count} high / ${entry.watchlist_watch_count} watch / ${entry.watchlist_info_count} info`;
+}
+
+function formatHistoryDriftScore(entry: receipt_recheck_history_entry) {
+  if (
+    entry.snapshot_drift_score === null ||
+    entry.snapshot_drift_score === undefined
+  ) {
+    return "n/a";
+  }
+
+  return `${entry.snapshot_drift_score}/100 · ${entry.snapshot_drift_label?.replaceAll("_", " ") ?? "n/a"}`;
 }
 
 function formatDriftAge(value: number | null) {

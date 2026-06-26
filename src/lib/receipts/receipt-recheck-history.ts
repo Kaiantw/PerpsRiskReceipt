@@ -16,6 +16,10 @@ import type {
   receipt_recheck_watchlist_label,
 } from "./receipt-recheck-watchlist.ts";
 import type {
+  receipt_snapshot_drift,
+  receipt_snapshot_drift_label,
+} from "./receipt-snapshot-drift.ts";
+import type {
   snapshot_comparison,
   snapshot_comparison_status,
 } from "./snapshot-comparison.ts";
@@ -58,6 +62,10 @@ export type receipt_recheck_history_entry = {
   top_drilldown_summary: string | null;
   top_drilldown_current_liquidation_distance_bps: number | null;
   top_drilldown_current_funding_burden_bps: number | null;
+  snapshot_drift_age_minutes?: number | null;
+  snapshot_drift_focus_market?: string | null;
+  snapshot_drift_label?: receipt_snapshot_drift_label | null;
+  snapshot_drift_score?: number | null;
   volatility_loaded: boolean;
 };
 
@@ -89,6 +97,11 @@ export type receipt_recheck_history_summary = {
   latest_watchlist_high_count: number;
   latest_watchlist_watch_count: number;
   latest_watchlist_info_count: number;
+  latest_snapshot_drift_label: receipt_snapshot_drift_label | null;
+  latest_snapshot_drift_score: number | null;
+  oldest_snapshot_drift_label: receipt_snapshot_drift_label | null;
+  oldest_snapshot_drift_score: number | null;
+  snapshot_drift_score_delta: number | null;
 };
 
 export function getLocalRecheckHistoryStorageKey(receiptId: string) {
@@ -102,6 +115,7 @@ export function createReceiptRecheckHistoryEntry(input: {
   marketRegimeDrilldown: receipt_market_regime_drilldown;
   receiptId: string;
   recheckedAtIso?: string;
+  snapshotDrift?: receipt_snapshot_drift | null;
   volatilityLoaded: boolean;
   watchlist: receipt_recheck_watchlist;
 }): receipt_recheck_history_entry {
@@ -152,6 +166,10 @@ export function createReceiptRecheckHistoryEntry(input: {
       topDrilldownRow?.current_liquidation_distance_bps ?? null,
     top_drilldown_current_funding_burden_bps:
       topDrilldownRow?.current_funding_burden_bps ?? null,
+    snapshot_drift_age_minutes: input.snapshotDrift?.age_minutes ?? null,
+    snapshot_drift_focus_market: input.snapshotDrift?.focus_market ?? null,
+    snapshot_drift_label: input.snapshotDrift?.label ?? null,
+    snapshot_drift_score: input.snapshotDrift?.drift_score ?? null,
     volatility_loaded: input.volatilityLoaded,
   };
 }
@@ -237,6 +255,11 @@ export function buildReceiptRecheckHistorySummary(
       latest_watchlist_high_count: 0,
       latest_watchlist_watch_count: 0,
       latest_watchlist_info_count: 0,
+      latest_snapshot_drift_label: null,
+      latest_snapshot_drift_score: null,
+      oldest_snapshot_drift_label: null,
+      oldest_snapshot_drift_score: null,
+      snapshot_drift_score_delta: null,
     };
   }
 
@@ -277,13 +300,27 @@ export function buildReceiptRecheckHistorySummary(
       latest_watchlist_high_count: latestEntry.watchlist_high_count,
       latest_watchlist_watch_count: latestEntry.watchlist_watch_count,
       latest_watchlist_info_count: latestEntry.watchlist_info_count,
+      latest_snapshot_drift_label: latestEntry.snapshot_drift_label ?? null,
+      latest_snapshot_drift_score: latestEntry.snapshot_drift_score ?? null,
+      oldest_snapshot_drift_label: oldestEntry.snapshot_drift_label ?? null,
+      oldest_snapshot_drift_score: oldestEntry.snapshot_drift_score ?? null,
+      snapshot_drift_score_delta: null,
     };
   }
 
   const riskScoreDelta =
     latestEntry.current_risk_score - oldestEntry.current_risk_score;
+  const snapshotDriftScoreDelta = getNullableScoreDelta({
+    latestScore: latestEntry.snapshot_drift_score ?? null,
+    oldestScore: oldestEntry.snapshot_drift_score ?? null,
+  });
   const trendLabel = getRiskScoreTrendLabel(riskScoreDelta);
   const trendPhrase = getRiskScoreTrendPhrase(trendLabel);
+  const snapshotDriftText = getSnapshotDriftTrendText({
+    latestEntry,
+    oldestEntry,
+    snapshotDriftScoreDelta,
+  });
   const focusMarketText = repeatedFocusMarket.market
     ? `${repeatedFocusMarket.market} appeared as focus market in ${repeatedFocusMarket.count} of ${entryCount} saved checks.`
     : "No repeated focus market was captured across saved checks.";
@@ -297,11 +334,13 @@ export function buildReceiptRecheckHistorySummary(
     summary: [
       `Latest risk score is ${latestEntry.current_risk_score} (${latestEntry.current_risk_label}) versus oldest ${oldestEntry.current_risk_score} (${oldestEntry.current_risk_label}).`,
       `Regime moved ${oldestEntry.market_regime_label} to ${latestEntry.market_regime_label}.`,
+      snapshotDriftText,
       focusMarketText,
       latestCue,
     ].join(" "),
     review_points: [
       getRiskScoreTrendReviewPoint(trendLabel),
+      getSnapshotDriftTrendReviewPoint(snapshotDriftScoreDelta),
       focusMarketText,
       getVolatilityHistoryReviewPoint({
         entryCount,
@@ -325,6 +364,11 @@ export function buildReceiptRecheckHistorySummary(
     latest_watchlist_high_count: latestEntry.watchlist_high_count,
     latest_watchlist_watch_count: latestEntry.watchlist_watch_count,
     latest_watchlist_info_count: latestEntry.watchlist_info_count,
+    latest_snapshot_drift_label: latestEntry.snapshot_drift_label ?? null,
+    latest_snapshot_drift_score: latestEntry.snapshot_drift_score ?? null,
+    oldest_snapshot_drift_label: oldestEntry.snapshot_drift_label ?? null,
+    oldest_snapshot_drift_score: oldestEntry.snapshot_drift_score ?? null,
+    snapshot_drift_score_delta: snapshotDriftScoreDelta,
   };
 }
 
@@ -426,6 +470,62 @@ function getRiskScoreTrendReviewPoint(
   }
 }
 
+function getNullableScoreDelta(input: {
+  latestScore: number | null;
+  oldestScore: number | null;
+}) {
+  if (input.latestScore === null || input.oldestScore === null) {
+    return null;
+  }
+
+  return input.latestScore - input.oldestScore;
+}
+
+function getSnapshotDriftTrendText(input: {
+  latestEntry: receipt_recheck_history_entry;
+  oldestEntry: receipt_recheck_history_entry;
+  snapshotDriftScoreDelta: number | null;
+}) {
+  const latestScore = input.latestEntry.snapshot_drift_score ?? null;
+  const oldestScore = input.oldestEntry.snapshot_drift_score ?? null;
+
+  if (latestScore === null || oldestScore === null) {
+    return "Snapshot-drift trend is unavailable for at least one saved check.";
+  }
+
+  return `Snapshot drift moved ${oldestScore} (${input.oldestEntry.snapshot_drift_label ?? "n/a"}) to ${latestScore} (${input.latestEntry.snapshot_drift_label ?? "n/a"}), delta ${formatSignedInteger(input.snapshotDriftScoreDelta)}.`;
+}
+
+function getSnapshotDriftTrendReviewPoint(
+  snapshotDriftScoreDelta: number | null,
+) {
+  if (snapshotDriftScoreDelta === null) {
+    return "Snapshot-drift trend is unavailable for older rows saved before drift history fields existed.";
+  }
+
+  if (snapshotDriftScoreDelta > 0) {
+    return "Snapshot drift score is higher than the oldest local recheck; inspect current-market movement and freshness cues before treating the receipt as current.";
+  }
+
+  if (snapshotDriftScoreDelta < 0) {
+    return "Snapshot drift score is lower than the oldest local recheck; confirm the latest live read still matches the receipt account and positions.";
+  }
+
+  return "Snapshot drift score is unchanged across the oldest and newest local rechecks; inspect label, watchlist, and market-regime details for movement the score did not capture.";
+}
+
+function formatSignedInteger(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  if (value === 0) {
+    return "0";
+  }
+
+  return `${value > 0 ? "+" : "-"}${Math.abs(value)}`;
+}
+
 function getVolatilityHistoryReviewPoint(input: {
   entryCount: number;
   volatilityLoadedCount: number;
@@ -480,6 +580,10 @@ function isReceiptRecheckHistoryEntry(
       value.top_drilldown_current_liquidation_distance_bps,
     ) &&
     isNullableFiniteNumber(value.top_drilldown_current_funding_burden_bps) &&
+    isOptionalNullableFiniteNumber(value.snapshot_drift_age_minutes) &&
+    isOptionalNullableString(value.snapshot_drift_focus_market) &&
+    isOptionalNullableSnapshotDriftLabel(value.snapshot_drift_label) &&
+    isOptionalNullableFiniteNumber(value.snapshot_drift_score) &&
     typeof value.volatility_loaded === "boolean"
   );
 }
@@ -553,6 +657,17 @@ function isWatchlistLabel(
   );
 }
 
+function isSnapshotDriftLabel(
+  value: unknown,
+): value is receipt_snapshot_drift_label {
+  return (
+    value === "not_comparable" ||
+    value === "stale_snapshot" ||
+    value === "drift_watch" ||
+    value === "close_snapshot"
+  );
+}
+
 function isIsoString(value: unknown) {
   return typeof value === "string" && Number.isFinite(Date.parse(value));
 }
@@ -561,8 +676,20 @@ function isNullableString(value: unknown) {
   return value === null || typeof value === "string";
 }
 
+function isOptionalNullableString(value: unknown) {
+  return value === undefined || isNullableString(value);
+}
+
 function isNullableFiniteNumber(value: unknown) {
   return value === null || isFiniteNumber(value);
+}
+
+function isOptionalNullableFiniteNumber(value: unknown) {
+  return value === undefined || isNullableFiniteNumber(value);
+}
+
+function isOptionalNullableSnapshotDriftLabel(value: unknown) {
+  return value === undefined || value === null || isSnapshotDriftLabel(value);
 }
 
 function isFiniteNumber(value: unknown) {
