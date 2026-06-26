@@ -47,6 +47,7 @@
 ## linked feature ideas
 
 - [[../features/receipt-market-regime]]
+- [[../features/receipt-market-regime-drilldown]]
 - [[../features/receipt-recheck-watchlist]]
 - [[../features/receipt-volatility-watchlist]]
 - [[../features/receipt-account-value-context]]

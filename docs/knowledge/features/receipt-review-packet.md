@@ -20,6 +20,7 @@ recipient to inspect every panel manually.
 - [[configurable-recheck-thresholds]]
 - [[receipt-volatility-buffer]]
 - [[receipt-market-regime]]
+- [[receipt-market-regime-drilldown]]
 - [[receipt-assistant-watchlist-citations]]
 - [[receipt-risk-driver-comparison]]
 - [[mark-price-context]]
@@ -31,7 +32,7 @@ recipient to inspect every panel manually.
 - Includes receipt id, truncated account, protocol, timestamps, snapshot hash,
   hash verification state, and saved risk score.
 - Includes live recheck status, receipt change summary, driver-comparison
-  headline metrics, market-regime read, recheck watchlist counts/items,
+  headline metrics, market-regime read, per-market regime rows, recheck watchlist counts/items,
   assistant watchlist answer, assistant citations, and market-context rows.
 - Includes the active review threshold profile so copied markdown explains what
   counted as a watchlist cue.
@@ -51,4 +52,6 @@ recipient to inspect every panel manually.
 - [[receipt-volatility-buffer]] supplies public volatility-vs-buffer context
   when loaded.
 - [[receipt-market-regime]] supplies the compact current-environment read.
+- [[receipt-market-regime-drilldown]] supplies the row-level explanation for the
+  account-level regime label.
 - [[portable-receipt-bundle]] remains the full verification/export artifact.

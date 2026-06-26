@@ -58,6 +58,10 @@ import {
   type receipt_market_regime_severity,
 } from "@/lib/receipts/receipt-market-regime.ts";
 import {
+  buildReceiptMarketRegimeDrilldown,
+  type receipt_market_regime_drilldown,
+} from "@/lib/receipts/receipt-market-regime-drilldown.ts";
+import {
   buildReceiptVolatilityBuffer,
   type receipt_volatility_buffer,
   type receipt_volatility_buffer_label,
@@ -431,6 +435,13 @@ function LiveRecheckResult({
     volatilityBuffer,
     watchlist: recheckWatchlist,
   });
+  const marketRegimeDrilldown = buildReceiptMarketRegimeDrilldown({
+    comparison,
+    marketContext,
+    riskDriverComparison,
+    volatilityBuffer,
+    watchlist: recheckWatchlist,
+  });
   const assistantContext: receipt_risk_assistant_context = {
     receipt,
     comparison,
@@ -439,6 +450,7 @@ function LiveRecheckResult({
     riskDriverComparison,
     recheckWatchlist,
     marketRegime,
+    marketRegimeDrilldown,
     volatilityBuffer,
     accountValueContext: receiptAccountValueContext,
     hashVerified,
@@ -454,6 +466,7 @@ function LiveRecheckResult({
     changeSummary,
     riskDriverComparison,
     marketRegime,
+    marketRegimeDrilldown,
     volatilityBuffer,
     watchlist: recheckWatchlist,
     watchlistAssistantResponse,
@@ -471,6 +484,8 @@ function LiveRecheckResult({
     String(recheckWatchlist.high_count),
     marketRegime.label,
     String(marketRegime.high_count),
+    marketRegimeDrilldown.focus_market ?? "no-regime-drilldown-focus",
+    String(marketRegimeDrilldown.high_count),
     volatilityBuffer?.label ?? "no-volatility-buffer",
     String(volatilityBuffer?.high_count ?? 0),
     formatThresholdSignature(recheckWatchlist.thresholds),
@@ -547,6 +562,7 @@ function LiveRecheckResult({
 
       <ReceiptChangeSummaryResult summary={changeSummary} />
       <ReceiptMarketRegimeResult regime={marketRegime} />
+      <ReceiptMarketRegimeDrilldownResult drilldown={marketRegimeDrilldown} />
       <ReceiptRiskDriverComparisonResult comparison={riskDriverComparison} />
       <MarketContextResult context={marketContext} />
       <ReceiptVolatilityBufferResult
@@ -1423,6 +1439,130 @@ function ReceiptMarketRegimeResult({
   );
 }
 
+function ReceiptMarketRegimeDrilldownResult({
+  drilldown,
+}: {
+  drilldown: receipt_market_regime_drilldown;
+}) {
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white">
+      <div className="border-b border-stone-200 px-4 py-3">
+        <h3 className="text-base font-semibold">Regime by market</h3>
+        <p className="mt-1 text-sm font-medium text-stone-800">
+          {drilldown.headline}
+        </p>
+        <p className="mt-1 text-sm text-stone-600">{drilldown.summary}</p>
+      </div>
+
+      <dl className="grid gap-3 p-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
+        <MiniMetric label="Focus market" value={drilldown.focus_market ?? "n/a"} />
+        <MiniMetric label="Critical" value={String(drilldown.critical_count)} />
+        <MiniMetric label="High" value={String(drilldown.high_count)} />
+        <MiniMetric label="Watch" value={String(drilldown.watch_count)} />
+        <MiniMetric label="Info" value={String(drilldown.info_count)} />
+      </dl>
+
+      {drilldown.rows.length === 0 ? (
+        <p className="border-t border-stone-200 px-4 py-3 text-sm text-stone-600">
+          No per-market regime rows are available for this recheck.
+        </p>
+      ) : (
+        <div className="overflow-x-auto border-t border-stone-200">
+          <table className="w-full min-w-[1280px] text-left text-sm">
+            <thead className="bg-stone-100 text-xs uppercase text-stone-600">
+              <tr>
+                <th className="px-4 py-3">Market</th>
+                <th className="px-4 py-3">Cue</th>
+                <th className="px-4 py-3">Listed buffer</th>
+                <th className="px-4 py-3">Funding burden</th>
+                <th className="px-4 py-3">Mark move</th>
+                <th className="px-4 py-3">Volatility</th>
+                <th className="px-4 py-3">Open interest</th>
+                <th className="px-4 py-3">Watch cues</th>
+              </tr>
+            </thead>
+            <tbody>
+              {drilldown.rows.map((row) => (
+                <tr className="border-t border-stone-200" key={row.market}>
+                  <td className="px-4 py-3 align-top">
+                    <span className="font-mono">{row.market}</span>
+                    <p className="mt-1 text-xs text-stone-500">
+                      {positionStatusLabels[row.status]}
+                    </p>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <span
+                      className={`w-fit rounded-lg border px-2 py-1 text-xs font-semibold uppercase ${marketRegimeTone[row.severity]}`}
+                    >
+                      {row.severity}
+                    </span>
+                    <p className="mt-2 max-w-80 font-medium text-stone-950">
+                      {row.primary_cue}
+                    </p>
+                    <p className="mt-1 max-w-80 text-xs leading-5 text-stone-600">
+                      {row.summary}
+                    </p>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    {formatPercentFromBps(row.current_liquidation_distance_bps)}
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <span className="font-mono">
+                      {formatNullablePlainBps(row.current_funding_burden_bps)}
+                    </span>
+                    <p className="mt-1 text-xs text-stone-500">
+                      {formatSignedNullableUsd(row.current_daily_funding_usd)}
+                      /day
+                    </p>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <span>{markMoveLabels[row.mark_move_direction]}</span>
+                    <p className="mt-1 font-mono text-xs text-stone-500">
+                      {formatNullableSignedPercent(row.mark_price_change_percent)}
+                    </p>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    {row.volatility_severity ?? "not loaded"}
+                    <p className="mt-1 text-xs text-stone-500">
+                      Range/buffer{" "}
+                      {formatNullableMultiple(
+                        row.volatility_range_to_buffer_ratio,
+                      )}
+                    </p>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    {formatSignedNullableUsd(row.open_interest_delta_usd)}
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    {formatDrilldownWatchCounts(row)}
+                    <ul className="mt-2 space-y-1 text-xs leading-5 text-stone-600">
+                      {row.review_points.slice(0, 2).map((point) => (
+                        <li className="flex gap-2" key={point}>
+                          <span
+                            aria-hidden="true"
+                            className="mt-2 h-1.5 w-1.5 rounded-full bg-stone-400"
+                          />
+                          <span>{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <p className="border-t border-stone-200 px-4 py-3 text-xs text-stone-500">
+        Per-market regime rows explain the account-level regime with visible
+        receipt recheck fields. They are review context, not forecasts,
+        liquidation alerts, or trade recommendations.
+      </p>
+    </section>
+  );
+}
+
 function MarketContextResult({ context }: { context: market_context }) {
   return (
     <section className="rounded-lg border border-stone-200 bg-white">
@@ -1651,6 +1791,12 @@ function formatNullableMultiple(value: number | null) {
   }
 
   return `${value.toFixed(2)}x`;
+}
+
+function formatDrilldownWatchCounts(
+  row: receipt_market_regime_drilldown["rows"][number],
+) {
+  return `${row.watchlist_high_count} high / ${row.watchlist_watch_count} watch / ${row.watchlist_info_count} info`;
 }
 
 function formatSignedNullableNumber(value: number | null) {

@@ -159,6 +159,12 @@ use this file for external protocol assumptions.
   - https://docs.dune.com/data-catalog/community/hyperliquid/market-data
   - https://www.coinapi.io/blog/historical-data-for-perpetual-futures
   - https://arxiv.org/html/2212.06888v5
+- docs checked on 2026-06-26 for receipt market regime drilldown:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
+  - https://www.coinapi.io/blog/historical-data-for-perpetual-futures
+  - https://metamask.io/news/perpetual-futures-liquidation-mechanics
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -237,6 +243,7 @@ use this file for external protocol assumptions.
   - watchlist-priority answers cite `receipt_recheck_watchlist` fields when the local live recheck has built a watchlist.
   - volatility-buffer answers cite loaded `receipt_volatility_buffer` fields when public 24h market history has been loaded.
   - market-regime answers cite `receipt_market_regime` fields after a local live recheck has built the regime read.
+  - market-regime drilldown answers cite `receipt_market_regime_drilldown` fields after a local live recheck has built per-market regime rows.
   - the assistant should describe watchlist items as inspect-first review cues, not trading instructions.
 - portable receipt bundle assumptions:
   - the bundle is a user-controlled JSON export/import path; it does not call new Hyperliquid endpoints.
@@ -302,6 +309,7 @@ use this file for external protocol assumptions.
   - it includes a truncated account identifier, full snapshot hash, hash verification state, receipt change summary, risk-driver comparison, watchlist cues, assistant watchlist answer, assistant citations, and market-context rows.
   - it includes the active review threshold profile so the copied markdown says what counted as meaningful movement.
   - it includes market-regime context after live recheck and volatility-buffer context only after the reviewer loads public 24h market history on the receipt page.
+  - it includes per-market regime drilldown rows after live recheck so the account-level regime label has row-level evidence.
   - the first version caps watchlist and market-context rows at five each for readability.
   - the packet is a communication summary only; a full portable receipt bundle remains required for another browser to recompute the snapshot hash.
 - receipt volatility buffer assumptions:
@@ -323,6 +331,15 @@ use this file for external protocol assumptions.
   - unloaded public 24h volatility is an informational context gap only; it does not by itself make the regime active or stressed.
   - open interest is participation context only and not a standalone direction signal.
   - the regime panel and assistant answer are not forecasts, liquidation alerts, protocol-official risk labels, or trade recommendations.
+- receipt market regime drilldown assumptions:
+  - the drilldown is a row-level explanation layer under the account-level market-regime label.
+  - it uses already-loaded local receipt objects: snapshot comparison, market context, risk-driver comparison, recheck watchlist, optional volatility buffer, and current account value from the comparison metrics.
+  - it does not call new endpoints, change the receipt model, change the risk model, save state, or alter the snapshot hash.
+  - per-market severity is review priority only and not an exchange alert, protocol-official risk label, liquidation proof, or trading recommendation.
+  - account mismatch makes market rows critical because the current snapshot should not be read as the same account.
+  - position-state changes make a row historical instead of directly comparable as the same risk object.
+  - current positive funding burden is estimated as current daily funding cost divided by current account value in bps/day.
+  - open-interest deltas remain participation context only.
 
 ## eas
 

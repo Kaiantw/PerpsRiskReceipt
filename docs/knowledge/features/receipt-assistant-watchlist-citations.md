@@ -16,6 +16,7 @@ instead of forcing a reviewer to scan every panel manually.
 - [[receipt-recheck-watchlist]]
 - [[receipt-volatility-watchlist]]
 - [[receipt-market-regime]]
+- [[receipt-market-regime-drilldown]]
 - [[receipt-risk-assistant]]
 - [[receipt-assistant-market-context-fusion]]
 
@@ -32,6 +33,8 @@ instead of forcing a reviewer to scan every panel manually.
   has been loaded and added to the watchlist.
 - The same assistant context now also supports a `Regime` prompt from
   `receipt_market_regime` fields.
+- The same assistant context now also supports a `Regime rows` prompt from
+  `receipt_market_regime_drilldown` fields.
 - Keeps trade-intent refusal ahead of watchlist routing.
 
 ## related ideas
@@ -45,5 +48,7 @@ instead of forcing a reviewer to scan every panel manually.
   the same inspect-first answer path.
 - [[receipt-market-regime]] answers broader current-environment questions using
   the watchlist, volatility, funding, and sampled account-value context.
+- [[receipt-market-regime-drilldown]] answers why the regime label appears by
+  showing the top market rows behind it.
 - [[redacted-market-watchlist]] could later get a redacted-share assistant that
   uses the same inspect-first pattern without exposing hidden fields.

@@ -10,6 +10,7 @@ import type { normalized_account_snapshot } from "../perps/types.ts";
 import { createRiskReceipt } from "../receipts/receipt.ts";
 import { buildReceiptChangeSummary } from "../receipts/receipt-change-summary.ts";
 import { buildReceiptMarketRegime } from "../receipts/receipt-market-regime.ts";
+import { buildReceiptMarketRegimeDrilldown } from "../receipts/receipt-market-regime-drilldown.ts";
 import { compareReceiptRiskDrivers } from "../receipts/receipt-risk-driver-comparison.ts";
 import { buildReceiptRecheckWatchlist } from "../receipts/receipt-recheck-watchlist.ts";
 import { buildReceiptVolatilityBuffer } from "../receipts/receipt-volatility-buffer.ts";
@@ -79,6 +80,13 @@ async function buildAssistantContext(input?: {
     volatilityBuffer,
     watchlist: recheckWatchlist,
   });
+  const marketRegimeDrilldown = buildReceiptMarketRegimeDrilldown({
+    comparison,
+    marketContext,
+    riskDriverComparison,
+    volatilityBuffer,
+    watchlist: recheckWatchlist,
+  });
 
   return {
     receipt: await createRiskReceipt(receiptSnapshot),
@@ -89,6 +97,7 @@ async function buildAssistantContext(input?: {
     riskDriverComparison,
     recheckWatchlist,
     marketRegime,
+    marketRegimeDrilldown,
     volatilityBuffer,
     changeSummary: buildReceiptChangeSummary({
       comparison,
@@ -392,6 +401,42 @@ test("answers market-regime questions from the synthesized regime context", asyn
   );
 });
 
+test("answers per-market regime drilldown questions from row context", async () => {
+  const receiptSnapshot = loadFixtureAccount("demo-safe-eth-long");
+  const currentSnapshot = {
+    ...receiptSnapshot,
+    positions: receiptSnapshot.positions.map((position) => ({
+      ...position,
+      mark_price_usd: 2_400,
+    })),
+  } satisfies normalized_account_snapshot;
+  const context = await buildAssistantContext({
+    receiptSnapshot,
+    currentSnapshot,
+    includeVolatilityBuffer: true,
+  });
+  const response = answerReceiptRiskQuestion({
+    context,
+    question: "Which markets caused this regime?",
+  });
+
+  assert.match(response.answer, /Per-market regime rows/i);
+  assert.match(response.answer, /Focus market: ETH-PERP/);
+  assert.match(response.answer, /Current listed buffer:/);
+  assert.match(response.answer, /Funding burden:/);
+  assert.match(response.answer, /not forecasts/i);
+  assert.ok(
+    response.citations.includes(
+      "receipt_market_regime_drilldown.rows.ETH-PERP.severity",
+    ),
+  );
+  assert.ok(
+    response.citations.includes(
+      "receipt_market_regime_drilldown.rows.ETH-PERP.current_funding_burden_bps",
+    ),
+  );
+});
+
 test("explains when the watchlist has no ranked items", async () => {
   const context = await buildAssistantContext();
   const response = answerReceiptRiskQuestion({
@@ -485,6 +530,10 @@ test("suggestions include account history only when context exists", async () =>
   );
   assert.equal(
     withoutHistory.some((suggestion) => suggestion.id === "regime"),
+    true,
+  );
+  assert.equal(
+    withoutHistory.some((suggestion) => suggestion.id === "regime-rows"),
     true,
   );
   assert.equal(

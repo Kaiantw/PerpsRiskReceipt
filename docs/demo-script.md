@@ -79,6 +79,8 @@ Open `http://localhost:3000`.
    - Point out that it combines account match, position state, liquidation buffer movement, funding changes, market movement, and sampled account-value context.
    - Show `Market regime`.
    - Point out the calm/active/stretched/stress/not-comparable label, focus market, funding burden, sampled drawdown, max mark move, and high/watch/info regime signals.
+   - Show `Regime by market`.
+   - Point out that the account-level regime label is explained row-by-row with current listed buffer, funding burden, mark movement, volatility status, open-interest movement, and watch cue counts.
    - Show `Risk drivers since receipt`.
    - Point out saved top driver versus current top driver, score delta, gross exposure delta, closest listed-buffer delta, daily funding delta, and the per-market driver table.
    - Explain that this answers what is valuable in the current market: whether the current account is still driven by the same risk, whether the buffer tightened or widened, and whether funding burden changed.
@@ -94,9 +96,9 @@ Open `http://localhost:3000`.
    - Show `Recheck watchlist`.
    - Point out the high/watch/info counts and the ranked items for position changes, thin listed buffer, volatility-buffer cues, adverse mark movement, higher funding cost, driver-score movement, open-interest movement, or missing market context.
    - Show `Receipt risk assistant`.
-   - Click `Review`, `Regime`, `Watchlist`, `Volatility`, `Drivers`, `Funding`, and `Hash` to show cited answers from the receipt summary, market-regime read, ranked recheck watchlist, loaded volatility buffer, risk-driver comparison, live recheck, funding delta, and snapshot hash.
+   - Click `Review`, `Regime`, `Regime rows`, `Watchlist`, `Volatility`, `Drivers`, `Funding`, and `Hash` to show cited answers from the receipt summary, market-regime read, per-market regime rows, ranked recheck watchlist, loaded volatility buffer, risk-driver comparison, live recheck, funding delta, and snapshot hash.
    - Ask `What should I inspect first?` and show that the answer cites `receipt_recheck_watchlist` item fields while preserving the no-trade-recommendation caveat.
-   - Show `Review packet`, click `Copy markdown`, and point out that it packages the hash, live recheck, market regime, watchlist, active thresholds, loaded volatility buffer, assistant read, driver comparison, and market context for quick review.
+   - Show `Review packet`, click `Copy markdown`, and point out that it packages the hash, live recheck, market regime, per-market regime rows, watchlist, active thresholds, loaded volatility buffer, assistant read, driver comparison, and market context for quick review.
    - Explain that the review packet is for communication; a full portable receipt bundle is still required when another browser needs to recompute the snapshot hash.
    - Click `Top market` or ask `Why is ETH-PERP the current risk driver?` to show a named-market driver drilldown with saved/current component scores plus mark, listed-buffer, funding, and open-interest context.
    - Ask `Should I increase leverage?` and show that it refuses trade recommendations while still explaining receipt signals.
@@ -109,4 +111,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, market-regime summaries and volatility-buffer cues, assistant-cited watchlist/volatility/regime reads, copyable review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

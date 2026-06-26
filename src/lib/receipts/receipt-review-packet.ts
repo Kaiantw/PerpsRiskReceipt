@@ -17,6 +17,10 @@ import type {
   receipt_market_regime,
   receipt_market_regime_signal,
 } from "./receipt-market-regime.ts";
+import type {
+  receipt_market_regime_drilldown,
+  receipt_market_regime_drilldown_row,
+} from "./receipt-market-regime-drilldown.ts";
 import type { receipt_risk_driver_comparison } from "./receipt-risk-driver-comparison.ts";
 import type {
   receipt_recheck_watch_item,
@@ -40,6 +44,7 @@ export function buildReceiptReviewPacket(input: {
   hashVerified?: boolean;
   marketContext: market_context;
   marketRegime?: receipt_market_regime | null;
+  marketRegimeDrilldown?: receipt_market_regime_drilldown | null;
   receipt: risk_receipt;
   riskDriverComparison: receipt_risk_driver_comparison;
   volatilityBuffer?: receipt_volatility_buffer | null;
@@ -69,6 +74,9 @@ export function buildReceiptReviewPacket(input: {
     `- largest comparable mark move: ${input.comparison.max_abs_mark_price_change_percent.toFixed(2)}%`,
     "",
     ...formatMarketRegimeSection(input.marketRegime ?? null),
+    ...formatMarketRegimeDrilldownSection(
+      input.marketRegimeDrilldown ?? null,
+    ),
     "## risk drivers since receipt",
     `- saved top driver: ${input.riskDriverComparison.saved_top_driver_market ?? "n/a"}`,
     `- current top driver: ${input.riskDriverComparison.current_top_driver_market ?? "n/a"}`,
@@ -224,6 +232,41 @@ function formatMarketRegimeSignals(signals: receipt_market_regime_signal[]) {
   ]);
 }
 
+function formatMarketRegimeDrilldownSection(
+  drilldown: receipt_market_regime_drilldown | null,
+) {
+  if (!drilldown) {
+    return [];
+  }
+
+  return [
+    "## regime by market",
+    `- focus market: ${drilldown.focus_market ?? "n/a"}`,
+    `- counts: ${drilldown.critical_count} critical, ${drilldown.high_count} high, ${drilldown.watch_count} watch, ${drilldown.info_count} info`,
+    ...formatMarketRegimeDrilldownRows(drilldown.rows),
+    "",
+  ];
+}
+
+function formatMarketRegimeDrilldownRows(
+  rows: receipt_market_regime_drilldown_row[],
+) {
+  if (rows.length === 0) {
+    return ["- no per-market regime rows are available"];
+  }
+
+  return rows.slice(0, 5).flatMap((row) => [
+    `- [${row.severity}] ${row.market}: ${row.primary_cue}`,
+    `  - summary: ${row.summary}`,
+    `  - current listed buffer: ${formatPercentFromBps(row.current_liquidation_distance_bps)}`,
+    `  - funding burden: ${formatNullableBps(row.current_funding_burden_bps)}/day`,
+    `  - mark move: ${formatSignedNullablePercent(row.mark_price_change_percent)}`,
+    `  - volatility: ${row.volatility_severity ?? "not loaded"}`,
+    `  - open-interest delta: ${formatSignedNullableUsd(row.open_interest_delta_usd)}`,
+    ...row.review_points.slice(0, 2).map((point) => `  - review: ${point}`),
+  ]);
+}
+
 function formatVolatilityBufferRows(rows: receipt_volatility_buffer_row[]) {
   if (rows.length === 0) {
     return ["- no volatility-buffer rows are available"];
@@ -258,6 +301,22 @@ function formatNullablePercent(value: number | null) {
   }
 
   return `${value.toFixed(2)}%`;
+}
+
+function formatSignedNullablePercent(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return `${formatSignedNullableNumber(value)}%`;
+}
+
+function formatNullableBps(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return `${value.toFixed(2)} bps`;
 }
 
 function formatNullableMultiple(value: number | null) {

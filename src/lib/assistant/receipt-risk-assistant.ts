@@ -25,6 +25,10 @@ import type {
   receipt_market_regime_signal,
 } from "../receipts/receipt-market-regime.ts";
 import type {
+  receipt_market_regime_drilldown,
+  receipt_market_regime_drilldown_row,
+} from "../receipts/receipt-market-regime-drilldown.ts";
+import type {
   receipt_volatility_buffer,
   receipt_volatility_buffer_row,
 } from "../receipts/receipt-volatility-buffer.ts";
@@ -45,6 +49,7 @@ export type receipt_risk_assistant_context = {
   riskDriverComparison?: receipt_risk_driver_comparison | null;
   recheckWatchlist?: receipt_recheck_watchlist | null;
   marketRegime?: receipt_market_regime | null;
+  marketRegimeDrilldown?: receipt_market_regime_drilldown | null;
   volatilityBuffer?: receipt_volatility_buffer | null;
   accountValueContext?: receipt_account_value_context | null;
   hashVerified?: boolean;
@@ -134,6 +139,14 @@ function formatPercent(value: number | null) {
   }
 
   return `${value.toFixed(2)}%`;
+}
+
+function formatPlainBps(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return `${value.toFixed(2)} bps`;
 }
 
 function formatMultiple(value: number | null) {
@@ -230,6 +243,23 @@ function formatMarketRegimeSignal(signal: receipt_market_regime_signal) {
   const reviewPoints = signal.review_points.join(" ");
 
   return `${signal.severity.toUpperCase()} ${signal.category.replaceAll("_", " ")}: ${signal.title}. ${signal.detail} Review: ${reviewPoints}`;
+}
+
+function formatMarketRegimeDrilldownRow(
+  row: receipt_market_regime_drilldown_row,
+) {
+  const reviewPoints = row.review_points.join(" ");
+
+  return [
+    `${row.severity.toUpperCase()} ${row.market}: ${row.primary_cue}.`,
+    row.summary,
+    `Current listed buffer: ${formatPercentFromBps(row.current_liquidation_distance_bps)}.`,
+    `Funding burden: ${formatPlainBps(row.current_funding_burden_bps)}/day.`,
+    `Mark move: ${formatPercent(row.mark_price_change_percent)}.`,
+    `Volatility: ${row.volatility_severity ?? "not loaded"}.`,
+    `Open-interest delta: ${formatNullableSignedUsd(row.open_interest_delta_usd)}.`,
+    `Review: ${reviewPoints}`,
+  ].join(" ");
 }
 
 function getRequestedMarketChange(input: {
@@ -472,6 +502,53 @@ function buildMarketRegimeAnswer(
         `receipt_market_regime.signals.${signal.id}.severity`,
         `receipt_market_regime.signals.${signal.id}.detail`,
         `receipt_market_regime.signals.${signal.id}.review_points`,
+      ]),
+    ],
+  };
+}
+
+function buildMarketRegimeDrilldownAnswer(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_response {
+  const drilldown = context.marketRegimeDrilldown ?? null;
+
+  if (!drilldown) {
+    return {
+      answer:
+        "Per-market regime rows are not loaded for this receipt. Run a live recheck to build the row-level buffer, funding, volatility, mark-move, open-interest, and watchlist context.",
+      citations: ["receipt_market_regime_drilldown"],
+    };
+  }
+
+  const topRows = drilldown.rows.slice(0, 3);
+  const rowSummary =
+    topRows.length === 0
+      ? "No per-market regime rows are available for this recheck."
+      : topRows.map(formatMarketRegimeDrilldownRow).join(" ");
+
+  return {
+    answer: [
+      drilldown.headline,
+      drilldown.summary,
+      `Focus market: ${drilldown.focus_market ?? "n/a"}. Counts: ${drilldown.critical_count} critical, ${drilldown.high_count} high, ${drilldown.watch_count} watch, ${drilldown.info_count} info.`,
+      rowSummary,
+      "These rows explain the account-level regime from visible market context only; they are not forecasts, liquidation alerts, or trade recommendations.",
+    ].join(" "),
+    citations: [
+      "receipt_market_regime_drilldown.headline",
+      "receipt_market_regime_drilldown.summary",
+      "receipt_market_regime_drilldown.focus_market",
+      "receipt_market_regime_drilldown.critical_count",
+      "receipt_market_regime_drilldown.high_count",
+      "receipt_market_regime_drilldown.watch_count",
+      "receipt_market_regime_drilldown.info_count",
+      ...topRows.flatMap((row) => [
+        `receipt_market_regime_drilldown.rows.${row.market}.severity`,
+        `receipt_market_regime_drilldown.rows.${row.market}.primary_cue`,
+        `receipt_market_regime_drilldown.rows.${row.market}.current_liquidation_distance_bps`,
+        `receipt_market_regime_drilldown.rows.${row.market}.current_funding_burden_bps`,
+        `receipt_market_regime_drilldown.rows.${row.market}.volatility_severity`,
+        `receipt_market_regime_drilldown.rows.${row.market}.review_points`,
       ]),
     ],
   };
@@ -742,6 +819,20 @@ export function answerReceiptRiskQuestion(input: {
 
   if (
     includesAny(normalizedQuestion, [
+      "regime rows",
+      "regime by market",
+      "per-market regime",
+      "market drilldown",
+      "why this regime",
+      "why the regime",
+      "which markets caused",
+    ])
+  ) {
+    return buildMarketRegimeDrilldownAnswer(input.context);
+  }
+
+  if (
+    includesAny(normalizedQuestion, [
       "regime",
       "conditions",
       "environment",
@@ -861,6 +952,7 @@ export function getReceiptRiskAssistantSuggestions(
     context.riskDriverComparison?.current_top_driver_market ?? null;
   const hasRecheckWatchlist = Boolean(context.recheckWatchlist);
   const hasMarketRegime = Boolean(context.marketRegime);
+  const hasMarketRegimeDrilldown = Boolean(context.marketRegimeDrilldown);
   const hasVolatilityBuffer = Boolean(context.volatilityBuffer);
   const suggestions = [
     {
@@ -893,6 +985,15 @@ export function getReceiptRiskAssistantSuggestions(
             id: "regime",
             label: "Regime",
             question: "What market regime is this receipt in?",
+          },
+        ]
+      : []),
+    ...(hasMarketRegimeDrilldown
+      ? [
+          {
+            id: "regime-rows",
+            label: "Regime rows",
+            question: "Which markets caused this regime?",
           },
         ]
       : []),

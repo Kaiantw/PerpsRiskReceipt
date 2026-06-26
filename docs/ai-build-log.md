@@ -896,3 +896,25 @@ Review the market-regime thresholds and labels: funding burden watch at 5 bps/da
 - Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, mocked the read-only live snapshot and market-history responses, clicked `Recheck live account`, confirmed `Market regime`, clicked `Load 24h volatility`, confirmed `Public volatility is large versus listed buffer`, clicked the `Regime` assistant prompt, confirmed `receipt_market_regime.label`, confirmed the no-forecast caveat, confirmed the review packet included `## market regime`, and saw zero browser console errors.
 ### remaining risks:
 The market-regime read is heuristic synthesis over already-loaded local receipt fields. It is not a forecast, liquidation alert, order-book/depth model, exact funding settlement accounting, protocol-official risk label, or advice about what a trader should do next.
+
+### task id: post-t9 receipt market regime drilldown
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a per-market drilldown under the local receipt market-regime read so reviewers can see which market rows caused the account-level regime.
+### output accepted:
+Added `src/lib/receipts/receipt-market-regime-drilldown.ts` with deterministic rows for current listed buffer, positive funding burden, mark movement, open-interest movement, volatility-buffer status, watchlist counts, severity, primary cue, summary, and review points. Mounted a `Regime by market` table in the local receipt live recheck flow, added `Regime rows` assistant routing with `receipt_market_regime_drilldown` citations, and added a `## regime by market` section to the copyable review packet. Updated tests, package test registration, source notes, knowledge docs, README, demo script, known limitations, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, backend store, data model migration, LLM API, wallet/RPC flow, trading/exchange endpoint, alert system, forecast, exact Hyperliquid liquidation formula, or protocol-official regime attribution was added. One review-point condition was tightened so open-interest guidance appears only when an open-interest delta is actually present.
+### human review notes:
+Review whether the row severity ordering is right: account mismatch, position-state changes, high watchlist cues, and high volatility cues outrank ordinary watch/info rows. Review whether the funding burden watch threshold of 5 bps/day is intuitive for the demo, and whether `Regime by market` should be renamed to `Why this regime?` for non-trader reviewers.
+### tests/checks run:
+- `node --test src/lib/receipts/receipt-market-regime-drilldown.test.ts src/lib/assistant/receipt-risk-assistant.test.ts src/lib/receipts/receipt-review-packet.test.ts` passed: 22 tests, 22 passing.
+- `npm test` passed: 141 tests, 141 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]`, `/api/hyperliquid/market-history`, and the existing receipt/API routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a generated full portable Hyperliquid-shaped bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Regime by market`, the ETH-PERP high row, the no-forecast/no-trade caveat, clicked `Regime rows`, confirmed `receipt_market_regime_drilldown.rows.ETH-PERP.*` citations, and confirmed the review packet included `## regime by market`.
+### remaining risks:
+The drilldown is heuristic local explanation over visible receipt recheck rows. It does not model Hyperliquid's exact liquidation engine, margin tiers, oracle/funding settlement, live order-book liquidity, hidden redacted-share fields, or what a trader should do next. The live browser pass could not exercise loaded volatility rows because the live recheck account had no comparable open ETH position; loaded volatility drilldown behavior is covered by focused tests.
