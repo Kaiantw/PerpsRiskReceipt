@@ -25,6 +25,7 @@ import {
   type redacted_market_watchlist,
   type redacted_market_watch_severity,
 } from "@/lib/market/redacted-market-watchlist.ts";
+import { buildRedactedReviewPacket } from "@/lib/market/redacted-review-packet.ts";
 import type {
   hyperliquid_market_context,
   hyperliquid_market_history,
@@ -547,6 +548,12 @@ export function ReceiptImportClient() {
               marketContextState={redactedMarketContextState}
               marketTrendState={redactedMarketTrendState}
             />
+
+            <RedactedReviewPacketPanel
+              bundle={state.bundle}
+              marketContextState={redactedMarketContextState}
+              marketTrendState={redactedMarketTrendState}
+            />
           </section>
         ) : null}
       </div>
@@ -850,6 +857,84 @@ function RedactedMarketWatchlistPanel({
           ))}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function RedactedReviewPacketPanel({
+  bundle,
+  marketContextState,
+  marketTrendState,
+}: {
+  bundle: redacted_receipt_bundle;
+  marketContextState: redacted_market_context_state;
+  marketTrendState: redacted_market_trend_state;
+}) {
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
+    "idle",
+  );
+  const marketContext =
+    marketContextState.status === "loaded"
+      ? marketContextState.context
+      : undefined;
+  const marketTrend =
+    marketTrendState.status === "loaded" ? marketTrendState.trend : undefined;
+  const watchlist = buildRedactedMarketWatchlist({
+    bundle,
+    marketContext,
+    marketTrend,
+  });
+  const packet = buildRedactedReviewPacket({
+    bundle,
+    marketContext,
+    marketTrend,
+    watchlist,
+  });
+
+  async function copyPacketMarkdown() {
+    try {
+      await navigator.clipboard.writeText(packet.markdown);
+      setCopyState("copied");
+    } catch {
+      setCopyState("failed");
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded-lg border border-stone-300 bg-white p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Redacted review packet</h3>
+          <p className="mt-1 text-sm text-stone-600">{packet.summary}</p>
+        </div>
+        <button
+          className="inline-flex min-h-11 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-semibold text-white"
+          onClick={() => {
+            void copyPacketMarkdown();
+          }}
+          type="button"
+        >
+          Copy redacted markdown
+        </button>
+      </div>
+
+      {copyState === "copied" ? (
+        <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-950">
+          Redacted review packet copied.
+        </p>
+      ) : null}
+
+      {copyState === "failed" ? (
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-950">
+          Browser clipboard access failed. Select the markdown below instead.
+        </p>
+      ) : null}
+
+      <textarea
+        className="mt-4 h-96 w-full resize-y rounded-lg border border-stone-300 bg-stone-50 p-3 font-mono text-xs text-stone-950"
+        readOnly
+        value={packet.markdown}
+      />
     </div>
   );
 }

@@ -24,5 +24,6 @@
 ## linked feature ideas
 
 - [[../features/redacted-receipt-share]]
+- [[../features/redacted-review-packet]]
 - [[../features/portable-receipt-bundle]]
 - [[../features/live-receipt-recheck]]

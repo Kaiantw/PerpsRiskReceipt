@@ -19,6 +19,7 @@ short list of cues a reviewer should inspect first.
 - [[redacted-market-context]]
 - [[redacted-market-trend]]
 - [[redacted-receipt-share]]
+- [[redacted-review-packet]]
 - docs/source-notes.md#hyperliquid
 
 ## implemented behavior
@@ -44,3 +45,5 @@ short list of cues a reviewer should inspect first.
 - [[redacted-market-trend]] supplies the 24-hour public price and funding rows.
 - [[redacted-receipt-share]] defines the privacy boundary the watchlist must
   respect.
+- [[redacted-review-packet]] carries the watchlist into a copyable public
+  markdown summary.

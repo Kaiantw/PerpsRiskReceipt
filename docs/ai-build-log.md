@@ -983,3 +983,25 @@ Review whether the packet should include the local-history section after one sav
 - Browser verification used `http://localhost:3000/receipt/import`, imported a generated full portable Hyperliquid-shaped bundle for `/receipt/local/rr_78b061a0af37c810`, confirmed `Hash verified`, cleared existing local history, clicked `Recheck live account` twice, confirmed `Local recheck risk score is unchanged across 2 saved checks.`, confirmed the review packet contained `## local recheck history`, `trend: risk unchanged`, `saved checks: 2`, `risk-score delta: 0`, and the compact browser-local note, clicked `Copy markdown`, confirmed the clipboard contained the same history fields, confirmed raw test ids were not copied, and saw zero browser console errors.
 ### remaining risks:
 The packet history section is a compact browser-local trend summary only. It is not synced, encrypted, a raw history export, a full private-snapshot archive, a precise account-history import, a live alert feed, exact liquidation monitoring, protocol-official risk attribution, or advice about what a trader should do next.
+
+### task id: post-t9 redacted review packet
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a copyable public markdown packet for imported redacted receipt shares so a reviewer can share disclosed buckets, loaded public market context, 24-hour trend context, and redacted watchlist cues without exposing the full private snapshot.
+### output accepted:
+Added `src/lib/market/redacted-review-packet.ts` with a deterministic markdown builder over the redacted bundle, optional redacted current market context, optional 24-hour trend context, and redacted market watchlist. Added tests that cover loaded public context, hash-reference-only caveats, no-context fallback text, and absence of private full-snapshot field names. Wired `/receipt/import` to render `Redacted review packet`, copy markdown to the browser clipboard, and update the packet as public current/trend context loads. Updated package test registration, source notes, knowledge graph, README, demo script, limitations, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, bundle format, backend store, LLM API, wallet/RPC flow, trading/exchange endpoint, raw account lookup, full-snapshot export, cryptographic selective-disclosure proof, EAS transaction, exact Hyperliquid liquidation formula, or protocol-official risk claim was added. An automation verification snippet initially read `document` from the wrong context; it was rerun correctly and did not require app changes.
+### human review notes:
+Review whether the markdown is too verbose for public sharing and whether a later compressed mode should be available. Review whether the packet should include redacted field names in the limits section or keep them even more abstract. Review whether public mark price should remain in the packet after context loads, since it is public market data but still visually precise.
+### tests/checks run:
+- `node --test src/lib/market/redacted-review-packet.test.ts` passed: 2 tests, 2 passing.
+- `npm test` passed: 151 tests, 151 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/import`, `/receipt/local/[id]`, `/api/hyperliquid/markets`, `/api/hyperliquid/market-history`, and the existing receipt/API routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted a generated Hyperliquid-shaped redacted bundle for `rr_78b061a0af37c810`, confirmed `Redacted review packet` rendered before context load with `status: not loaded`, confirmed private field names such as `account_value_usd`, `mark_price_usd`, and `liquidation_price_usd` were absent, clicked `Load current markets` and `Load 24h trends`, confirmed the packet included loaded public current market context, loaded public 24-hour trend context, the redacted review watchlist, and hash-reference-only caveats, clicked `Copy redacted markdown`, confirmed the browser clipboard contained the same sections, and saw zero browser console errors.
+### remaining risks:
+The redacted review packet is public markdown context only. It cannot recompute or verify the hidden full snapshot hash, prove hidden receipt state, replace a full portable receipt bundle, provide cryptographic selective disclosure, monitor exact liquidation state, or tell a trader what to do next.

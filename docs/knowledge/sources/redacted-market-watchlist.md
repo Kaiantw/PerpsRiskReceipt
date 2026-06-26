@@ -38,6 +38,7 @@ These thresholds are review heuristics, not exchange risk rules.
 ## linked feature ideas
 
 - [[../features/redacted-market-watchlist]]
+- [[../features/redacted-review-packet]]
 - [[../features/redacted-market-context]]
 - [[../features/redacted-market-trend]]
 - [[../features/redacted-receipt-share]]

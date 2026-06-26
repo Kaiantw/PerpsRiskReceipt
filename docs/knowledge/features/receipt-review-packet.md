@@ -58,4 +58,6 @@ recipient to inspect every panel manually.
   account-level regime label.
 - [[receipt-review-packet-history-summary]] adds the latest-versus-oldest local
   recheck trend to the packet.
+- [[redacted-review-packet]] is the data-minimized sibling for imported redacted
+  shares.
 - [[portable-receipt-bundle]] remains the full verification/export artifact.

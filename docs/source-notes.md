@@ -81,6 +81,12 @@ use this file for external protocol assumptions.
   - https://www.coinbase.com/learn/perpetual-futures/understanding-funding-rates-in-perpetual-futures
   - https://www.coinbase.com/advanced-perpetuals
   - https://www.kraken.com/learn/trading/perpetual-futures-contracts
+- docs checked on 2026-06-26 for redacted review packet:
+  - https://docs.attest.org/docs/tutorials/private-data-attestations
+  - https://w3c-ccg.github.io/data-minimization/
+  - https://www.w3.org/TR/vc-data-model-2.0/
+  - https://w3c-ccg.github.io/Merkle-Disclosure-2021/
+  - https://chain.link/article/blockchain-privacy-data-confidentiality
 - docs checked on 2026-06-25 for position risk drivers:
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
@@ -295,6 +301,13 @@ use this file for external protocol assumptions.
   - watch thresholds are heuristic: thin disclosed liquidation distance is `<= 500` bps, tight disclosed liquidation distance is `<= 1000` bps, material adverse price move is `>= 2%`, material funding cost/delta is `>= 1` bps, and high public range is `>= 8%` or at least half of disclosed liquidation distance.
   - high-attention cues are used when tight buffers overlap adverse trend, persistent funding cost becomes more expensive, or public range is large versus a tight disclosed buffer.
   - the watchlist is a review checklist only; it cannot prove hidden receipt fields, recompute the snapshot hash, or monitor exact liquidation state.
+- redacted review packet assumptions:
+  - the packet is deterministic markdown built from the redacted bundle plus already-loaded public current market context, public 24-hour trend context, and redacted watchlist cues.
+  - it does not call a new endpoint, change the redacted bundle format, store packet state, or send a raw account address.
+  - it includes disclosed bucketed receipt fields, disclosed market rows, optional public market/trend rows, watchlist counts/items, and hash-reference-only caveats.
+  - it does not include raw local receipt history, raw account identifiers, exact account value, exact position sizes, saved mark prices, listed liquidation prices, PnL, exact funding dollars, or hidden full-snapshot fields.
+  - the snapshot hash is preserved as a reference only; the hidden full snapshot remains required for recomputation.
+  - the packet is a public communication summary only, not cryptographic selective disclosure, a Verifiable Credential, an EAS private-data proof, exact liquidation monitoring, or trading advice.
 - position risk driver assumptions:
   - position risk drivers are derived entirely from the loaded normalized snapshot; no new endpoint is called.
   - the driver score is heuristic and intentionally decomposed into visible components: listed liquidation buffer up to 45 points, notional exposure/concentration up to 25 points, positive daily funding burden up to 20 points, and unrealized loss burden up to 10 points.

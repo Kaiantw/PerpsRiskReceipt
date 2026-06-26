@@ -35,6 +35,7 @@ informed it and forward to related feature ideas.
 - [[sources/redacted-market-context]] - market-only source notes for redacted share current context.
 - [[sources/redacted-market-trend]] - candle and funding-history source notes for redacted share 24h public market trends.
 - [[sources/redacted-market-watchlist]] - liquidation, funding, volatility, and review-cue source notes for redacted share watchlists.
+- [[sources/redacted-review-packet]] - data-minimized markdown review packets for redacted shares.
 
 ## implemented feature notes
 
@@ -68,6 +69,7 @@ informed it and forward to related feature ideas.
 - [[features/redacted-market-context]] - current public Hyperliquid mark, funding, and open-interest context for redacted shares.
 - [[features/redacted-market-trend]] - 24h public candle and funding-history context for redacted shares.
 - [[features/redacted-market-watchlist]] - synthesized review cues over redacted fields plus loaded public market context.
+- [[features/redacted-review-packet]] - copyable markdown summary for redacted shares using disclosed fields and loaded public context.
 
 ## connected backlog ideas
 
@@ -83,8 +85,8 @@ informed it and forward to related feature ideas.
   per-market recheck checklist with configurable thresholds.
 - [[features/receipt-assistant-watchlist-citations]] could later expand into a
   redacted-share assistant that uses public-only watchlist citations.
-- [[features/receipt-review-packet]] could later offer redacted and full packet
-  modes if users want different disclosure levels.
+- [[features/redacted-review-packet]] could later support a compressed public
+  packet mode for social posts or issue comments.
 - [[features/configurable-recheck-thresholds]] could later persist named review
   presets if the app adds user settings without changing receipt integrity.
 - [[features/receipt-volatility-watchlist]] could later add local sensitivity
@@ -95,6 +97,6 @@ informed it and forward to related feature ideas.
   controls if accounts have many open markets.
 - [[features/receipt-recheck-history]] could later support optional export if
   reviewers want to discuss several checks outside the current browser.
-- [[features/receipt-review-packet-history-summary]] could later add a redacted
-  packet mode if local history trends should be shared without full receipt
-  context.
+- [[features/receipt-review-packet-history-summary]] could later define a
+  redacted-safe trend summary if local recheck history should cross the privacy
+  boundary.
