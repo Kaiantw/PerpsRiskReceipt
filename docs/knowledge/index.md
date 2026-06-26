@@ -40,6 +40,7 @@ informed it and forward to related feature ideas.
 - [[sources/redacted-freshness-verdict]] - receipt-age, public-market, buffer, trend, funding, and data-minimization notes for redacted freshness classification.
 - [[sources/redacted-snapshot-comparison]] - journal, risk-management, funding, buffer, and data-minimization notes for comparing two redacted snapshots.
 - [[sources/redacted-comparison-assistant-packet]] - source notes for carrying redacted snapshot comparison into assistant answers and packets.
+- [[sources/redacted-review-thresholds]] - source notes for local public-only sensitivity profiles over redacted age, buffer, funding, and market-movement cues.
 
 ## implemented feature notes
 
@@ -76,6 +77,7 @@ informed it and forward to related feature ideas.
 - [[features/redacted-freshness-verdict]] - classifies redacted shares as reviewable, stale but informative, or needing full recheck.
 - [[features/redacted-snapshot-comparison]] - compares two redacted shares and labels visible risk cue movement.
 - [[features/redacted-comparison-assistant-packet]] - feeds redacted comparison context into assistant answers and copyable packets.
+- [[features/redacted-review-thresholds]] - local strict/standard/relaxed sensitivity profiles for redacted current-market review.
 - [[features/redacted-review-packet]] - copyable markdown summary for redacted shares using disclosed fields and loaded public context.
 - [[features/redacted-share-assistant]] - cited local assistant answers for redacted shares using disclosed fields and loaded public context.
 
@@ -85,10 +87,8 @@ informed it and forward to related feature ideas.
   once citations, refusal policy, and private-data boundaries are stronger.
 - [[features/redacted-receipt-share]] could later evolve from minimized JSON to
   cryptographic selective disclosure using EAS private data or Merkle proofs.
-- [[features/redacted-market-watchlist]] could later add configurable market-only
-  thresholds without requiring a raw account address.
-- [[features/redacted-freshness-verdict]] could later support reviewer-tuned
-  public-only thresholds without changing redacted bundle integrity.
+- [[features/redacted-review-thresholds]] could later persist named review
+  presets if the app adds user settings without changing receipt integrity.
 - [[features/receipt-assistant-driver-citations]] could later expand into
   side-by-side cited answers for each per-market driver row.
 - [[features/receipt-assistant-market-context-fusion]] could later grow into a
@@ -97,8 +97,8 @@ informed it and forward to related feature ideas.
   redacted-share assistant that uses public-only watchlist citations.
 - [[features/redacted-review-packet]] could later support a compressed public
   packet mode for social posts or issue comments.
-- [[features/redacted-share-assistant]] could later support configurable
-  public-only thresholds and a compressed answer mode for issue comments.
+- [[features/redacted-share-assistant]] could later support a compressed answer
+  mode for issue comments.
 - [[features/configurable-recheck-thresholds]] could later persist named review
   presets if the app adds user settings without changing receipt integrity.
 - [[features/receipt-volatility-watchlist]] could later add local sensitivity

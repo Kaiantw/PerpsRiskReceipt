@@ -17,6 +17,7 @@ open-interest sensitivity without changing the saved receipt or the live data.
 - [[receipt-recheck-watchlist]]
 - [[receipt-review-packet]]
 - [[mark-price-context]]
+- [[redacted-review-thresholds]]
 
 ## implemented behavior
 
@@ -38,5 +39,5 @@ open-interest sensitivity without changing the saved receipt or the live data.
 - [[receipt-recheck-watchlist]] consumes the active thresholds.
 - [[receipt-review-packet]] records the active threshold profile in copied
   markdown.
-- [[redacted-market-watchlist]] could later get a separate public-only threshold
-  panel.
+- [[redacted-review-thresholds]] is the public/redacted sibling for imported
+  minimized shares.

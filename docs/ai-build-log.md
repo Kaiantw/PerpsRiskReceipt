@@ -1094,3 +1094,25 @@ Review whether the `Compare` prompt should remain hidden until a second redacted
 - Browser verification used `http://localhost:3000/receipt/import`, pasted generated Hyperliquid-shaped redacted bundles for `rr_browser_previous_compare` and `rr_browser_latest_improved_compare`, confirmed the page showed an improved latest-snapshot summary, `risk improved` badge, `-36` risk-score delta, 7.00% to 20.00% disclosed buffer movement, ETH-PERP funding movement, and BTC-PERP removed row. It then clicked the assistant `Compare` prompt, confirmed the answer included `risk-score delta -36`, previous/latest receipt ids, comparison citations, and visible-fields-only caveat, clicked `Copy redacted markdown`, confirmed the clipboard contained `## redacted snapshot comparison`, `risk-score delta: -36`, BTC-PERP removal, and no private full-snapshot field names, with zero captured browser console errors.
 ### remaining risks:
 Comparison-aware assistant answers and packets remain heuristic redacted-only review context. They cannot inspect hidden account state, prove exact account improvement or worsening, compare hidden exact values, recompute hidden full-snapshot hashes, provide cryptographic selective disclosure, monitor exact liquidation state, load current market context by themselves, or tell a trader what to do next.
+
+### task id: post-t9 redacted review thresholds
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added reviewer-tuned public-only sensitivity profiles for imported redacted receipt shares so current-market reads can be interpreted as strict, standard, or relaxed without exposing full snapshots or changing bundle integrity.
+### output accepted:
+Added `src/lib/market/redacted-review-thresholds.ts` with strict, standard, and relaxed profiles plus threshold sanitization. Wired active thresholds into the redacted market watchlist, freshness verdict, redacted snapshot comparison, redacted share assistant, and redacted review packet. Added a `Redacted review sensitivity` panel on `/receipt/import`, a `Thresholds` assistant prompt with threshold citations, and a `redacted review thresholds` section in copied markdown packets. Added tests for threshold resolution, relaxed watchlist sensitivity, strict freshness escalation, assistant threshold answers, and packet threshold output. Updated package test registration, source notes, knowledge docs, README, demo script, limitations, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, bundle format, backend store, wallet/RPC flow, trading/exchange endpoint, raw account lookup, LLM API, exact Hyperliquid liquidation formula, protocol-official threshold claim, or cryptographic selective-disclosure proof was added. Browser verification caught that an already-rendered assistant threshold answer stayed stale after profile changes; the assistant panel now re-answers the submitted question from the current threshold context.
+### human review notes:
+Review the profile values: strict uses 2h watch/12h full-recheck age, 7.50% thin and 15.00% tight disclosed buffers, 1% adverse move, 0.50 bps material funding, 2 bps high funding, 5% high range, and 0.35x/0.75x range-buffer ratios. Standard keeps the prior defaults. Relaxed uses 8h/2d age, 3.00%/7.00% buffers, 4% adverse move, 2 bps material funding, 5 bps high funding, 12% high range, and 0.75x/1.25x range-buffer ratios.
+### tests/checks run:
+- `node --test src/lib/market/redacted-review-thresholds.test.ts src/lib/market/redacted-market-watchlist.test.ts src/lib/market/redacted-freshness-verdict.test.ts src/lib/market/redacted-snapshot-comparison.test.ts src/lib/assistant/redacted-share-assistant.test.ts src/lib/market/redacted-review-packet.test.ts` passed: 37 tests, 37 passing.
+- `npm test` passed: 182 tests, 182 passing.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed and listed `/`, `/receipt/import`, `/receipt/local/[id]`, `/api/hyperliquid/markets`, `/api/hyperliquid/market-history`, `/api/hyperliquid/portfolio`, `/api/hyperliquid/snapshot`, and the fixture receipt routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted a 13-hour-old redacted bundle for `rr_browser_thresholds`, confirmed standard showed `stale but informative`, strict showed `needs full recheck` with `Receipt is older than 12h`, relaxed returned to `stale but informative`, the `Thresholds` assistant answer updated from strict to relaxed after profile change, copied markdown included `## redacted review thresholds`, strict copied `full-recheck age: 12h` and `thin disclosed buffer: 7.50%`, and zero browser console errors were captured.
+### remaining risks:
+Redacted review thresholds are local public-only review heuristics. They are not saved, synced, protocol-official, a proof that stale redacted state is current, a substitute for full bundle hash recomputation, exact Hyperliquid liquidation logic, live alerting, or trading advice.

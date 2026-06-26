@@ -375,6 +375,23 @@ test("answers comparison questions from the loaded redacted snapshot comparison"
   assert.doesNotMatch(response.answer, /liquidation_price_usd/);
 });
 
+test("answers threshold questions from active redacted review settings", () => {
+  const response = answerRedactedShareQuestion({
+    context: buildAssistantContext(),
+    question: "What thresholds are active?",
+  });
+
+  assert.match(response.answer, /public-only sensitivity thresholds/i);
+  assert.match(response.answer, /Watch at 4h/i);
+  assert.match(response.answer, /thin at 5.00%/i);
+  assert.match(response.answer, /do not change the receipt/i);
+  assert.ok(
+    response.citations.includes(
+      "redacted_market_watchlist.thresholds.watch_age_minutes",
+    ),
+  );
+});
+
 test("explains when comparison context has not been pasted", () => {
   const response = answerRedactedShareQuestion({
     context: buildAssistantContext(),
@@ -423,6 +440,7 @@ test("suggestions include context-dependent review prompts", () => {
   assert.ok(suggestionIds.includes("watchlist"));
   assert.ok(suggestionIds.includes("comparison"));
   assert.ok(suggestionIds.includes("freshness"));
+  assert.ok(suggestionIds.includes("thresholds"));
   assert.ok(suggestionIds.includes("current-market"));
   assert.ok(suggestionIds.includes("trend"));
   assert.ok(suggestionIds.includes("liquidation"));

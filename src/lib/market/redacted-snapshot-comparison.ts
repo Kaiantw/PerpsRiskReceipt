@@ -8,6 +8,7 @@ import type {
   redacted_receipt_bundle,
   redacted_receipt_market,
 } from "../receipts/portable-receipt-bundle.ts";
+import type { redacted_review_thresholds } from "./redacted-review-thresholds.ts";
 
 export type redacted_snapshot_comparison_direction =
   | "improved"
@@ -68,6 +69,7 @@ export function buildRedactedSnapshotComparison(input: {
   firstBundle: redacted_receipt_bundle;
   secondBundle: redacted_receipt_bundle;
   nowIso?: string;
+  thresholds?: Partial<redacted_review_thresholds>;
 }): redacted_snapshot_comparison {
   const orderedBundles = orderBundlesByDataTime({
     firstBundle: input.firstBundle,
@@ -78,16 +80,19 @@ export function buildRedactedSnapshotComparison(input: {
   const previousFreshnessVerdict = buildRedactedOnlyFreshnessVerdict({
     bundle: previousBundle,
     nowIso: input.nowIso,
+    thresholds: input.thresholds,
   });
   const latestFreshnessVerdict = buildRedactedOnlyFreshnessVerdict({
     bundle: latestBundle,
     nowIso: input.nowIso,
+    thresholds: input.thresholds,
   });
   const baseMetrics = buildBaseMetrics({
     previousBundle,
     latestBundle,
     previousFreshnessVerdict,
     latestFreshnessVerdict,
+    thresholds: previousFreshnessVerdict.thresholds,
   });
   const marketChanges = buildMarketChanges({ previousBundle, latestBundle });
   const metrics = [
@@ -141,13 +146,18 @@ export function buildRedactedSnapshotComparison(input: {
 function buildRedactedOnlyFreshnessVerdict(input: {
   bundle: redacted_receipt_bundle;
   nowIso: string | undefined;
+  thresholds: Partial<redacted_review_thresholds> | undefined;
 }) {
-  const watchlist = buildRedactedMarketWatchlist({ bundle: input.bundle });
+  const watchlist = buildRedactedMarketWatchlist({
+    bundle: input.bundle,
+    thresholds: input.thresholds,
+  });
 
   return buildRedactedFreshnessVerdict({
     bundle: input.bundle,
     watchlist,
     nowIso: input.nowIso,
+    thresholds: watchlist.thresholds,
   });
 }
 
@@ -180,9 +190,16 @@ function buildBaseMetrics(input: {
   latestBundle: redacted_receipt_bundle;
   previousFreshnessVerdict: redacted_freshness_verdict;
   latestFreshnessVerdict: redacted_freshness_verdict;
+  thresholds: redacted_review_thresholds;
 }) {
-  const previousWatchSeverity = getDisclosedWatchSeverity(input.previousBundle);
-  const latestWatchSeverity = getDisclosedWatchSeverity(input.latestBundle);
+  const previousWatchSeverity = getDisclosedWatchSeverity({
+    bundle: input.previousBundle,
+    thresholds: input.thresholds,
+  });
+  const latestWatchSeverity = getDisclosedWatchSeverity({
+    bundle: input.latestBundle,
+    thresholds: input.thresholds,
+  });
 
   return [
     compareNumberMetric({
@@ -833,23 +850,28 @@ function getComparisonCitations(input: {
   );
 }
 
-function getDisclosedWatchSeverity(bundle: redacted_receipt_bundle) {
-  const minDistanceBps = bundle.aggregate.min_liquidation_distance_bps;
+function getDisclosedWatchSeverity(input: {
+  bundle: redacted_receipt_bundle;
+  thresholds: redacted_review_thresholds;
+}) {
+  const minDistanceBps =
+    input.bundle.aggregate.min_liquidation_distance_bps;
 
-  if (bundle.aggregate.risk_label === "critical") {
+  if (input.bundle.aggregate.risk_label === "critical") {
     return "critical";
   }
 
   if (
     minDistanceBps !== null &&
-    minDistanceBps <= 500
+    minDistanceBps <= input.thresholds.thin_liquidation_distance_bps
   ) {
     return "high";
   }
 
   if (
-    bundle.aggregate.risk_label === "high" ||
-    (minDistanceBps !== null && minDistanceBps <= 1_000)
+    input.bundle.aggregate.risk_label === "high" ||
+    (minDistanceBps !== null &&
+      minDistanceBps <= input.thresholds.tight_liquidation_distance_bps)
   ) {
     return "watch";
   }

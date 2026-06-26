@@ -73,13 +73,18 @@ Open `http://localhost:3000`.
    - Show `Freshness verdict`.
    - Point out whether the redacted receipt is `reviewable`, `stale but informative`, or `needs full recheck`.
    - Explain that the verdict combines receipt age, disclosed liquidation buffer, loaded public current context, 24h trend, funding movement, and watchlist severity without exposing hidden account fields.
+   - Show `Redacted review sensitivity`.
+   - Switch between `Strict`, `Standard`, and `Relaxed`.
+   - Point out that the app is not trying to make the old receipt live; it is tuning how quickly public age, buffer, adverse move, funding, and range cues should make the reviewer ask for a full recheck.
+   - Point out that the sensitivity profile updates the watchlist, freshness verdict, comparison read, assistant answers, and copied packet without changing the receipt hash or bundle contents.
    - Show `Redacted snapshot compare`.
    - Paste a second redacted share and point out previous/latest receipt ids, risk score delta, changed cue counts, redacted-only freshness movement, disclosed buffer movement, funding bucket movement, and market rows that were added, removed, improved, worsened, or changed.
    - Explain that this is useful for privacy-preserving review of visible risk cues over time, but it cannot prove hidden exact account values changed or recompute the full snapshot hash.
    - Show `Redacted share assistant`.
-   - Click `Compare`, `Freshness`, `Current`, `24h Trend`, `Watchlist`, `Top Cue`, `Funding`, and `Privacy` to show cited answers from disclosed fields, loaded public context, and the loaded redacted comparison.
+   - Click `Thresholds`, `Compare`, `Freshness`, `Current`, `24h Trend`, `Watchlist`, `Top Cue`, `Funding`, and `Privacy` to show cited answers from disclosed fields, loaded public context, active sensitivity, and the loaded redacted comparison.
    - Ask `Should I increase leverage?` and show that it refuses trade recommendations while still explaining visible redacted-share cues.
    - Show `Redacted review packet`, click `Copy redacted markdown`, and point out that it packages disclosed buckets, loaded public context, freshness verdict, redacted snapshot comparison, watchlist cues, and hash-reference-only caveats without exposing the full snapshot.
+   - Point out the `redacted review thresholds` section in the copied packet so another reviewer can see the local sensitivity profile that produced the read.
    - Return to the local receipt, switch to `Full receipt`, click `Copy full bundle`, open `/receipt/import`, paste the bundle, and show the import preview with `Hash verified`.
    - Click `Import receipt` and show that the app opens the same local receipt route in this browser.
    - Show `Receipt account-value context`.
@@ -126,4 +131,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, local recheck history with history-aware assistant and packet reads, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable full and redacted review packets, redacted freshness verdicts, redacted snapshot comparison, redacted-share assistant answers, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, local recheck history with history-aware assistant and packet reads, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable full and redacted review packets, redacted freshness verdicts, redacted snapshot comparison, redacted public-only sensitivity profiles, redacted-share assistant answers, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

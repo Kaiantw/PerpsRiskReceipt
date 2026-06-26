@@ -24,6 +24,9 @@
   the reviewer what trade to make.
 - Public 24-hour range and adverse side-aware price movement are useful context
   for deciding whether a stale redacted snapshot needs a full recheck.
+- Strict/standard/relaxed threshold profiles are useful because review
+  sensitivity should change by context without changing the redacted bundle or
+  claiming exchange-official risk.
 - Data minimization keeps the verdict to disclosed buckets, public market data,
   and field citations; it should not infer hidden account equity, exact size,
   saved marks, listed liquidation prices, PnL, or raw account identity.
@@ -34,5 +37,6 @@
 - [[../features/redacted-market-context]]
 - [[../features/redacted-market-trend]]
 - [[../features/redacted-market-watchlist]]
+- [[../features/redacted-review-thresholds]]
 - [[../features/redacted-share-assistant]]
 - [[../features/redacted-review-packet]]

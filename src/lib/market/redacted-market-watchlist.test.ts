@@ -4,6 +4,7 @@ import test from "node:test";
 import type { redacted_receipt_bundle } from "../receipts/portable-receipt-bundle.ts";
 import type { redacted_market_context } from "./redacted-market-context.ts";
 import type { redacted_market_trend } from "./redacted-market-trend.ts";
+import { getRedactedReviewThresholdProfile } from "./redacted-review-thresholds.ts";
 import { buildRedactedMarketWatchlist } from "./redacted-market-watchlist.ts";
 
 const redactedBundle: redacted_receipt_bundle = {
@@ -188,6 +189,20 @@ test("combines persistent and more expensive funding into one high cue", () => {
     fundingItems[0]?.title,
     "Funding cost is persistent and more expensive now",
   );
+});
+
+test("uses relaxed thresholds to reduce public review sensitivity", () => {
+  const watchlist = buildRedactedMarketWatchlist({
+    bundle: redactedBundle,
+    marketContext,
+    marketTrend,
+    thresholds: getRedactedReviewThresholdProfile("relaxed").thresholds,
+  });
+
+  assert.equal(watchlist.label, "watch_items_loaded");
+  assert.equal(watchlist.high_count, 0);
+  assert.ok(watchlist.watch_count > 0);
+  assert.equal(watchlist.thresholds.tight_liquidation_distance_bps, 700);
 });
 
 test("reports missing public context without exposing hidden snapshot fields", () => {

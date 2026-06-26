@@ -73,6 +73,8 @@ export function buildRedactedReviewPacket(input: {
     ...formatMarketTrendSection(input.marketTrend),
     ...formatFreshnessVerdictSection(input.freshnessVerdict),
     ...formatSnapshotComparisonSection(input.snapshotComparison),
+    "## redacted review thresholds",
+    ...formatRedactedReviewThresholds(input.watchlist),
     "## redacted review watchlist",
     `- label: ${input.watchlist.label.replaceAll("_", " ")}`,
     `- headline: ${input.watchlist.headline}`,
@@ -83,6 +85,7 @@ export function buildRedactedReviewPacket(input: {
     "- this packet is a public/redacted communication summary, not a full receipt bundle.",
     "- hidden fields include the raw account address, exact account value, exact position sizes, entry prices, saved mark prices, listed liquidation prices, PnL, and exact funding dollars.",
     "- the snapshot hash is preserved as a reference, but this redacted packet cannot recompute or verify it.",
+    "- redacted review thresholds are local sensitivity settings only; they do not change the receipt, snapshot hash, bundle contents, or protocol risk.",
     "- redacted snapshot comparison uses visible minimized fields only and cannot prove hidden exact account movement.",
     "- public market context uses disclosed markets only and does not use a raw account address.",
     "- review cues are heuristic context, not protocol-official risk calculations or trading advice.",
@@ -90,6 +93,24 @@ export function buildRedactedReviewPacket(input: {
   ].join("\n");
 
   return { title, summary, markdown };
+}
+
+function formatRedactedReviewThresholds(watchlist: redacted_market_watchlist) {
+  const thresholds = watchlist.thresholds;
+
+  return [
+    `- watch age: ${formatAgeMinutes(thresholds.watch_age_minutes)}`,
+    `- full-recheck age: ${formatAgeMinutes(thresholds.high_age_minutes)}`,
+    `- thin disclosed buffer: ${formatBpsAsPercent(thresholds.thin_liquidation_distance_bps)}`,
+    `- tight disclosed buffer: ${formatBpsAsPercent(thresholds.tight_liquidation_distance_bps)}`,
+    `- adverse 24h move: ${formatPlainNumber(thresholds.material_adverse_move_percent)}%`,
+    `- material funding move: ${formatPlainNumber(thresholds.material_funding_move_bps)} bps`,
+    `- high funding move: ${formatPlainNumber(thresholds.high_funding_move_bps)} bps`,
+    `- high public range: ${formatPlainNumber(thresholds.high_range_percent)}%`,
+    `- range/watch buffer ratio: ${formatPlainNumber(thresholds.range_to_buffer_watch_ratio)}x`,
+    `- range/full-recheck buffer ratio: ${formatPlainNumber(thresholds.range_to_buffer_high_ratio)}x`,
+    "",
+  ];
 }
 
 function formatSnapshotComparisonSection(
@@ -273,6 +294,24 @@ function formatWatchlistItems(items: redacted_market_watch_item[]) {
 
 function formatBpsAsPercent(value: number | null) {
   return value === null ? "n/a" : `${(value / 100).toFixed(2)}%`;
+}
+
+function formatAgeMinutes(value: number) {
+  if (value < 60) {
+    return `${value}m`;
+  }
+
+  const hours = value / 60;
+
+  if (hours < 24) {
+    return `${formatPlainNumber(hours)}h`;
+  }
+
+  return `${formatPlainNumber(hours / 24)}d`;
+}
+
+function formatPlainNumber(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
 function formatNullablePercent(value: number | null) {

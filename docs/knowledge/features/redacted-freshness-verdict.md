@@ -18,10 +18,12 @@ classification: `reviewable`, `stale but informative`, or `needs full recheck`.
 - [[../sources/redacted-market-context]]
 - [[../sources/redacted-market-trend]]
 - [[../sources/redacted-market-watchlist]]
+- [[../sources/redacted-review-thresholds]]
 - [[redacted-receipt-share]]
 - [[redacted-market-context]]
 - [[redacted-market-trend]]
 - [[redacted-market-watchlist]]
+- [[redacted-review-thresholds]]
 - [[redacted-snapshot-comparison]]
 - [[redacted-share-assistant]]
 - [[redacted-review-packet]]
@@ -38,9 +40,11 @@ classification: `reviewable`, `stale but informative`, or `needs full recheck`.
   appear, such as material funding movement, older timestamps, or public range
   using a meaningful share of the disclosed buffer.
 - Returns `needs_full_recheck` when high cues appear, such as a receipt older
-  than 24 hours, thin disclosed buffer, public 24-hour range reaching the
-  disclosed buffer, adverse trend near a tight buffer, or high watchlist
-  severity.
+  than the active full-recheck age, thin disclosed buffer, public 24-hour range
+  reaching the disclosed buffer, adverse trend near a tight buffer, or high
+  watchlist severity.
+- Uses the active redacted review threshold profile for age, buffer, adverse
+  move, funding movement, and range-versus-buffer sensitivity.
 - Exposes driver counts, a bounded signal score, field-style citations, and
   review points.
 - Feeds the verdict into the redacted share assistant and redacted review
@@ -55,6 +59,8 @@ classification: `reviewable`, `stale but informative`, or `needs full recheck`.
 - [[redacted-market-trend]] supplies public 24-hour range, adverse trend, and
   funding-history rows.
 - [[redacted-market-watchlist]] supplies high/watch/info review severity.
+- [[redacted-review-thresholds]] supplies strict/standard/relaxed sensitivity
+  profiles without mutating bundle integrity.
 - [[redacted-snapshot-comparison]] uses redacted-only freshness labels to compare
   two minimized snapshots without loading public context.
 - [[redacted-share-assistant]] answers whether a redacted receipt is still

@@ -19,6 +19,7 @@ hash-reference-only caveats.
 - [[../sources/redacted-market-watchlist]]
 - [[../sources/redacted-freshness-verdict]]
 - [[../sources/redacted-comparison-assistant-packet]]
+- [[../sources/redacted-review-thresholds]]
 - [[redacted-receipt-share]]
 - [[redacted-market-context]]
 - [[redacted-market-trend]]
@@ -26,6 +27,7 @@ hash-reference-only caveats.
 - [[redacted-freshness-verdict]]
 - [[redacted-snapshot-comparison]]
 - [[redacted-comparison-assistant-packet]]
+- [[redacted-review-thresholds]]
 - [[redacted-share-assistant]]
 - [[receipt-review-packet]]
 
@@ -46,6 +48,8 @@ hash-reference-only caveats.
   previous/latest receipt ids, timestamps, risk-score delta, cue counts,
   redacted-only freshness movement, notable metric movement, disclosed
   market-row changes, review points, and limits.
+- Includes the active redacted review threshold profile values so copied
+  markdown preserves the local sensitivity used for the read.
 - Includes redacted review watchlist label, counts, and capped top cues.
 - Explicitly says the packet cannot recompute or verify the hidden full snapshot
   hash and is not a trading recommendation.
@@ -60,6 +64,7 @@ hash-reference-only caveats.
   verdict.
 - [[redacted-comparison-assistant-packet]] carries loaded comparison context into
   this copyable markdown packet.
+- [[redacted-review-thresholds]] supplies the copied local sensitivity profile.
 - [[redacted-share-assistant]] answers cited questions from the same public and
   disclosed fields.
 - [[receipt-review-packet]] is the full-snapshot sibling used after local live

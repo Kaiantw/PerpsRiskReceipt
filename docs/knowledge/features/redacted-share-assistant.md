@@ -21,6 +21,7 @@ public 24-hour trend context, and the redacted watchlist.
 - [[../sources/redacted-market-watchlist]]
 - [[../sources/redacted-freshness-verdict]]
 - [[../sources/redacted-comparison-assistant-packet]]
+- [[../sources/redacted-review-thresholds]]
 - [[redacted-receipt-share]]
 - [[redacted-market-context]]
 - [[redacted-market-trend]]
@@ -28,6 +29,7 @@ public 24-hour trend context, and the redacted watchlist.
 - [[redacted-freshness-verdict]]
 - [[redacted-snapshot-comparison]]
 - [[redacted-comparison-assistant-packet]]
+- [[redacted-review-thresholds]]
 - [[redacted-review-packet]]
 
 ## implemented behavior
@@ -48,6 +50,8 @@ public 24-hour trend context, and the redacted watchlist.
   redacted freshness verdict.
 - Adds a `Compare` prompt after a second redacted bundle is pasted and answers
   what changed between the previous and latest visible redacted cues.
+- Adds a `Thresholds` prompt that explains the active public-only sensitivity
+  profile and cites threshold fields.
 - Refuses trade, leverage, hedge, and position-change requests while still
   explaining visible risk signals.
 - Explains that the snapshot hash is a reference only for redacted bundles; full
@@ -63,6 +67,8 @@ public 24-hour trend context, and the redacted watchlist.
   classification.
 - [[redacted-comparison-assistant-packet]] supplies comparison answers once a
   second redacted bundle is loaded.
+- [[redacted-review-thresholds]] supplies local sensitivity context for threshold
+  answers.
 - [[redacted-review-packet]] packages similar public/disclosed context as markdown.
 - [[receipt-risk-assistant]] is the full-snapshot sibling after local receipt
   import and live recheck.

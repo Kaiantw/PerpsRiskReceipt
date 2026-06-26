@@ -333,19 +333,28 @@ use this file for external protocol assumptions.
 - redacted market watchlist assumptions:
   - the watchlist is a synthesis layer over already-loaded redacted market context, redacted 24-hour trend rows, and disclosed redacted receipt fields.
   - it does not call a new endpoint and does not send a raw account address.
-  - watch thresholds are heuristic: thin disclosed liquidation distance is `<= 500` bps, tight disclosed liquidation distance is `<= 1000` bps, material adverse price move is `>= 2%`, material funding cost/delta is `>= 1` bps, and high public range is `>= 8%` or at least half of disclosed liquidation distance.
+  - default watch thresholds are heuristic: thin disclosed liquidation distance is `<= 500` bps, tight disclosed liquidation distance is `<= 1000` bps, material adverse price move is `>= 2%`, material funding cost/delta is `>= 1` bps, high funding movement is `>= 3` bps, high public range is `>= 8%`, public range watch starts at half of the disclosed buffer, and public range high starts when it reaches the disclosed buffer.
   - high-attention cues are used when tight buffers overlap adverse trend, persistent funding cost becomes more expensive, or public range is large versus a tight disclosed buffer.
   - the watchlist is a review checklist only; it cannot prove hidden receipt fields, recompute the snapshot hash, or monitor exact liquidation state.
+- redacted review threshold assumptions:
+  - reviewer-tuned public-only thresholds apply to the imported redacted share view only.
+  - strict, standard, and relaxed profiles change local sensitivity for receipt age, disclosed buffer, adverse 24-hour move, funding movement, high public range, and public-range-versus-buffer ratios.
+  - thresholds are sanitized before use: negative values are clamped, high/full-recheck thresholds cannot fall below watch thresholds, and tight disclosed-buffer thresholds cannot fall below thin disclosed-buffer thresholds.
+  - active thresholds feed the redacted watchlist, redacted freshness verdict, redacted snapshot comparison, redacted share assistant, and redacted review packet.
+  - active thresholds do not change the redacted bundle, original receipt, snapshot hash, protocol risk, hidden full snapshot, or live Hyperliquid data.
+  - because liquidation risk can change with mark price, margin requirements, funding, volatility, and liquidity, these controls are reviewer sensitivity settings only; they are not Hyperliquid official liquidation rules.
 - redacted review packet assumptions:
   - the packet is deterministic markdown built from the redacted bundle plus already-loaded public current market context, public 24-hour trend context, and redacted watchlist cues.
   - it does not call a new endpoint, change the redacted bundle format, store packet state, or send a raw account address.
   - it includes disclosed bucketed receipt fields, disclosed market rows, optional public market/trend rows, optional redacted snapshot comparison, watchlist counts/items, and hash-reference-only caveats.
+  - it includes the active redacted review thresholds so copied markdown says which local sensitivity profile produced the public-only read.
   - it does not include raw local receipt history, raw account identifiers, exact account value, exact position sizes, saved mark prices, listed liquidation prices, PnL, exact funding dollars, or hidden full-snapshot fields.
   - the snapshot hash is preserved as a reference only; the hidden full snapshot remains required for recomputation.
   - the packet is a public communication summary only, not cryptographic selective disclosure, a Verifiable Credential, an EAS private-data proof, exact liquidation monitoring, or trading advice.
 - redacted share assistant assumptions:
   - the assistant is deterministic local explanation logic; it does not call an LLM, backend assistant endpoint, wallet, or trading endpoint.
   - answers cite disclosed redacted receipt fields, loaded public current market context, loaded public 24-hour trend context, redacted watchlist items, and optional redacted snapshot comparison fields.
+  - threshold answers cite the active redacted review threshold fields and explain that they only change local review sensitivity.
   - unloaded public context stays explicit as not loaded; the assistant does not invent current mark, funding, open-interest, or trend reads.
   - unloaded comparison context stays explicit as not loaded; the assistant does not invent previous-versus-latest movement unless a second redacted bundle has been pasted.
   - named-market answers use disclosed markets only and do not reveal exact size, saved mark, listed liquidation price, PnL, raw account, or exact account equity.

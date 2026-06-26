@@ -10,13 +10,10 @@ import type {
   redacted_receipt_bundle,
   redacted_receipt_market,
 } from "../receipts/portable-receipt-bundle.ts";
-
-const THIN_LIQUIDATION_DISTANCE_BPS = 500;
-const TIGHT_LIQUIDATION_DISTANCE_BPS = 1_000;
-const MATERIAL_PRICE_MOVE_PERCENT = 2;
-const MATERIAL_FUNDING_BPS = 1;
-const HIGH_RANGE_PERCENT = 8;
-const RANGE_TO_BUFFER_WARN_RATIO = 0.5;
+import {
+  resolveRedactedReviewThresholds,
+  type redacted_review_thresholds,
+} from "./redacted-review-thresholds.ts";
 
 export type redacted_market_watch_severity = "info" | "watch" | "high";
 
@@ -49,6 +46,7 @@ export type redacted_market_watchlist = {
   label: redacted_market_watchlist_label;
   headline: string;
   summary: string;
+  thresholds: redacted_review_thresholds;
   item_count: number;
   high_count: number;
   watch_count: number;
@@ -60,7 +58,9 @@ export function buildRedactedMarketWatchlist(input: {
   bundle: redacted_receipt_bundle;
   marketContext?: redacted_market_context;
   marketTrend?: redacted_market_trend;
+  thresholds?: Partial<redacted_review_thresholds>;
 }): redacted_market_watchlist {
+  const thresholds = resolveRedactedReviewThresholds(input.thresholds);
   const contextRowsByMarket = getRowsByMarket(input.marketContext?.rows ?? []);
   const trendRowsByMarket = getRowsByMarket(input.marketTrend?.rows ?? []);
   const hasLoadedContext =
@@ -70,6 +70,7 @@ export function buildRedactedMarketWatchlist(input: {
     return buildWatchlistResult({
       label: "no_loaded_context",
       items: [],
+      thresholds,
     });
   }
 
@@ -81,6 +82,7 @@ export function buildRedactedMarketWatchlist(input: {
         trendRow: trendRowsByMarket.get(market.market),
         hasLoadedMarketContext: input.marketContext !== undefined,
         hasLoadedMarketTrend: input.marketTrend !== undefined,
+        thresholds,
       }),
     )
     .sort(compareWatchItems);
@@ -88,6 +90,7 @@ export function buildRedactedMarketWatchlist(input: {
   return buildWatchlistResult({
     label: getWatchlistLabel(items),
     items,
+    thresholds,
   });
 }
 
@@ -97,9 +100,10 @@ function buildMarketWatchItems(input: {
   trendRow: redacted_market_trend_row | undefined;
   hasLoadedMarketContext: boolean;
   hasLoadedMarketTrend: boolean;
+  thresholds: redacted_review_thresholds;
 }): redacted_market_watch_item[] {
   const items: Array<redacted_market_watch_item | null> = [
-    getLiquidationBufferItem(input.market),
+    getLiquidationBufferItem(input.market, input.thresholds),
     getAdverseTrendItem(input),
     getFundingCostItem(input),
     getVolatilityRangeItem(input),
@@ -112,6 +116,7 @@ function buildMarketWatchItems(input: {
 
 function getLiquidationBufferItem(
   market: redacted_receipt_market,
+  thresholds: redacted_review_thresholds,
 ): redacted_market_watch_item | null {
   const liquidationDistanceBps = market.liquidation_distance_bps;
 
@@ -119,7 +124,7 @@ function getLiquidationBufferItem(
     return null;
   }
 
-  if (liquidationDistanceBps <= THIN_LIQUIDATION_DISTANCE_BPS) {
+  if (liquidationDistanceBps <= thresholds.thin_liquidation_distance_bps) {
     return {
       id: `${market.market}:liquidation-buffer:thin`,
       market: market.market,
@@ -137,7 +142,7 @@ function getLiquidationBufferItem(
     };
   }
 
-  if (liquidationDistanceBps <= TIGHT_LIQUIDATION_DISTANCE_BPS) {
+  if (liquidationDistanceBps <= thresholds.tight_liquidation_distance_bps) {
     return {
       id: `${market.market}:liquidation-buffer:tight`,
       market: market.market,
@@ -161,6 +166,7 @@ function getLiquidationBufferItem(
 function getAdverseTrendItem(input: {
   market: redacted_receipt_market;
   trendRow: redacted_market_trend_row | undefined;
+  thresholds: redacted_review_thresholds;
 }): redacted_market_watch_item | null {
   const trendRow = input.trendRow;
 
@@ -168,12 +174,19 @@ function getAdverseTrendItem(input: {
     return null;
   }
 
-  if (!isAdversePriceMove(input.market, trendRow.price_change_percent)) {
+  if (
+    !isAdversePriceMove(
+      input.market,
+      trendRow.price_change_percent,
+      input.thresholds,
+    )
+  ) {
     return null;
   }
 
   const hasTightBuffer = isTightLiquidationDistance(
     input.market.liquidation_distance_bps,
+    input.thresholds,
   );
   const priceMove = formatSignedPercent(trendRow.price_change_percent);
 
@@ -198,6 +211,7 @@ function getFundingCostItem(input: {
   market: redacted_receipt_market;
   contextRow: redacted_market_context_row | undefined;
   trendRow: redacted_market_trend_row | undefined;
+  thresholds: redacted_review_thresholds;
 }): redacted_market_watch_item | null {
   const averageFunding =
     input.trendRow?.average_funding_8h_bps_user_perspective ?? null;
@@ -208,12 +222,13 @@ function getFundingCostItem(input: {
   const hasPersistentFundingCost =
     averageFunding !== null &&
     latestFunding !== null &&
-    averageFunding >= MATERIAL_FUNDING_BPS &&
-    latestFunding >= MATERIAL_FUNDING_BPS;
+    averageFunding >= input.thresholds.material_funding_move_bps &&
+    latestFunding >= input.thresholds.material_funding_move_bps;
 
   if (
     !hasPersistentFundingCost &&
-    (fundingDelta === null || fundingDelta <= MATERIAL_FUNDING_BPS)
+    (fundingDelta === null ||
+      fundingDelta <= input.thresholds.material_funding_move_bps)
   ) {
     return null;
   }
@@ -221,7 +236,7 @@ function getFundingCostItem(input: {
   if (
     hasPersistentFundingCost &&
     fundingDelta !== null &&
-    fundingDelta > MATERIAL_FUNDING_BPS
+    fundingDelta > input.thresholds.material_funding_move_bps
   ) {
     return {
       id: `${input.market.market}:funding-cost:persistent-and-worse`,
@@ -230,7 +245,7 @@ function getFundingCostItem(input: {
       severity: "high",
       category: "funding_cost",
       title: "Funding cost is persistent and more expensive now",
-      detail: `Public funding stayed at or above ${MATERIAL_FUNDING_BPS.toFixed(
+      detail: `Public funding stayed at or above ${input.thresholds.material_funding_move_bps.toFixed(
         2,
       )} bps for the disclosed side, and current funding is ${formatSignedBps(
         fundingDelta,
@@ -261,7 +276,10 @@ function getFundingCostItem(input: {
     };
   }
 
-  if (fundingDelta === null || fundingDelta <= MATERIAL_FUNDING_BPS) {
+  if (
+    fundingDelta === null ||
+    fundingDelta <= input.thresholds.material_funding_move_bps
+  ) {
     return null;
   }
 
@@ -284,6 +302,7 @@ function getFundingCostItem(input: {
 function getVolatilityRangeItem(input: {
   market: redacted_receipt_market;
   trendRow: redacted_market_trend_row | undefined;
+  thresholds: redacted_review_thresholds;
 }): redacted_market_watch_item | null {
   const highLowRangePercent = input.trendRow?.high_low_range_percent;
 
@@ -295,14 +314,18 @@ function getVolatilityRangeItem(input: {
   const rangeBps = highLowRangePercent * 100;
   const rangeIsLargeComparedWithBuffer =
     liquidationDistanceBps !== null &&
-    rangeBps >= liquidationDistanceBps * RANGE_TO_BUFFER_WARN_RATIO;
+    rangeBps >=
+      liquidationDistanceBps * input.thresholds.range_to_buffer_watch_ratio;
 
   if (rangeIsLargeComparedWithBuffer) {
     return {
       id: `${input.market.market}:range:relative-to-buffer`,
       market: input.market.market,
       side: input.market.side,
-      severity: isTightLiquidationDistance(liquidationDistanceBps)
+      severity: isTightLiquidationDistance(
+        liquidationDistanceBps,
+        input.thresholds,
+      )
         ? "high"
         : "watch",
       category: "volatility_range",
@@ -318,7 +341,7 @@ function getVolatilityRangeItem(input: {
     };
   }
 
-  if (highLowRangePercent >= HIGH_RANGE_PERCENT) {
+  if (highLowRangePercent >= input.thresholds.high_range_percent) {
     return {
       id: `${input.market.market}:range:high`,
       market: input.market.market,
@@ -399,16 +422,20 @@ function isWatchItem(
 function isAdversePriceMove(
   market: redacted_receipt_market,
   priceChangePercent: number,
+  thresholds: redacted_review_thresholds,
 ) {
   return market.side === "long"
-    ? priceChangePercent <= -MATERIAL_PRICE_MOVE_PERCENT
-    : priceChangePercent >= MATERIAL_PRICE_MOVE_PERCENT;
+    ? priceChangePercent <= -thresholds.material_adverse_move_percent
+    : priceChangePercent >= thresholds.material_adverse_move_percent;
 }
 
-function isTightLiquidationDistance(liquidationDistanceBps: number | null) {
+function isTightLiquidationDistance(
+  liquidationDistanceBps: number | null,
+  thresholds: redacted_review_thresholds,
+) {
   return (
     liquidationDistanceBps !== null &&
-    liquidationDistanceBps <= TIGHT_LIQUIDATION_DISTANCE_BPS
+    liquidationDistanceBps <= thresholds.tight_liquidation_distance_bps
   );
 }
 
@@ -429,6 +456,7 @@ function getWatchlistLabel(
 function buildWatchlistResult(input: {
   label: redacted_market_watchlist_label;
   items: redacted_market_watch_item[];
+  thresholds: redacted_review_thresholds;
 }): redacted_market_watchlist {
   const highCount = input.items.filter((item) => item.severity === "high").length;
   const watchCount = input.items.filter(
@@ -440,6 +468,7 @@ function buildWatchlistResult(input: {
     label: input.label,
     headline: getHeadline(input.label),
     summary: getSummary(input.label),
+    thresholds: input.thresholds,
     item_count: input.items.length,
     high_count: highCount,
     watch_count: watchCount,

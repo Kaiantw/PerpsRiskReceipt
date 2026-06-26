@@ -26,6 +26,14 @@ import {
   type redacted_market_watch_severity,
 } from "@/lib/market/redacted-market-watchlist.ts";
 import {
+  defaultRedactedReviewThresholds,
+  getRedactedReviewThresholdProfile,
+  redactedReviewThresholdProfiles,
+  resolveRedactedReviewThresholds,
+  type redacted_review_threshold_profile_id,
+  type redacted_review_thresholds,
+} from "@/lib/market/redacted-review-thresholds.ts";
+import {
   buildRedactedFreshnessVerdict,
   type redacted_freshness_verdict_driver,
   type redacted_freshness_verdict_label,
@@ -42,7 +50,6 @@ import { buildRedactedReviewPacket } from "@/lib/market/redacted-review-packet.t
 import {
   answerRedactedShareQuestion,
   getRedactedShareAssistantSuggestions,
-  type redacted_share_assistant_response,
 } from "@/lib/assistant/redacted-share-assistant.ts";
 import type {
   hyperliquid_market_context,
@@ -94,6 +101,7 @@ type redacted_snapshot_compare_state =
   | {
       status: "ready";
       comparison: redacted_snapshot_comparison;
+      secondBundle: redacted_receipt_bundle;
     };
 
 type hyperliquid_markets_payload = {
@@ -118,6 +126,10 @@ export function ReceiptImportClient() {
     useState<redacted_market_trend_state>({ status: "idle" });
   const [redactedSnapshotCompareState, setRedactedSnapshotCompareState] =
     useState<redacted_snapshot_compare_state>({ status: "empty" });
+  const [redactedReviewThresholdProfileId, setRedactedReviewThresholdProfileId] =
+    useState<redacted_review_threshold_profile_id>("standard");
+  const [redactedReviewThresholds, setRedactedReviewThresholds] =
+    useState<redacted_review_thresholds>(defaultRedactedReviewThresholds);
   const importPreviewRequestIdRef = useRef(0);
   const redactedMarketContextRequestIdRef = useRef(0);
   const redactedMarketTrendRequestIdRef = useRef(0);
@@ -132,6 +144,8 @@ export function ReceiptImportClient() {
     setRedactedMarketContextState({ status: "idle" });
     setRedactedMarketTrendState({ status: "idle" });
     setRedactedSnapshotCompareState({ status: "empty" });
+    setRedactedReviewThresholdProfileId("standard");
+    setRedactedReviewThresholds(defaultRedactedReviewThresholds);
 
     if (!value.trim()) {
       setState({ status: "empty" });
@@ -241,6 +255,31 @@ export function ReceiptImportClient() {
           error instanceof Error
             ? error.message
             : "Hyperliquid market context lookup failed.",
+      });
+    }
+  }
+
+  function updateRedactedReviewThresholdProfile(
+    profileId: redacted_review_threshold_profile_id,
+  ) {
+    const profile = getRedactedReviewThresholdProfile(profileId);
+    const thresholds = resolveRedactedReviewThresholds(profile.thresholds);
+
+    setRedactedReviewThresholdProfileId(profile.id);
+    setRedactedReviewThresholds(thresholds);
+
+    if (
+      state.status === "redacted_preview" &&
+      redactedSnapshotCompareState.status === "ready"
+    ) {
+      setRedactedSnapshotCompareState({
+        status: "ready",
+        secondBundle: redactedSnapshotCompareState.secondBundle,
+        comparison: buildRedactedSnapshotComparison({
+          firstBundle: state.bundle,
+          secondBundle: redactedSnapshotCompareState.secondBundle,
+          thresholds,
+        }),
       });
     }
   }
@@ -572,16 +611,24 @@ export function ReceiptImportClient() {
               }}
             />
 
+            <RedactedReviewThresholdsPanel
+              activeProfileId={redactedReviewThresholdProfileId}
+              onProfileChange={updateRedactedReviewThresholdProfile}
+              thresholds={redactedReviewThresholds}
+            />
+
             <RedactedMarketWatchlistPanel
               bundle={state.bundle}
               marketContextState={redactedMarketContextState}
               marketTrendState={redactedMarketTrendState}
+              thresholds={redactedReviewThresholds}
             />
 
             <RedactedFreshnessVerdictPanel
               bundle={state.bundle}
               marketContextState={redactedMarketContextState}
               marketTrendState={redactedMarketTrendState}
+              thresholds={redactedReviewThresholds}
             />
 
             <RedactedSnapshotComparePanel
@@ -589,6 +636,7 @@ export function ReceiptImportClient() {
               compareState={redactedSnapshotCompareState}
               key={state.bundle.receipt_id}
               onCompareStateChange={setRedactedSnapshotCompareState}
+              thresholds={redactedReviewThresholds}
             />
 
             <RedactedShareAssistantPanel
@@ -597,6 +645,7 @@ export function ReceiptImportClient() {
               marketContextState={redactedMarketContextState}
               marketTrendState={redactedMarketTrendState}
               snapshotCompareState={redactedSnapshotCompareState}
+              thresholds={redactedReviewThresholds}
             />
 
             <RedactedReviewPacketPanel
@@ -605,6 +654,7 @@ export function ReceiptImportClient() {
               marketContextState={redactedMarketContextState}
               marketTrendState={redactedMarketTrendState}
               snapshotCompareState={redactedSnapshotCompareState}
+              thresholds={redactedReviewThresholds}
             />
           </section>
         ) : null}
@@ -855,14 +905,132 @@ function RedactedMarketTrendResult({
   );
 }
 
+function RedactedReviewThresholdsPanel({
+  activeProfileId,
+  onProfileChange,
+  thresholds,
+}: {
+  activeProfileId: redacted_review_threshold_profile_id;
+  onProfileChange: (profileId: redacted_review_threshold_profile_id) => void;
+  thresholds: redacted_review_thresholds;
+}) {
+  return (
+    <div className="mt-4 rounded-lg border border-stone-300 bg-white p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">
+            Redacted review sensitivity
+          </h3>
+          <p className="mt-1 text-sm text-stone-600">
+            Tune what counts as stale, tight, adverse, or expensive when reading
+            public-only redacted context.
+          </p>
+        </div>
+        <span className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-semibold uppercase text-stone-600">
+          Local thresholds
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        {redactedReviewThresholdProfiles.map((profile) => {
+          const isActive = profile.id === activeProfileId;
+
+          return (
+            <button
+              className={`rounded-lg border p-3 text-left text-sm ${
+                isActive
+                  ? "border-stone-950 bg-stone-950 text-white"
+                  : "border-stone-300 bg-stone-50 text-stone-900 hover:bg-stone-100"
+              }`}
+              key={profile.id}
+              onClick={() => onProfileChange(profile.id)}
+              type="button"
+            >
+              <span className="block font-semibold">{profile.label}</span>
+              <span
+                className={`mt-1 block text-xs leading-5 ${
+                  isActive ? "text-stone-200" : "text-stone-600"
+                }`}
+              >
+                {profile.description}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <ImportMetric
+          label="Watch age"
+          value={formatThresholdAge(thresholds.watch_age_minutes)}
+        />
+        <ImportMetric
+          label="Full recheck age"
+          value={formatThresholdAge(thresholds.high_age_minutes)}
+        />
+        <ImportMetric
+          label="Thin buffer"
+          value={formatPercentFromBps(thresholds.thin_liquidation_distance_bps)}
+        />
+        <ImportMetric
+          label="Tight buffer"
+          value={formatPercentFromBps(
+            thresholds.tight_liquidation_distance_bps,
+          )}
+        />
+        <ImportMetric
+          label="Adverse move"
+          value={`${formatPlainNumber(
+            thresholds.material_adverse_move_percent,
+          )}%`}
+        />
+        <ImportMetric
+          label="Funding move"
+          value={`${formatPlainNumber(
+            thresholds.material_funding_move_bps,
+          )} bps`}
+        />
+        <ImportMetric
+          label="High funding"
+          value={`${formatPlainNumber(thresholds.high_funding_move_bps)} bps`}
+        />
+        <ImportMetric
+          label="High range"
+          value={`${formatPlainNumber(thresholds.high_range_percent)}%`}
+        />
+        <ImportMetric
+          label="Range watch"
+          value={`${formatPlainNumber(
+            thresholds.range_to_buffer_watch_ratio,
+          )}x buffer`}
+        />
+        <ImportMetric
+          label="Range full"
+          value={`${formatPlainNumber(
+            thresholds.range_to_buffer_high_ratio,
+          )}x buffer`}
+        />
+      </div>
+
+      <p className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-700">
+        These settings only affect this browser&apos;s redacted review read.
+        They do not change the receipt, snapshot hash, redacted bundle, or
+        protocol risk.
+      </p>
+    </div>
+  );
+}
+
 function RedactedMarketWatchlistPanel({
   bundle,
   marketContextState,
   marketTrendState,
+  thresholds,
 }: {
   bundle: redacted_receipt_bundle;
   marketContextState: redacted_market_context_state;
   marketTrendState: redacted_market_trend_state;
+  thresholds: redacted_review_thresholds;
 }) {
   const marketContext =
     marketContextState.status === "loaded"
@@ -874,6 +1042,7 @@ function RedactedMarketWatchlistPanel({
     bundle,
     marketContext,
     marketTrend,
+    thresholds,
   });
 
   return (
@@ -917,10 +1086,12 @@ function RedactedFreshnessVerdictPanel({
   bundle,
   marketContextState,
   marketTrendState,
+  thresholds,
 }: {
   bundle: redacted_receipt_bundle;
   marketContextState: redacted_market_context_state;
   marketTrendState: redacted_market_trend_state;
+  thresholds: redacted_review_thresholds;
 }) {
   const marketContext =
     marketContextState.status === "loaded"
@@ -932,12 +1103,14 @@ function RedactedFreshnessVerdictPanel({
     bundle,
     marketContext,
     marketTrend,
+    thresholds,
   });
   const verdict = buildRedactedFreshnessVerdict({
     bundle,
     marketContext,
     marketTrend,
     watchlist,
+    thresholds,
   });
   const displayedDrivers =
     verdict.drivers.filter((driver) => driver.severity !== "info").length > 0
@@ -1015,10 +1188,12 @@ function RedactedSnapshotComparePanel({
   bundle,
   compareState,
   onCompareStateChange,
+  thresholds,
 }: {
   bundle: redacted_receipt_bundle;
   compareState: redacted_snapshot_compare_state;
   onCompareStateChange: (state: redacted_snapshot_compare_state) => void;
+  thresholds: redacted_review_thresholds;
 }) {
   const [compareText, setCompareText] = useState("");
 
@@ -1048,9 +1223,11 @@ function RedactedSnapshotComparePanel({
 
     onCompareStateChange({
       status: "ready",
+      secondBundle: parsed.bundle,
       comparison: buildRedactedSnapshotComparison({
         firstBundle: bundle,
         secondBundle: parsed.bundle,
+        thresholds,
       }),
     });
   }
@@ -1280,15 +1457,16 @@ function RedactedShareAssistantPanel({
   marketContextState,
   marketTrendState,
   snapshotCompareState,
+  thresholds,
 }: {
   bundle: redacted_receipt_bundle;
   marketContextState: redacted_market_context_state;
   marketTrendState: redacted_market_trend_state;
   snapshotCompareState: redacted_snapshot_compare_state;
+  thresholds: redacted_review_thresholds;
 }) {
   const [question, setQuestion] = useState("");
-  const [response, setResponse] =
-    useState<redacted_share_assistant_response | null>(null);
+  const [submittedQuestion, setSubmittedQuestion] = useState("");
   const marketContext =
     marketContextState.status === "loaded"
       ? marketContextState.context
@@ -1299,12 +1477,14 @@ function RedactedShareAssistantPanel({
     bundle,
     marketContext,
     marketTrend,
+    thresholds,
   });
   const freshnessVerdict = buildRedactedFreshnessVerdict({
     bundle,
     marketContext,
     marketTrend,
     watchlist,
+    thresholds,
   });
   const assistantContext = {
     bundle,
@@ -1318,15 +1498,16 @@ function RedactedShareAssistantPanel({
         : undefined,
   };
   const suggestions = getRedactedShareAssistantSuggestions(assistantContext);
+  const response = submittedQuestion.trim()
+    ? answerRedactedShareQuestion({
+        context: assistantContext,
+        question: submittedQuestion,
+      })
+    : null;
 
   function askAssistant(questionToAsk: string) {
     setQuestion(questionToAsk);
-    setResponse(
-      answerRedactedShareQuestion({
-        context: assistantContext,
-        question: questionToAsk,
-      }),
-    );
+    setSubmittedQuestion(questionToAsk);
   }
 
   return (
@@ -1418,11 +1599,13 @@ function RedactedReviewPacketPanel({
   marketContextState,
   marketTrendState,
   snapshotCompareState,
+  thresholds,
 }: {
   bundle: redacted_receipt_bundle;
   marketContextState: redacted_market_context_state;
   marketTrendState: redacted_market_trend_state;
   snapshotCompareState: redacted_snapshot_compare_state;
+  thresholds: redacted_review_thresholds;
 }) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
     "idle",
@@ -1437,12 +1620,14 @@ function RedactedReviewPacketPanel({
     bundle,
     marketContext,
     marketTrend,
+    thresholds,
   });
   const freshnessVerdict = buildRedactedFreshnessVerdict({
     bundle,
     marketContext,
     marketTrend,
     watchlist,
+    thresholds,
   });
   const packet = buildRedactedReviewPacket({
     bundle,
@@ -1737,6 +1922,24 @@ function formatSignedNumber(value: number) {
   }
 
   return `${value > 0 ? "+" : ""}${value}`;
+}
+
+function formatThresholdAge(value: number) {
+  if (value < 60) {
+    return `${value}m`;
+  }
+
+  const hours = value / 60;
+
+  if (hours < 24) {
+    return `${formatPlainNumber(hours)}h`;
+  }
+
+  return `${formatPlainNumber(hours / 24)}d`;
+}
+
+function formatPlainNumber(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
 function MarketTrendSparkline({ values }: { values: number[] }) {

@@ -148,6 +148,24 @@ function formatSignedNumber(value: number) {
   return `${value > 0 ? "+" : ""}${value}`;
 }
 
+function formatAgeMinutes(value: number) {
+  if (value < 60) {
+    return `${value}m`;
+  }
+
+  const hours = value / 60;
+
+  if (hours < 24) {
+    return `${formatPlainNumber(hours)}h`;
+  }
+
+  return `${formatPlainNumber(hours / 24)}d`;
+}
+
+function formatPlainNumber(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
 function getContextRowByMarket(
   marketContext: redacted_market_context | undefined,
   market: string,
@@ -437,6 +455,55 @@ function buildWatchlistAnswer(
         `redacted_market_watchlist.items.${item.id}.detail`,
         `redacted_market_watchlist.items.${item.id}.review_points`,
       ]),
+    ],
+  };
+}
+
+function buildThresholdsAnswer(
+  context: redacted_share_assistant_context,
+): redacted_share_assistant_response {
+  const thresholds = context.watchlist.thresholds;
+
+  return {
+    answer: [
+      "This redacted review is using local public-only sensitivity thresholds.",
+      `Receipt age becomes watch at ${formatAgeMinutes(
+        thresholds.watch_age_minutes,
+      )} and needs-full-recheck at ${formatAgeMinutes(
+        thresholds.high_age_minutes,
+      )}.`,
+      `Disclosed liquidation buffers are thin at ${formatBpsAsPercent(
+        thresholds.thin_liquidation_distance_bps,
+      )} and tight at ${formatBpsAsPercent(
+        thresholds.tight_liquidation_distance_bps,
+      )}.`,
+      `Adverse 24h moves cross at ${formatPlainNumber(
+        thresholds.material_adverse_move_percent,
+      )}%, material funding moves cross at ${formatPlainNumber(
+        thresholds.material_funding_move_bps,
+      )} bps, and high funding moves cross at ${formatPlainNumber(
+        thresholds.high_funding_move_bps,
+      )} bps.`,
+      `Public range crosses watch at ${formatPlainNumber(
+        thresholds.range_to_buffer_watch_ratio,
+      )}x disclosed buffer, full-recheck at ${formatPlainNumber(
+        thresholds.range_to_buffer_high_ratio,
+      )}x disclosed buffer, or watch if absolute 24h range reaches ${formatPlainNumber(
+        thresholds.high_range_percent,
+      )}%.`,
+      "These settings only change local review sensitivity; they do not change the receipt, snapshot hash, redacted bundle, or protocol risk.",
+    ].join(" "),
+    citations: [
+      "redacted_market_watchlist.thresholds.watch_age_minutes",
+      "redacted_market_watchlist.thresholds.high_age_minutes",
+      "redacted_market_watchlist.thresholds.thin_liquidation_distance_bps",
+      "redacted_market_watchlist.thresholds.tight_liquidation_distance_bps",
+      "redacted_market_watchlist.thresholds.material_adverse_move_percent",
+      "redacted_market_watchlist.thresholds.material_funding_move_bps",
+      "redacted_market_watchlist.thresholds.high_funding_move_bps",
+      "redacted_market_watchlist.thresholds.range_to_buffer_watch_ratio",
+      "redacted_market_watchlist.thresholds.range_to_buffer_high_ratio",
+      "redacted_market_watchlist.thresholds.high_range_percent",
     ],
   };
 }
@@ -809,6 +876,19 @@ export function answerRedactedShareQuestion(input: {
 
   if (
     includesAny(normalizedQuestion, [
+      "threshold",
+      "thresholds",
+      "sensitivity",
+      "strict",
+      "relaxed",
+      "profile",
+    ])
+  ) {
+    return buildThresholdsAnswer(input.context);
+  }
+
+  if (
+    includesAny(normalizedQuestion, [
       "watchlist",
       "inspect first",
       "review first",
@@ -918,6 +998,11 @@ export function getRedactedShareAssistantSuggestions(
       id: "freshness",
       label: "Freshness",
       question: "Is this redacted receipt still reviewable?",
+    },
+    {
+      id: "thresholds",
+      label: "Thresholds",
+      question: "What redacted review thresholds are active?",
     },
     {
       id: "current-market",

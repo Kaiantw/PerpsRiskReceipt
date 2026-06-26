@@ -228,6 +228,9 @@ test("builds a copyable redacted markdown packet from disclosed and public conte
   assert.match(packet.markdown, /risk-score delta: -27/);
   assert.match(packet.markdown, /disclosed buffer moved from 9.00% to 19.00%/);
   assert.match(packet.markdown, /BTC-PERP: Disclosed market row removed/);
+  assert.match(packet.markdown, /## redacted review thresholds/);
+  assert.match(packet.markdown, /thin disclosed buffer: 5.00%/);
+  assert.match(packet.markdown, /full-recheck age: 1d/);
   assert.match(packet.markdown, /## redacted review watchlist/);
   assert.match(packet.markdown, /Adverse trend near disclosed buffer/);
   assert.match(packet.markdown, /hidden full snapshot is required/);

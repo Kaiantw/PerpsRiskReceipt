@@ -6,6 +6,7 @@ import type { redacted_market_context } from "./redacted-market-context.ts";
 import type { redacted_market_trend } from "./redacted-market-trend.ts";
 import { buildRedactedFreshnessVerdict } from "./redacted-freshness-verdict.ts";
 import { buildRedactedMarketWatchlist } from "./redacted-market-watchlist.ts";
+import { getRedactedReviewThresholdProfile } from "./redacted-review-thresholds.ts";
 
 const nowIso = "2026-06-26T12:10:00.000Z";
 
@@ -216,6 +217,30 @@ test("marks a redacted share stale but informative when public context is not lo
       (driver) =>
         driver.category === "trend_context" &&
         driver.id === "trend-context:not-loaded",
+    ),
+  );
+});
+
+test("uses strict thresholds to require a full recheck sooner", () => {
+  const thresholds = getRedactedReviewThresholdProfile("strict").thresholds;
+  const watchlist = buildRedactedMarketWatchlist({
+    bundle: redactedBundle,
+    thresholds,
+  });
+  const verdict = buildRedactedFreshnessVerdict({
+    bundle: redactedBundle,
+    watchlist,
+    nowIso: "2026-06-27T01:00:00.000Z",
+    thresholds,
+  });
+
+  assert.equal(verdict.label, "needs_full_recheck");
+  assert.equal(verdict.thresholds.high_age_minutes, 720);
+  assert.ok(
+    verdict.drivers.some(
+      (driver) =>
+        driver.id === "receipt-age:high" &&
+        driver.title === "Receipt is older than 12h",
     ),
   );
 });

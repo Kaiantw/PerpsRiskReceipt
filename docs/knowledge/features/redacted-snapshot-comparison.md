@@ -17,9 +17,11 @@ the two timestamped public summaries without exposing the hidden full snapshots.
 - [[../sources/redacted-receipt-sharing]]
 - [[../sources/redacted-freshness-verdict]]
 - [[../sources/redacted-market-watchlist]]
+- [[../sources/redacted-review-thresholds]]
 - [[redacted-receipt-share]]
 - [[redacted-freshness-verdict]]
 - [[redacted-market-watchlist]]
+- [[redacted-review-thresholds]]
 - [[redacted-review-packet]]
 - [[redacted-share-assistant]]
 - [[redacted-comparison-assistant-packet]]
@@ -31,9 +33,9 @@ the two timestamped public summaries without exposing the hidden full snapshots.
 - Orders the two bundles by `data_time_iso` so the result compares previous to
   latest even if the user pastes them in reverse order.
 - Compares risk score, risk label, margin usage, minimum disclosed liquidation
-  buffer, redacted-only disclosed watch severity, redacted-only freshness label,
-  position count, account value bucket, total notional bucket, daily funding
-  bucket, and 30-day funding bucket.
+  buffer, redacted-only disclosed watch severity using the active threshold
+  profile, redacted-only freshness label, position count, account value bucket,
+  total notional bucket, daily funding bucket, and 30-day funding bucket.
 - Compares disclosed market rows by market and side, including row added,
   removed, liquidation-distance movement, funding movement, notional bucket
   changes, and open-interest bucket changes.
@@ -53,6 +55,8 @@ the two timestamped public summaries without exposing the hidden full snapshots.
   in the comparison.
 - [[redacted-market-watchlist]] remains the public-context watchlist for a single
   loaded redacted receipt.
+- [[redacted-review-thresholds]] supplies the local sensitivity profile used by
+  visible disclosed-buffer severity.
 - [[redacted-comparison-assistant-packet]] carries the loaded comparison into
   cited assistant answers and copyable markdown.
 - [[redacted-review-packet]] includes the copyable comparison section.

@@ -13,16 +13,10 @@ import type {
   redacted_receipt_bundle,
   redacted_receipt_market,
 } from "../receipts/portable-receipt-bundle.ts";
-
-const WATCH_AGE_MINUTES = 4 * 60;
-const HIGH_AGE_MINUTES = 24 * 60;
-const THIN_LIQUIDATION_DISTANCE_BPS = 500;
-const TIGHT_LIQUIDATION_DISTANCE_BPS = 1_000;
-const MATERIAL_PRICE_MOVE_PERCENT = 2;
-const MATERIAL_FUNDING_MOVE_BPS = 1;
-const HIGH_FUNDING_MOVE_BPS = 3;
-const RANGE_TO_BUFFER_WATCH_RATIO = 0.5;
-const RANGE_TO_BUFFER_HIGH_RATIO = 1;
+import {
+  resolveRedactedReviewThresholds,
+  type redacted_review_thresholds,
+} from "./redacted-review-thresholds.ts";
 
 export type redacted_freshness_verdict_label =
   | "reviewable"
@@ -55,6 +49,7 @@ export type redacted_freshness_verdict = {
   label: redacted_freshness_verdict_label;
   headline: string;
   summary: string;
+  thresholds: redacted_review_thresholds;
   age_minutes: number | null;
   age_label: string;
   signal_score: number;
@@ -73,8 +68,12 @@ export function buildRedactedFreshnessVerdict(input: {
   marketTrend?: redacted_market_trend;
   watchlist: redacted_market_watchlist;
   nowIso?: string;
+  thresholds?: Partial<redacted_review_thresholds>;
 }): redacted_freshness_verdict {
   const nowIso = input.nowIso ?? new Date().toISOString();
+  const thresholds = resolveRedactedReviewThresholds(
+    input.thresholds ?? input.watchlist.thresholds,
+  );
   const ageMinutes = getAgeMinutes({
     dataTimeIso: input.bundle.data_time_iso,
     nowIso,
@@ -82,16 +81,17 @@ export function buildRedactedFreshnessVerdict(input: {
   const contextRowsByMarket = getRowsByMarket(input.marketContext?.rows ?? []);
   const trendRowsByMarket = getRowsByMarket(input.marketTrend?.rows ?? []);
   const drivers = [
-    getAgeDriver({ bundle: input.bundle, ageMinutes, nowIso }),
+    getAgeDriver({ bundle: input.bundle, ageMinutes, nowIso, thresholds }),
     getMarketContextDriver(input.marketContext),
     getTrendContextDriver(input.marketTrend),
     getWatchlistDriver(input.watchlist),
-    getLiquidationBufferDriver(input.bundle),
+    getLiquidationBufferDriver({ bundle: input.bundle, thresholds }),
     ...input.bundle.markets.flatMap((market) =>
       getMarketDrivers({
         market,
         contextRow: contextRowsByMarket.get(market.market),
         trendRow: trendRowsByMarket.get(market.market),
+        thresholds,
       }),
     ),
   ]
@@ -108,6 +108,7 @@ export function buildRedactedFreshnessVerdict(input: {
     label,
     headline: getHeadline(label),
     summary: getSummary(label),
+    thresholds,
     age_minutes: ageMinutes,
     age_label: formatAge(ageMinutes),
     signal_score: getSignalScore({ highCount, watchCount, infoCount }),
@@ -136,6 +137,7 @@ function getAgeDriver(input: {
   bundle: redacted_receipt_bundle;
   ageMinutes: number | null;
   nowIso: string;
+  thresholds: redacted_review_thresholds;
 }): redacted_freshness_verdict_driver {
   if (input.ageMinutes === null) {
     return {
@@ -155,12 +157,14 @@ function getAgeDriver(input: {
     };
   }
 
-  if (input.ageMinutes >= HIGH_AGE_MINUTES) {
+  if (input.ageMinutes >= input.thresholds.high_age_minutes) {
     return {
       id: "receipt-age:high",
       severity: "high",
       category: "receipt_age",
-      title: "Receipt is older than 24 hours",
+      title: `Receipt is older than ${formatAge(
+        input.thresholds.high_age_minutes,
+      )}`,
       detail: `The redacted data timestamp is ${formatAge(
         input.ageMinutes,
       )} behind the review time.`,
@@ -175,12 +179,14 @@ function getAgeDriver(input: {
     };
   }
 
-  if (input.ageMinutes >= WATCH_AGE_MINUTES) {
+  if (input.ageMinutes >= input.thresholds.watch_age_minutes) {
     return {
       id: "receipt-age:watch",
       severity: "watch",
       category: "receipt_age",
-      title: "Receipt is more than four hours old",
+      title: `Receipt is more than ${formatAge(
+        input.thresholds.watch_age_minutes,
+      )} old`,
       detail: `The redacted data timestamp is ${formatAge(
         input.ageMinutes,
       )} behind the review time.`,
@@ -393,13 +399,17 @@ function getWatchlistDriver(
   return null;
 }
 
-function getLiquidationBufferDriver(
-  bundle: redacted_receipt_bundle,
-): redacted_freshness_verdict_driver | null {
+function getLiquidationBufferDriver(input: {
+  bundle: redacted_receipt_bundle;
+  thresholds: redacted_review_thresholds;
+}): redacted_freshness_verdict_driver | null {
   const liquidationDistanceBps =
-    bundle.aggregate.min_liquidation_distance_bps;
+    input.bundle.aggregate.min_liquidation_distance_bps;
 
-  if (bundle.aggregate.position_count > 0 && liquidationDistanceBps === null) {
+  if (
+    input.bundle.aggregate.position_count > 0 &&
+    liquidationDistanceBps === null
+  ) {
     return {
       id: "liquidation-buffer:missing",
       severity: "watch",
@@ -421,7 +431,7 @@ function getLiquidationBufferDriver(
     return null;
   }
 
-  if (liquidationDistanceBps <= THIN_LIQUIDATION_DISTANCE_BPS) {
+  if (liquidationDistanceBps <= input.thresholds.thin_liquidation_distance_bps) {
     return {
       id: "liquidation-buffer:thin",
       severity: "high",
@@ -439,7 +449,9 @@ function getLiquidationBufferDriver(
     };
   }
 
-  if (liquidationDistanceBps <= TIGHT_LIQUIDATION_DISTANCE_BPS) {
+  if (
+    liquidationDistanceBps <= input.thresholds.tight_liquidation_distance_bps
+  ) {
     return {
       id: "liquidation-buffer:tight",
       severity: "watch",
@@ -464,6 +476,7 @@ function getMarketDrivers(input: {
   market: redacted_receipt_market;
   contextRow: redacted_market_context_row | undefined;
   trendRow: redacted_market_trend_row | undefined;
+  thresholds: redacted_review_thresholds;
 }) {
   return [
     getRangeDriver(input),
@@ -475,6 +488,7 @@ function getMarketDrivers(input: {
 function getRangeDriver(input: {
   market: redacted_receipt_market;
   trendRow: redacted_market_trend_row | undefined;
+  thresholds: redacted_review_thresholds;
 }): redacted_freshness_verdict_driver | null {
   const rangePercent = input.trendRow?.high_low_range_percent;
   const liquidationDistanceBps = input.market.liquidation_distance_bps;
@@ -489,9 +503,9 @@ function getRangeDriver(input: {
 
   const rangeBps = rangePercent * 100;
   const highThresholdBps =
-    liquidationDistanceBps * RANGE_TO_BUFFER_HIGH_RATIO;
+    liquidationDistanceBps * input.thresholds.range_to_buffer_high_ratio;
   const watchThresholdBps =
-    liquidationDistanceBps * RANGE_TO_BUFFER_WATCH_RATIO;
+    liquidationDistanceBps * input.thresholds.range_to_buffer_watch_ratio;
 
   if (rangeBps >= highThresholdBps) {
     return {
@@ -541,20 +555,22 @@ function getRangeDriver(input: {
 function getAdverseTrendDriver(input: {
   market: redacted_receipt_market;
   trendRow: redacted_market_trend_row | undefined;
+  thresholds: redacted_review_thresholds;
 }): redacted_freshness_verdict_driver | null {
   const priceChangePercent = input.trendRow?.price_change_percent;
 
   if (
     priceChangePercent === null ||
     priceChangePercent === undefined ||
-    !isAdversePriceMove(input.market, priceChangePercent)
+    !isAdversePriceMove(input.market, priceChangePercent, input.thresholds)
   ) {
     return null;
   }
 
   const hasTightBuffer =
     input.market.liquidation_distance_bps !== null &&
-    input.market.liquidation_distance_bps <= TIGHT_LIQUIDATION_DISTANCE_BPS;
+    input.market.liquidation_distance_bps <=
+      input.thresholds.tight_liquidation_distance_bps;
 
   return {
     id: `${input.market.market}:adverse-trend`,
@@ -580,20 +596,22 @@ function getAdverseTrendDriver(input: {
 function getFundingChangeDriver(input: {
   market: redacted_receipt_market;
   contextRow: redacted_market_context_row | undefined;
+  thresholds: redacted_review_thresholds;
 }): redacted_freshness_verdict_driver | null {
   const fundingDeltaBps = input.contextRow?.funding_delta_bps_user_perspective;
 
   if (
     fundingDeltaBps === null ||
     fundingDeltaBps === undefined ||
-    Math.abs(fundingDeltaBps) <= MATERIAL_FUNDING_MOVE_BPS
+    Math.abs(fundingDeltaBps) <= input.thresholds.material_funding_move_bps
   ) {
     return null;
   }
 
   const moreExpensive = fundingDeltaBps > 0;
   const isHigh =
-    moreExpensive && fundingDeltaBps >= HIGH_FUNDING_MOVE_BPS;
+    moreExpensive &&
+    fundingDeltaBps >= input.thresholds.high_funding_move_bps;
 
   return {
     id: `${input.market.market}:funding-change`,
@@ -715,10 +733,11 @@ function getRowsByMarket<Row extends { market: string }>(rows: Row[]) {
 function isAdversePriceMove(
   market: redacted_receipt_market,
   priceChangePercent: number,
+  thresholds: redacted_review_thresholds,
 ) {
   return market.side === "long"
-    ? priceChangePercent <= -MATERIAL_PRICE_MOVE_PERCENT
-    : priceChangePercent >= MATERIAL_PRICE_MOVE_PERCENT;
+    ? priceChangePercent <= -thresholds.material_adverse_move_percent
+    : priceChangePercent >= thresholds.material_adverse_move_percent;
 }
 
 function isVerdictDriver(

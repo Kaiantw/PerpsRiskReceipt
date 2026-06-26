@@ -14,12 +14,14 @@ short list of cues a reviewer should inspect first.
 ## source links
 
 - [[../sources/redacted-market-watchlist]]
+- [[../sources/redacted-review-thresholds]]
 - [[../sources/redacted-market-context]]
 - [[../sources/redacted-market-trend]]
 - [[redacted-market-context]]
 - [[redacted-market-trend]]
 - [[redacted-receipt-share]]
 - [[redacted-freshness-verdict]]
+- [[redacted-review-thresholds]]
 - [[redacted-review-packet]]
 - [[redacted-share-assistant]]
 - docs/source-notes.md#hyperliquid
@@ -31,6 +33,9 @@ short list of cues a reviewer should inspect first.
   context or 24-hour trend context.
 - The watchlist calls no new endpoint and sends no raw account address.
 - High/watch/info counts summarize the loaded cues.
+- The active redacted review threshold profile controls what counts as thin,
+  tight, adverse, material funding movement, high range, or range versus the
+  disclosed buffer.
 - Cues include thin or tight disclosed liquidation distance, adverse public
   24-hour trend for the disclosed side, persistent side-adjusted funding cost,
   current funding that is more expensive than the receipt, high public range
@@ -49,6 +54,8 @@ short list of cues a reviewer should inspect first.
   respect.
 - [[redacted-freshness-verdict]] uses watchlist severity as one input to the
   reviewable/stale/full-recheck classification.
+- [[redacted-review-thresholds]] supplies strict/standard/relaxed local
+  sensitivity profiles.
 - [[redacted-share-assistant]] turns ranked watchlist cues into cited answers.
 - [[redacted-review-packet]] carries the watchlist into a copyable public
   markdown summary.
