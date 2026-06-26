@@ -19,6 +19,7 @@ informed it and forward to related feature ideas.
 - [[sources/perp-receipt-recheck-watchlist]] - source notes for ranking full-receipt saved/current review cues after live recheck.
 - [[sources/perp-receipt-assistant-watchlist-citations]] - source notes for assistant answers that cite ranked recheck watchlist items.
 - [[sources/perp-receipt-review-packet]] - source notes for copyable markdown receipt review packets after live recheck.
+- [[sources/markdown-packet-export]] - browser-local markdown download and durable review-artifact notes.
 - [[sources/perp-receipt-review-packet-history-summary]] - source notes for adding compact local recheck-history trends to review packets.
 - [[sources/perp-configurable-recheck-thresholds]] - source notes for local threshold controls over live receipt review cues.
 - [[sources/perp-volatility-buffer]] - source notes for comparing current listed buffers with public 24h volatility.
@@ -62,6 +63,7 @@ informed it and forward to related feature ideas.
 - [[features/receipt-recheck-watchlist]] - ranked review cues from full saved/current receipt recheck context.
 - [[features/receipt-assistant-watchlist-citations]] - receipt assistant inspect-first answers from ranked watchlist cues.
 - [[features/receipt-review-packet]] - copyable markdown summary of receipt hash, recheck, watchlist, assistant, driver, and market context.
+- [[features/markdown-packet-download]] - downloadable `.md` files for full receipt packets and compact/full redacted packets.
 - [[features/receipt-review-packet-history-summary]] - compact local recheck-history trend inside the copyable review packet.
 - [[features/configurable-recheck-thresholds]] - local threshold controls for what counts as meaningful current-market movement.
 - [[features/receipt-volatility-buffer]] - compares current listed liquidation buffer with public 24h range and ATR-style movement.
@@ -97,9 +99,8 @@ informed it and forward to related feature ideas.
   per-market recheck checklist with configurable thresholds.
 - [[features/receipt-assistant-watchlist-citations]] could later expand into a
   redacted-share assistant that uses public-only watchlist citations.
-- [[features/compact-redacted-risk-note]] could later add a one-click
-  downloadable `.md` export or permalink preview if reviewers need to preserve
-  the compact note outside the clipboard.
+- [[features/markdown-packet-download]] could later support a local packet
+  archive if reviewers want to keep several generated notes inside the app.
 - [[features/redacted-share-assistant]] could later support a compressed answer
   mode for issue comments.
 - [[features/configurable-recheck-thresholds]] could later persist named review

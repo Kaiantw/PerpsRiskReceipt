@@ -14,12 +14,14 @@ thresholds, freshness verdict, and optional redacted comparison.
 ## source links
 
 - [[../sources/compact-redacted-risk-note]]
+- [[../sources/markdown-packet-export]]
 - [[../sources/redacted-review-packet]]
 - [[../sources/redacted-review-thresholds]]
 - [[redacted-review-packet]]
 - [[redacted-review-thresholds]]
 - [[redacted-freshness-verdict]]
 - [[redacted-snapshot-comparison]]
+- [[markdown-packet-download]]
 
 ## implemented behavior
 
@@ -32,8 +34,8 @@ thresholds, freshness verdict, and optional redacted comparison.
   optional comparison summary, and capped top review cues.
 - Full mode remains available and keeps the detailed redacted receipt, market
   context, trend, freshness, comparison, threshold, and watchlist sections.
-- Copy uses the selected mode so reviewers can choose between concise and
-  detailed artifacts.
+- Copy and download use the selected mode so reviewers can choose between
+  concise and detailed artifacts.
 - Compact limits explicitly say the hidden full snapshot is required to
   recompute the original hash and that the note is not a live monitor, official
   protocol risk calculation, or trading advice.
@@ -46,3 +48,5 @@ thresholds, freshness verdict, and optional redacted comparison.
 - [[redacted-freshness-verdict]] supplies the compact reviewable/stale/full
   recheck label.
 - [[redacted-snapshot-comparison]] supplies the optional previous/latest summary.
+- [[markdown-packet-download]] preserves the selected compact/full packet as a
+  local `.md` file.

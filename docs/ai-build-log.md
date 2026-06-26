@@ -1138,3 +1138,26 @@ Review whether compact should be the long-term default or whether reviewers pref
 - Browser verification used `http://localhost:3000/receipt/import`, pasted a generated redacted bundle for `rr_browser_compact_packet`, confirmed compact mode rendered by default, clicked `Copy compact markdown`, confirmed the clipboard started with `# Compact redacted risk note for rr_browser_compact_packet`, included the shortened hash and top review cues, omitted `## disclosed market rows`, and did not include hidden/internal field names. It then switched to `Full`, clicked `Copy full markdown`, confirmed the clipboard started with `# Redacted review packet for rr_browser_compact_packet`, included `## disclosed market rows` and `## redacted review thresholds`, and still omitted hidden/internal field names. Captured browser console errors: 0.
 ### remaining risks:
 Compact redacted packets are short public communication notes only. They cannot recompute the hidden full snapshot hash, prove hidden receipt state, replace a full portable receipt bundle, provide cryptographic selective disclosure, monitor exact liquidation state, certify that stale data is current, or tell a trader what to do next.
+
+### task id: post-t9 markdown packet downloads
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added browser-local `.md` downloads for selected redacted review packets and full local receipt review packets so reviewers can preserve packet artifacts without relying only on clipboard access.
+### output accepted:
+Added `src/lib/download/markdown-file.ts` with a shared markdown filename builder and browser-local Blob/object URL download helper. Added tests for stable sanitized filenames and fallback receipt ids. Wired `/receipt/import` so the redacted review packet panel downloads either the selected compact packet as `<receipt>.compact.redacted-review.md` or the selected full packet as `<receipt>.full.redacted-review.md`. Wired local receipt review packets so the `Review packet` panel downloads `<receipt>.receipt-review.md`. Updated package test registration, source notes, knowledge graph, README, demo script, known limitations, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, backend store, synced archive, packet format, portable bundle format, wallet/RPC flow, trading/exchange endpoint, LLM API, cryptographic proof, or attestation flow was added. Downloads use the exact markdown already visible in the packet textarea and do not add fields, recompute hashes, or alter privacy boundaries.
+### human review notes:
+Review whether the file names are clear enough for real reviewer folders. Review whether the next slice should add an in-app local packet archive/history so several generated markdown notes can be revisited without searching the downloads folder. Review whether the redacted packet download buttons should include a tooltip explaining compact versus full.
+### tests/checks run:
+- `node --test src/lib/download/markdown-file.test.ts` passed: 2 tests, 2 passing.
+- `node --test src/lib/download/markdown-file.test.ts src/lib/market/redacted-review-packet.test.ts src/lib/receipts/receipt-review-packet.test.ts` passed: 9 tests, 9 passing.
+- `npm test` passed: 186 tests, 186 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/`, `/receipt/import`, `/receipt/local/[id]`, `/api/hyperliquid/markets`, `/api/hyperliquid/market-history`, `/api/hyperliquid/portfolio`, `/api/hyperliquid/snapshot`, and the fixture receipt routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted a generated redacted bundle for `rr_browser_md_download`, clicked `Download compact .md`, confirmed `Compact markdown download started.`, switched to `Full`, clicked `Download full .md`, confirmed `Full markdown download started.`, and saw 0 console errors. It then imported a generated full portable bundle for `/receipt/local/rr_2f6b3a2ad298c698`, clicked `Recheck live account`, confirmed `Review packet`, clicked `Download .md`, confirmed `Markdown download started.`, and saw 0 console errors. The in-app browser did not expose a Playwright download event for the programmatic Blob URL click, so the browser pass verified visible app confirmation and console cleanliness rather than inspecting the downloaded file on disk.
+### remaining risks:
+Markdown packet downloads are local communication artifacts only. They are not encrypted, access-controlled, synced, hash-recomputable bundles, full private snapshot exports, cryptographic selective-disclosure proofs, EAS attestations, exact liquidation monitors, or trading advice.

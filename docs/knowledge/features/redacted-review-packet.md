@@ -16,6 +16,7 @@ hash-reference-only caveats.
 
 - [[../sources/redacted-review-packet]]
 - [[../sources/compact-redacted-risk-note]]
+- [[../sources/markdown-packet-export]]
 - [[../sources/redacted-receipt-sharing]]
 - [[../sources/redacted-market-watchlist]]
 - [[../sources/redacted-freshness-verdict]]
@@ -32,12 +33,14 @@ hash-reference-only caveats.
 - [[redacted-share-assistant]]
 - [[receipt-review-packet]]
 - [[compact-redacted-risk-note]]
+- [[markdown-packet-download]]
 
 ## implemented behavior
 
 - Adds a `Redacted review packet` panel to imported redacted shares.
 - Adds compact/full packet modes, with compact selected by default for shorter
   public comments.
+- Adds a `.md` download action for the selected compact/full mode.
 - Builds deterministic markdown from the redacted bundle and already-loaded
   public market context.
 - Includes receipt id, protocol, source/freshness, timestamps, snapshot hash
@@ -74,6 +77,8 @@ hash-reference-only caveats.
 - [[redacted-review-thresholds]] supplies the copied local sensitivity profile.
 - [[compact-redacted-risk-note]] is the concise sibling for issue comments or
   social-style sharing.
+- [[markdown-packet-download]] lets reviewers preserve the selected packet as a
+  local file.
 - [[redacted-share-assistant]] answers cited questions from the same public and
   disclosed fields.
 - [[receipt-review-packet]] is the full-snapshot sibling used after local live

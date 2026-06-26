@@ -21,6 +21,7 @@ offers a redacted share mode for minimized public review.
 - [[live-receipt-recheck]]
 - [[receipt-change-summary]]
 - [[receipt-risk-assistant]]
+- [[markdown-packet-download]]
 - docs/product-spec.md#4-receipt-page
 - docs/source-notes.md#hyperliquid
 - docs/source-notes.md#eas
@@ -53,3 +54,5 @@ offers a redacted share mode for minimized public review.
 - [[receipt-risk-assistant]] can answer what the imported receipt proves and
   what still needs live context.
 - [[redacted-receipt-share]] is the minimized sharing lane for public review.
+- [[markdown-packet-download]] is the markdown communication artifact; portable
+  bundles remain the JSON import/hash-recompute artifact.

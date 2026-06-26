@@ -55,6 +55,10 @@ import {
   answerRedactedShareQuestion,
   getRedactedShareAssistantSuggestions,
 } from "@/lib/assistant/redacted-share-assistant.ts";
+import {
+  buildMarkdownPacketFileName,
+  downloadMarkdownFile,
+} from "@/lib/download/markdown-file.ts";
 import type {
   hyperliquid_market_context,
   hyperliquid_market_history,
@@ -1614,6 +1618,9 @@ function RedactedReviewPacketPanel({
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
     "idle",
   );
+  const [downloadState, setDownloadState] = useState<
+    "idle" | "downloaded" | "failed"
+  >("idle");
   const [packetMode, setPacketMode] =
     useState<redacted_review_packet_mode>("compact");
   const marketContext =
@@ -1662,6 +1669,7 @@ function RedactedReviewPacketPanel({
   function updatePacketMode(nextPacketMode: redacted_review_packet_mode) {
     setPacketMode(nextPacketMode);
     setCopyState("idle");
+    setDownloadState("idle");
   }
 
   async function copyPacketMarkdown() {
@@ -1670,6 +1678,22 @@ function RedactedReviewPacketPanel({
       setCopyState("copied");
     } catch {
       setCopyState("failed");
+    }
+  }
+
+  function downloadPacketMarkdown() {
+    try {
+      downloadMarkdownFile({
+        fileName: buildMarkdownPacketFileName({
+          mode: packetMode,
+          packetKind: "redacted-review",
+          receiptId: bundle.receipt_id,
+        }),
+        markdown: selectedPacket.markdown,
+      });
+      setDownloadState("downloaded");
+    } catch {
+      setDownloadState("failed");
     }
   }
 
@@ -1708,6 +1732,13 @@ function RedactedReviewPacketPanel({
           >
             Copy {packetMode} markdown
           </button>
+          <button
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-950"
+            onClick={downloadPacketMarkdown}
+            type="button"
+          >
+            Download {packetMode} .md
+          </button>
         </div>
       </div>
 
@@ -1721,6 +1752,19 @@ function RedactedReviewPacketPanel({
       {copyState === "failed" ? (
         <p className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-950">
           Browser clipboard access failed. Select the markdown below instead.
+        </p>
+      ) : null}
+
+      {downloadState === "downloaded" ? (
+        <p className="mt-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm font-medium text-sky-950">
+          {packetMode === "compact" ? "Compact" : "Full"} markdown download
+          started.
+        </p>
+      ) : null}
+
+      {downloadState === "failed" ? (
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-950">
+          Markdown download failed. Select the markdown below instead.
         </p>
       ) : null}
 

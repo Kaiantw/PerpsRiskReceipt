@@ -94,6 +94,12 @@ use this file for external protocol assumptions.
   - https://metamask.io/news/perpetual-futures-liquidation-mechanics
   - https://www.binance.com/en/academy/articles/what-is-a-trading-journal-and-how-to-use-one
   - https://www.cmegroup.com/education/courses/things-to-know-before-trading-cme-futures/position-and-risk-management
+- docs checked on 2026-06-26 for markdown packet exports:
+  - https://developer.mozilla.org/en-US/docs/Web/API/HTMLAnchorElement/download
+  - https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static
+  - https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Schemes/blob
+  - https://www.tradezella.com/blog/crypto-trading-journal
+  - https://www.tradebb.ai/blog/what-is-a-crypto-trading-journal
 - docs checked on 2026-06-26 for redacted share assistant:
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
@@ -360,6 +366,12 @@ use this file for external protocol assumptions.
   - it does not include raw local receipt history, raw account identifiers, exact account value, exact position sizes, saved mark prices, listed liquidation prices, PnL, exact funding dollars, or hidden full-snapshot fields.
   - the snapshot hash is preserved as a reference only; the hidden full snapshot remains required for recomputation.
   - the packet is a public communication summary only, not cryptographic selective disclosure, a Verifiable Credential, an EAS private-data proof, exact liquidation monitoring, or trading advice.
+- markdown packet export assumptions:
+  - packet downloads are browser-local `.md` files generated from the same markdown already visible in the packet textarea.
+  - exports use Blob/object URL browser behavior with a download filename and revoke the object URL after triggering the download.
+  - filenames are sanitized from receipt ids and packet mode; they do not add account addresses or hidden fields.
+  - redacted packet downloads preserve the redacted packet privacy boundary; full receipt review packet downloads preserve the full local receipt review packet boundary.
+  - markdown downloads are durable communication artifacts only; they are not portable JSON bundles, hash-recompute inputs, encrypted shares, backend-synced records, or attestations.
 - redacted share assistant assumptions:
   - the assistant is deterministic local explanation logic; it does not call an LLM, backend assistant endpoint, wallet, or trading endpoint.
   - answers cite disclosed redacted receipt fields, loaded public current market context, loaded public 24-hour trend context, redacted watchlist items, and optional redacted snapshot comparison fields.

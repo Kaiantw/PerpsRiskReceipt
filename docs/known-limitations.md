@@ -25,6 +25,7 @@
 - redacted snapshot comparison is a heuristic comparison of visible redacted fields only; it cannot compare hidden exact account values, exact position values, saved mark prices, PnL, or recompute hidden full-snapshot hashes.
 - redacted review sensitivity profiles are local UI thresholds only; they are not saved, synced, protocol-official, or proof that a stale redacted receipt is current.
 - redacted review packet is a public markdown summary over disclosed fields, loaded public context, and optional redacted comparison context; compact mode omits detailed rows for shorter public sharing, full mode keeps the longer row-level packet, and neither can recompute the hidden snapshot hash, prove hidden receipt state, or replace a full portable receipt bundle.
+- markdown packet downloads are local files generated from the visible packet text; they are not encrypted, access-controlled, synced, hash-recomputable bundles, or attestations.
 - redacted share assistant is deterministic local explanation logic over disclosed redacted fields, loaded public context, freshness verdict, and optional redacted comparison context; it is not a connected LLM, hidden-state verifier, full-snapshot importer, live alert, or financial adviser.
 - redacted share assistant citations point to local public/disclosed fields only and do not prove the hidden snapshot state or recompute the original snapshot hash.
 - live receipt recheck compares against a fresh read-only snapshot but is not an exact liquidation monitor or historical account audit.
@@ -36,6 +37,7 @@
 - configurable recheck thresholds are local UI sensitivity settings and are not saved, synced, or protocol-official.
 - receipt volatility buffer uses public 24-hour candle history and listed liquidation distance only; it is not exact liquidation monitoring, order-book depth analysis, a forecast, or advice.
 - receipt review packet is a markdown communication summary, not a full private snapshot, encrypted share, access-controlled artifact, or hash-recomputable portable bundle.
+- receipt review packet downloads preserve that same communication-summary limitation and do not make the packet verifiable by another browser.
 - receipt review packet local-history context is a compact trend summary only; it does not export raw history rows, sync history, or prove exact account-history state.
 - receipt account-value context uses the nearest sampled Hyperliquid portfolio point, so the visible sample gap matters for interpretation.
 - receipt change summary is heuristic and prioritizes review cues; it is not a trading recommendation or exact risk monitor.

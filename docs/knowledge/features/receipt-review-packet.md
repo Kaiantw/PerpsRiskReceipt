@@ -15,6 +15,7 @@ recipient to inspect every panel manually.
 ## source links
 
 - [[../sources/perp-receipt-review-packet]]
+- [[../sources/markdown-packet-export]]
 - [[../sources/perp-configurable-recheck-thresholds]]
 - [[receipt-recheck-watchlist]]
 - [[configurable-recheck-thresholds]]
@@ -25,6 +26,7 @@ recipient to inspect every panel manually.
 - [[receipt-risk-driver-comparison]]
 - [[mark-price-context]]
 - [[portable-receipt-bundle]]
+- [[markdown-packet-download]]
 
 ## implemented behavior
 
@@ -42,7 +44,8 @@ recipient to inspect every panel manually.
   history rows exist.
 - Limits watchlist and market-context rows to five items each for a readable
   first packet.
-- Renders a `Review packet` panel with copy-to-clipboard and read-only markdown.
+- Renders a `Review packet` panel with copy-to-clipboard, `.md` download, and
+  read-only markdown.
 - Explains that the packet is a review summary; full portable receipt bundles
   remain the path for another browser to recompute the snapshot hash.
 
@@ -58,6 +61,7 @@ recipient to inspect every panel manually.
   account-level regime label.
 - [[receipt-review-packet-history-summary]] adds the latest-versus-oldest local
   recheck trend to the packet.
+- [[markdown-packet-download]] preserves the generated packet as a local file.
 - [[redacted-review-packet]] is the data-minimized sibling for imported redacted
   shares.
 - [[portable-receipt-bundle]] remains the full verification/export artifact.

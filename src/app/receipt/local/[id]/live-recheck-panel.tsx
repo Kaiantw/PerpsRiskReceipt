@@ -7,6 +7,10 @@ import {
   type receipt_risk_assistant_context,
 } from "@/lib/assistant/receipt-risk-assistant.ts";
 import {
+  buildMarkdownPacketFileName,
+  downloadMarkdownFile,
+} from "@/lib/download/markdown-file.ts";
+import {
   formatPercentFromBps,
   formatIsoDate,
   formatSignedBps,
@@ -713,7 +717,7 @@ function LiveRecheckResult({
         context={assistantContext}
         key={assistantKey}
       />
-      <ReceiptReviewPacketResult packet={reviewPacket} />
+      <ReceiptReviewPacketResult packet={reviewPacket} receiptId={receipt.id} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <ComparisonMetric
@@ -1131,12 +1135,17 @@ function ReceiptVolatilityBufferResult({
 
 function ReceiptReviewPacketResult({
   packet,
+  receiptId,
 }: {
   packet: receipt_review_packet;
+  receiptId: string;
 }) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">(
     "idle",
   );
+  const [downloadState, setDownloadState] = useState<
+    "idle" | "downloaded" | "error"
+  >("idle");
 
   async function copyPacket() {
     try {
@@ -1144,6 +1153,21 @@ function ReceiptReviewPacketResult({
       setCopyState("copied");
     } catch {
       setCopyState("error");
+    }
+  }
+
+  function downloadPacket() {
+    try {
+      downloadMarkdownFile({
+        fileName: buildMarkdownPacketFileName({
+          packetKind: "receipt-review",
+          receiptId,
+        }),
+        markdown: packet.markdown,
+      });
+      setDownloadState("downloaded");
+    } catch {
+      setDownloadState("error");
     }
   }
 
@@ -1157,13 +1181,22 @@ function ReceiptReviewPacketResult({
           </p>
           <p className="mt-1 text-sm text-stone-600">{packet.summary}</p>
         </div>
-        <button
-          className="inline-flex min-h-10 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-semibold text-white"
-          onClick={copyPacket}
-          type="button"
-        >
-          Copy markdown
-        </button>
+        <div className="flex flex-col gap-2 sm:items-end">
+          <button
+            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-semibold text-white"
+            onClick={copyPacket}
+            type="button"
+          >
+            Copy markdown
+          </button>
+          <button
+            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-950"
+            onClick={downloadPacket}
+            type="button"
+          >
+            Download .md
+          </button>
+        </div>
       </div>
 
       {copyState === "copied" ? (
@@ -1174,6 +1207,16 @@ function ReceiptReviewPacketResult({
       {copyState === "error" ? (
         <p className="border-b border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900">
           Clipboard copy failed. Select and copy the markdown below.
+        </p>
+      ) : null}
+      {downloadState === "downloaded" ? (
+        <p className="border-b border-sky-200 bg-sky-50 px-4 py-3 text-sm font-medium text-sky-900">
+          Markdown download started.
+        </p>
+      ) : null}
+      {downloadState === "error" ? (
+        <p className="border-b border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900">
+          Markdown download failed. Select and copy the markdown below.
         </p>
       ) : null}
 
