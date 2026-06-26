@@ -57,6 +57,12 @@ import {
   type receipt_review_packet,
 } from "@/lib/receipts/receipt-review-packet.ts";
 import {
+  buildReceiptSnapshotDrift,
+  type receipt_snapshot_drift,
+  type receipt_snapshot_drift_label,
+  type receipt_snapshot_drift_severity,
+} from "@/lib/receipts/receipt-snapshot-drift.ts";
+import {
   buildReceiptRecheckHistorySummary,
   createReceiptRecheckHistoryEntry,
   getLocalRecheckHistoryStorageKey,
@@ -184,6 +190,19 @@ const receiptSummaryLabels: Record<receipt_change_summary["label"], string> = {
 const receiptSummaryTone: Record<receipt_change_summary["severity"], string> = {
   critical: "border-red-200 bg-red-100 text-red-950",
   changed: "border-amber-200 bg-amber-100 text-amber-950",
+  watch: "border-yellow-200 bg-yellow-100 text-yellow-950",
+  neutral: "border-emerald-200 bg-emerald-100 text-emerald-950",
+};
+
+const snapshotDriftLabels: Record<receipt_snapshot_drift_label, string> = {
+  not_comparable: "not comparable",
+  stale_snapshot: "stale snapshot",
+  drift_watch: "drift watch",
+  close_snapshot: "close snapshot",
+};
+
+const snapshotDriftTone: Record<receipt_snapshot_drift_severity, string> = {
+  critical: "border-red-200 bg-red-100 text-red-950",
   watch: "border-yellow-200 bg-yellow-100 text-yellow-950",
   neutral: "border-emerald-200 bg-emerald-100 text-emerald-950",
 };
@@ -533,6 +552,13 @@ function LiveRecheckResult({
     thresholds,
     volatilityBuffer,
   });
+  const snapshotDrift = buildReceiptSnapshotDrift({
+    comparison,
+    currentDataTimeIso: currentSnapshot.data_time_iso,
+    marketContext,
+    receiptDataTimeIso: receipt.snapshot.data_time_iso,
+    watchlist: recheckWatchlist,
+  });
   const changeSummary = buildReceiptChangeSummary({
     comparison,
     marketContext,
@@ -576,6 +602,7 @@ function LiveRecheckResult({
     comparison,
     marketContext,
     changeSummary,
+    snapshotDrift,
     riskDriverComparison,
     marketRegime,
     marketRegimeDrilldown,
@@ -602,6 +629,8 @@ function LiveRecheckResult({
     comparison.changed_position_count,
     comparison.max_abs_mark_price_change_percent,
     changeSummary.label,
+    snapshotDrift.label,
+    String(snapshotDrift.drift_score),
     riskDriverComparison.label,
     riskDriverComparison.current_top_driver_market ?? "no-current-driver",
     recheckWatchlist.label,
@@ -698,6 +727,7 @@ function LiveRecheckResult({
       </div>
 
       <ReceiptChangeSummaryResult summary={changeSummary} />
+      <ReceiptSnapshotDriftResult drift={snapshotDrift} />
       <ReceiptMarketRegimeResult regime={marketRegime} />
       <ReceiptMarketRegimeDrilldownResult drilldown={marketRegimeDrilldown} />
       <ReceiptRiskDriverComparisonResult comparison={riskDriverComparison} />
@@ -1664,6 +1694,78 @@ function ReceiptChangeSummaryResult({
   );
 }
 
+function ReceiptSnapshotDriftResult({
+  drift,
+}: {
+  drift: receipt_snapshot_drift;
+}) {
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-stone-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Snapshot drift</h3>
+          <p className="mt-1 text-sm font-medium text-stone-800">
+            {drift.headline}
+          </p>
+          <p className="mt-1 text-sm text-stone-600">{drift.summary}</p>
+        </div>
+        <span
+          className={`rounded-lg border px-3 py-2 text-sm font-semibold ${snapshotDriftTone[drift.severity]}`}
+        >
+          {snapshotDriftLabels[drift.label]}
+        </span>
+      </div>
+
+      <dl className="grid gap-3 p-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
+        <MiniMetric label="Drift score" value={`${drift.drift_score}/100`} />
+        <MiniMetric label="Receipt age" value={formatDriftAge(drift.age_minutes)} />
+        <MiniMetric label="Focus market" value={drift.focus_market ?? "n/a"} />
+        <MiniMetric
+          label="Max mark move"
+          value={formatAbsPercent(drift.metrics.max_mark_move_percent)}
+        />
+        <MiniMetric
+          label="Current min buffer"
+          value={formatPercentFromBps(
+            drift.metrics.current_min_liquidation_distance_bps,
+          )}
+        />
+        <MiniMetric
+          label="Daily funding delta"
+          value={formatSignedNullableUsd(
+            drift.metrics.total_daily_funding_delta_usd,
+          )}
+        />
+        <MiniMetric
+          label="High cues"
+          value={String(drift.metrics.high_cue_count)}
+        />
+        <MiniMetric
+          label="Watch cues"
+          value={String(drift.metrics.watch_cue_count)}
+        />
+      </dl>
+
+      <ul className="space-y-2 border-t border-stone-200 p-4 text-sm text-stone-700">
+        {drift.review_points.map((point) => (
+          <li className="flex gap-2" key={point}>
+            <span
+              aria-hidden="true"
+              className="mt-2 h-1.5 w-1.5 rounded-full bg-stone-400"
+            />
+            <span>{point}</span>
+          </li>
+        ))}
+      </ul>
+
+      <p className="border-t border-stone-200 px-4 py-3 text-xs text-stone-500">
+        Snapshot drift compares the frozen receipt with the latest read-only
+        live recheck. It does not change hash verification or recommend a trade.
+      </p>
+    </section>
+  );
+}
+
 function ReceiptMarketRegimeResult({
   regime,
 }: {
@@ -2129,6 +2231,21 @@ function formatDrilldownWatchCounts(
 
 function formatHistoryWatchCounts(entry: receipt_recheck_history_entry) {
   return `${entry.watchlist_high_count} high / ${entry.watchlist_watch_count} watch / ${entry.watchlist_info_count} info`;
+}
+
+function formatDriftAge(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  if (value < 60) {
+    return `${value}m`;
+  }
+
+  const hours = Math.floor(value / 60);
+  const minutes = value % 60;
+
+  return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
 }
 
 function formatSignedNullableNumber(value: number | null) {

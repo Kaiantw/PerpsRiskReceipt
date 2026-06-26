@@ -18,6 +18,7 @@ rank concrete review cues and show what deserves attention first.
 - [[receipt-assistant-market-context-fusion]]
 - [[mark-price-context]]
 - [[configurable-recheck-thresholds]]
+- [[receipt-snapshot-drift]]
 - [[receipt-volatility-watchlist]]
 - [[receipt-market-regime]]
 - [[redacted-market-watchlist]]
@@ -50,6 +51,8 @@ rank concrete review cues and show what deserves attention first.
   markdown summary.
 - [[configurable-recheck-thresholds]] lets the reviewer tune what crosses the
   watchlist threshold in the current review.
+- [[receipt-snapshot-drift]] consumes high/watch cue counts from the watchlist
+  to decide whether the saved snapshot is close, drifted, or stale.
 - [[receipt-volatility-watchlist]] adds public volatility-versus-buffer cues
   after the reviewer loads 24h market history.
 - [[receipt-market-regime]] summarizes watchlist severity alongside funding,

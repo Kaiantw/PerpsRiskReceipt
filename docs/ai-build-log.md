@@ -1161,3 +1161,24 @@ Review whether the file names are clear enough for real reviewer folders. Review
 - Browser verification used `http://localhost:3000/receipt/import`, pasted a generated redacted bundle for `rr_browser_md_download`, clicked `Download compact .md`, confirmed `Compact markdown download started.`, switched to `Full`, clicked `Download full .md`, confirmed `Full markdown download started.`, and saw 0 console errors. It then imported a generated full portable bundle for `/receipt/local/rr_2f6b3a2ad298c698`, clicked `Recheck live account`, confirmed `Review packet`, clicked `Download .md`, confirmed `Markdown download started.`, and saw 0 console errors. The in-app browser did not expose a Playwright download event for the programmatic Blob URL click, so the browser pass verified visible app confirmation and console cleanliness rather than inspecting the downloaded file on disk.
 ### remaining risks:
 Markdown packet downloads are local communication artifacts only. They are not encrypted, access-controlled, synced, hash-recomputable bundles, full private snapshot exports, cryptographic selective-disclosure proofs, EAS attestations, exact liquidation monitors, or trading advice.
+
+### task id: post-t9 receipt snapshot drift
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a snapshot-drift read for local Hyperliquid receipt live rechecks so a reviewer can separate hash integrity from current-market freshness.
+### output accepted:
+Added `src/lib/receipts/receipt-snapshot-drift.ts` with a pure close/drift/stale/not-comparable classifier and 0-100 drift score from receipt age, max saved-vs-current mark move, current minimum listed liquidation distance, daily funding delta, and recheck watchlist cue counts. Added focused tests for close, stale, drift-watch, and not-comparable cases. Wired `/receipt/local/[id]` to render a `Snapshot drift` panel after live recheck and added the same section to copied/downloaded full receipt review packets. Updated package test registration, source notes, knowledge graph, README, demo script, known limitations, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, backend store, receipt/hash data model change, wallet/RPC flow, trading/exchange endpoint, exact Hyperliquid liquidation formula, protocol-official freshness claim, live alert, or advice surface was added. Snapshot drift uses existing live recheck context only, and a verified hash can still show as stale versus current market context.
+### human review notes:
+Review whether the default drift thresholds are intuitive: 4h watch age, 24h stale age, 2% watch mark move, 5% stale mark move, existing watchlist thin/tight buffer thresholds, and 1 USD/day material funding delta. Review whether the drift score should be stored in local recheck history on a later slice so repeated freshness movement can be compared over time.
+### tests/checks run:
+- `node --test src/lib/receipts/receipt-snapshot-drift.test.ts src/lib/receipts/receipt-review-packet.test.ts` passed: 7 tests, 7 passing.
+- `npm test` passed: 190 tests, 190 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/`, `/receipt/import`, `/receipt/local/[id]`, `/api/hyperliquid/markets`, `/api/hyperliquid/market-history`, `/api/hyperliquid/portfolio`, `/api/hyperliquid/snapshot`, and the fixture receipt routes.
+- Browser verification used `http://localhost:3000/receipt/local/rr_2f6b3a2ad298c698`, clicked `Recheck live account`, confirmed the `Snapshot drift` panel rendered with a not-comparable read, drift score, receipt age, focus market, max mark move, current minimum buffer, funding delta, and high/watch cue counts, confirmed the review packet textarea included `## snapshot drift` and `drift score:`, and captured 0 browser console errors.
+### remaining risks:
+Snapshot drift is heuristic freshness context only. It cannot prove exact liquidation state, recompute protocol-official risk, decide whether a trader should change a position, certify external market data correctness at capture time, or replace a full portable bundle for cross-browser hash recomputation.

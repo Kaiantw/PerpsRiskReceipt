@@ -186,6 +186,14 @@ use this file for external protocol assumptions.
   - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
   - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
   - https://www.w3.org/TR/vc-data-model-2.0/
+- docs checked on 2026-06-26 for receipt snapshot drift:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
+  - https://metamask.io/news/perpetual-futures-liquidation-mechanics
+  - https://metamask.io/news/perpetual-futures-funding-frequency-strategies
+  - https://www.dextools.io/tutorials/perpetual-futures-funding-mark-price-liquidations
+  - https://chain.link/article/what-are-perpetual-futures
+  - https://www.investopedia.com/what-are-perpetual-futures-7494870
 - docs checked on 2026-06-26 for receipt review packet local-history section:
   - https://www.binance.com/en/academy/articles/what-is-a-trading-journal-and-how-to-use-one
   - https://www.ecfr.gov/current/title-17/chapter-I/part-38
@@ -423,6 +431,14 @@ use this file for external protocol assumptions.
   - it does not export raw local history rows, full private snapshots, or a synced account journal.
   - the first version caps watchlist and market-context rows at five each for readability.
   - the packet is a communication summary only; a full portable receipt bundle remains required for another browser to recompute the snapshot hash.
+- receipt snapshot drift assumptions:
+  - snapshot drift is a local synthesis layer over already-loaded live receipt recheck objects; it does not call a new endpoint, change the receipt model, or change the snapshot hash.
+  - it separates integrity from freshness: a snapshot hash can verify while the frozen snapshot is stale versus current market context.
+  - the drift score uses receipt age, largest saved-vs-current mark move, current minimum listed liquidation distance, daily funding delta, and recheck watchlist cue counts.
+  - account mismatch and position-state changes are treated as not comparable rather than ordinary market drift.
+  - current listed liquidation distance is still the app's listed-buffer input, not exact Hyperliquid liquidation logic.
+  - funding delta is descriptive holding-cost context over normalized notional, not exact settlement accounting or a strategy recommendation.
+  - open interest remains participation context only and is not a standalone stale/current decision.
 - receipt volatility buffer assumptions:
   - local Hyperliquid receipt pages use the existing read-only `market-history` route after a live recheck.
   - the lookup calls public `candleSnapshot` and `fundingHistory` info requests for comparable current PERP markets only.

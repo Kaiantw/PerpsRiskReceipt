@@ -18,6 +18,7 @@ resembles the current market without turning into a trading UI.
 - [[../sources/perp-volatility-buffer]]
 - [[live-receipt-recheck]]
 - [[funding-carry-watch]]
+- [[receipt-snapshot-drift]]
 - [[receipt-volatility-buffer]]
 
 ## implemented behavior
@@ -31,6 +32,8 @@ resembles the current market without turning into a trading UI.
   change where both receipt and live values exist.
 - Summarizes the focus market and whether the most important context is position
   state, liquidation pressure, market movement, or funding movement.
+- Feeds [[receipt-snapshot-drift]], which turns the same saved/current market
+  context into a close/drift/stale/not-comparable receipt label.
 - Keep the explanation short and source-linked in docs, not loud in the app.
 
 ## next connected feature
@@ -39,3 +42,5 @@ resembles the current market without turning into a trading UI.
 receipts point to a persistent deterioration or just a one-off market move.
 [[receipt-volatility-buffer]] connects current listed buffer distance to public
 24h candle movement.
+[[receipt-snapshot-drift]] makes the current-market resemblance question visible
+near the top of a receipt recheck.

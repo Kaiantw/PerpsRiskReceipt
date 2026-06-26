@@ -14,11 +14,13 @@ account-value history into one short read.
 ## source links
 
 - [[../sources/perp-risk-review-checklist]]
+- [[../sources/perp-snapshot-drift]]
 - [[live-receipt-recheck]]
 - [[mark-price-context]]
 - [[receipt-account-value-context]]
 - [[funding-carry-watch]]
 - [[liquidation-buffer-ladder]]
+- [[receipt-snapshot-drift]]
 
 ## implemented behavior
 
@@ -42,5 +44,7 @@ account-value history into one short read.
   source for local live receipt pages.
 - [[receipt-risk-driver-comparison]] gives a more detailed saved-vs-current
   driver attribution panel under this summary.
+- [[receipt-snapshot-drift]] gives the freshness/current-market read beside
+  this "what changed" summary.
 - [[account-value-timeline]] can eventually expose a stable summary window
   preference so receipt summaries can choose day/week context deliberately.

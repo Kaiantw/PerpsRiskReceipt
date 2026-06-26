@@ -13,6 +13,7 @@ import type {
 } from "../market/market-context.ts";
 import type { risk_receipt } from "../perps/types.ts";
 import type { receipt_change_summary } from "./receipt-change-summary.ts";
+import type { receipt_snapshot_drift } from "./receipt-snapshot-drift.ts";
 import type {
   receipt_market_regime,
   receipt_market_regime_signal,
@@ -51,6 +52,7 @@ export function buildReceiptReviewPacket(input: {
   receipt: risk_receipt;
   recheckHistorySummary?: receipt_recheck_history_summary | null;
   riskDriverComparison: receipt_risk_driver_comparison;
+  snapshotDrift?: receipt_snapshot_drift | null;
   volatilityBuffer?: receipt_volatility_buffer | null;
   watchlist: receipt_recheck_watchlist;
   watchlistAssistantResponse: receipt_risk_assistant_response;
@@ -77,6 +79,7 @@ export function buildReceiptReviewPacket(input: {
     `- changed positions: ${input.comparison.changed_position_count}`,
     `- largest comparable mark move: ${input.comparison.max_abs_mark_price_change_percent.toFixed(2)}%`,
     "",
+    ...formatSnapshotDriftSection(input.snapshotDrift ?? null),
     ...formatRecheckHistorySection(input.recheckHistorySummary ?? null),
     ...formatMarketRegimeSection(input.marketRegime ?? null),
     ...formatMarketRegimeDrilldownSection(
@@ -144,6 +147,31 @@ function formatSignedNullableNumber(value: number | null) {
   }
 
   return `${value > 0 ? "+" : "-"}${Math.abs(value).toFixed(2)}`;
+}
+
+function formatSnapshotDriftSection(
+  snapshotDrift: receipt_snapshot_drift | null,
+) {
+  if (!snapshotDrift) {
+    return [];
+  }
+
+  return [
+    "## snapshot drift",
+    `- label: ${snapshotDrift.label.replaceAll("_", " ")}`,
+    `- headline: ${snapshotDrift.headline}`,
+    `- drift score: ${snapshotDrift.drift_score}/100`,
+    `- receipt age: ${formatAgeMinutes(snapshotDrift.age_minutes)}`,
+    `- focus market: ${snapshotDrift.focus_market ?? "n/a"}`,
+    `- max mark move: ${snapshotDrift.metrics.max_mark_move_percent.toFixed(2)}%`,
+    `- current min listed buffer: ${formatPercentFromBps(snapshotDrift.metrics.current_min_liquidation_distance_bps)}`,
+    `- daily funding delta: ${formatSignedNullableUsd(snapshotDrift.metrics.total_daily_funding_delta_usd)}`,
+    `- watchlist counts: ${snapshotDrift.metrics.high_cue_count} high, ${snapshotDrift.metrics.watch_cue_count} watch`,
+    ...snapshotDrift.review_points
+      .slice(0, 5)
+      .map((point) => `- review: ${point}`),
+    "",
+  ];
 }
 
 function formatSignedRiskScoreDelta(value: number | null) {
@@ -385,6 +413,21 @@ function formatNullableRiskScore(
   }
 
   return `${score} (${label ?? "n/a"})`;
+}
+
+function formatAgeMinutes(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  if (value < 60) {
+    return `${value}m`;
+  }
+
+  const hours = Math.floor(value / 60);
+  const minutes = value % 60;
+
+  return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
 }
 
 function formatPlainNumber(value: number) {

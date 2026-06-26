@@ -23,6 +23,7 @@ mark movement into one reviewer-facing headline.
 - [[receipt-volatility-buffer]]
 - [[receipt-account-value-context]]
 - [[receipt-assistant-watchlist-citations]]
+- [[receipt-snapshot-drift]]
 - [[receipt-review-packet]]
 
 ## implemented behavior
@@ -49,6 +50,8 @@ mark movement into one reviewer-facing headline.
   after history is loaded.
 - [[receipt-account-value-context]] supplies sampled drawdown context when
   portfolio history is available.
+- [[receipt-snapshot-drift]] gives a shorter stale-vs-close receipt read before
+  the broader regime synthesis.
 - [[receipt-review-packet]] carries the regime read into copyable markdown.
 - [[receipt-risk-assistant]] explains the same regime read through cited local
   assistant answers.

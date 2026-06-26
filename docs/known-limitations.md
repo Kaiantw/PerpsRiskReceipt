@@ -41,6 +41,7 @@
 - receipt review packet local-history context is a compact trend summary only; it does not export raw history rows, sync history, or prove exact account-history state.
 - receipt account-value context uses the nearest sampled Hyperliquid portfolio point, so the visible sample gap matters for interpretation.
 - receipt change summary is heuristic and prioritizes review cues; it is not a trading recommendation or exact risk monitor.
+- receipt snapshot drift is heuristic freshness context over receipt age, mark movement, listed buffer, funding delta, and watchlist counts; it does not change hash verification, prove exact liquidation state, or decide what a trader should do next.
 - receipt risk assistant is deterministic local explanation logic over visible receipt/recheck fields, not a connected LLM or financial adviser.
 - receipt assistant watchlist, volatility, regime, and regime-row answers cite heuristic local fields and do not decide what a trader should do next.
 - receipt risk assistant driver answers inherit the heuristic receipt risk-driver comparison limits and do not inspect hidden fields beyond the local receipt context.

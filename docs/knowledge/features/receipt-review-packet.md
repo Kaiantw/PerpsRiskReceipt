@@ -19,6 +19,7 @@ recipient to inspect every panel manually.
 - [[../sources/perp-configurable-recheck-thresholds]]
 - [[receipt-recheck-watchlist]]
 - [[configurable-recheck-thresholds]]
+- [[receipt-snapshot-drift]]
 - [[receipt-volatility-buffer]]
 - [[receipt-market-regime]]
 - [[receipt-market-regime-drilldown]]
@@ -33,9 +34,10 @@ recipient to inspect every panel manually.
 - Builds deterministic markdown from the local receipt live recheck context.
 - Includes receipt id, truncated account, protocol, timestamps, snapshot hash,
   hash verification state, and saved risk score.
-- Includes live recheck status, receipt change summary, driver-comparison
-  headline metrics, market-regime read, per-market regime rows, recheck watchlist counts/items,
-  assistant watchlist answer, assistant citations, and market-context rows.
+- Includes live recheck status, receipt change summary, snapshot-drift label,
+  driver-comparison headline metrics, market-regime read, per-market regime
+  rows, recheck watchlist counts/items, assistant watchlist answer, assistant
+  citations, and market-context rows.
 - Includes the active review threshold profile so copied markdown explains what
   counted as a watchlist cue.
 - Includes loaded volatility-buffer context when the reviewer has fetched public
@@ -54,6 +56,8 @@ recipient to inspect every panel manually.
 - [[receipt-assistant-watchlist-citations]] supplies the inspect-first assistant
   read embedded in the packet.
 - [[receipt-recheck-watchlist]] supplies ranked review cues.
+- [[receipt-snapshot-drift]] supplies the stale-vs-close receipt label and
+  drift score for the packet.
 - [[receipt-volatility-buffer]] supplies public volatility-vs-buffer context
   when loaded.
 - [[receipt-market-regime]] supplies the compact current-environment read.

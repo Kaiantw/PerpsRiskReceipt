@@ -18,6 +18,7 @@ import {
 import { compareReceiptRiskDrivers } from "./receipt-risk-driver-comparison.ts";
 import { buildReceiptRecheckWatchlist } from "./receipt-recheck-watchlist.ts";
 import { buildReceiptReviewPacket } from "./receipt-review-packet.ts";
+import { buildReceiptSnapshotDrift } from "./receipt-snapshot-drift.ts";
 import { buildReceiptVolatilityBuffer } from "./receipt-volatility-buffer.ts";
 import { compareSnapshots } from "./snapshot-comparison.ts";
 
@@ -86,6 +87,13 @@ async function buildPacket(input?: {
     riskDriverComparison,
     volatilityBuffer,
   });
+  const snapshotDrift = buildReceiptSnapshotDrift({
+    comparison,
+    currentDataTimeIso: currentSnapshot.data_time_iso,
+    marketContext,
+    receiptDataTimeIso: receiptSnapshot.data_time_iso,
+    watchlist,
+  });
   const changeSummary = buildReceiptChangeSummary({
     comparison,
     marketContext,
@@ -130,6 +138,7 @@ async function buildPacket(input?: {
     marketRegimeDrilldown,
     recheckHistorySummary: input?.recheckHistorySummary ?? null,
     changeSummary,
+    snapshotDrift,
     riskDriverComparison,
     volatilityBuffer,
     watchlist,
@@ -212,6 +221,9 @@ test("builds a copyable markdown packet with receipt, watchlist, assistant, and 
   assert.match(packet.markdown, /## receipt/);
   assert.match(packet.markdown, /snapshot hash: 0x/);
   assert.match(packet.markdown, /hash verification: verified on this page/);
+  assert.match(packet.markdown, /## snapshot drift/);
+  assert.match(packet.markdown, /drift score:/);
+  assert.match(packet.markdown, /current min listed buffer:/);
   assert.match(packet.markdown, /## market regime/);
   assert.match(packet.markdown, /label: stress/);
   assert.match(packet.markdown, /counts: 0 critical/);
