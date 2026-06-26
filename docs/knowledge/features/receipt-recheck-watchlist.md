@@ -18,6 +18,7 @@ rank concrete review cues and show what deserves attention first.
 - [[receipt-assistant-market-context-fusion]]
 - [[mark-price-context]]
 - [[configurable-recheck-thresholds]]
+- [[receipt-volatility-watchlist]]
 - [[redacted-market-watchlist]]
 
 ## implemented behavior
@@ -31,6 +32,8 @@ rank concrete review cues and show what deserves attention first.
 - Shows counts for total, high, watch, and info items.
 - Accepts local review thresholds for listed liquidation buffer, adverse mark
   movement, driver-score movement, funding deltas, and open-interest movement.
+- Adds loaded high/watch volatility-buffer rows when public 24h market history
+  has been fetched on the receipt page.
 - Renders review points for each item without adding trade recommendations.
 - Reuses existing live recheck data and does not call a new endpoint.
 
@@ -46,5 +49,7 @@ rank concrete review cues and show what deserves attention first.
   markdown summary.
 - [[configurable-recheck-thresholds]] lets the reviewer tune what crosses the
   watchlist threshold in the current review.
+- [[receipt-volatility-watchlist]] adds public volatility-versus-buffer cues
+  after the reviewer loads 24h market history.
 - [[receipt-risk-driver-comparison]] and [[mark-price-context]] remain the
   underlying sources of truth.

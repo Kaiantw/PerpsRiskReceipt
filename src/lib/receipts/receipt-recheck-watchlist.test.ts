@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import type { hyperliquid_market_history } from "../hyperliquid/adapter.ts";
 import { buildMarketContext } from "../market/market-context.ts";
 import { loadFixtureAccount } from "../perps/fixtures.ts";
 import type {
@@ -14,6 +15,7 @@ import {
   type receipt_recheck_watchlist_thresholds,
 } from "./receipt-recheck-watchlist.ts";
 import { compareReceiptRiskDrivers } from "./receipt-risk-driver-comparison.ts";
+import { buildReceiptVolatilityBuffer } from "./receipt-volatility-buffer.ts";
 import { compareSnapshots } from "./snapshot-comparison.ts";
 
 function toSnapshotInput(
@@ -48,20 +50,75 @@ function buildWatchlist(input: {
   receiptSnapshot: normalized_account_snapshot;
   currentSnapshot: normalized_account_snapshot;
   thresholds?: Partial<receipt_recheck_watchlist_thresholds>;
+  volatilityHistories?: hyperliquid_market_history[];
 }) {
   const comparison = compareSnapshots({
     receiptSnapshot: input.receiptSnapshot,
     currentSnapshot: input.currentSnapshot,
   });
+  const marketContext = buildMarketContext(comparison);
+  const volatilityBuffer = input.volatilityHistories
+    ? buildReceiptVolatilityBuffer({
+        marketContext,
+        histories: input.volatilityHistories,
+        fetchedAtIso: "2026-06-26T00:00:00.000Z",
+        windowHours: 24,
+        interval: "1h",
+      })
+    : null;
 
   return buildReceiptRecheckWatchlist({
-    marketContext: buildMarketContext(comparison),
+    marketContext,
     riskDriverComparison: compareReceiptRiskDrivers({
       savedSnapshot: input.receiptSnapshot,
       currentSnapshot: input.currentSnapshot,
     }),
     thresholds: input.thresholds,
+    volatilityBuffer,
   });
+}
+
+function buildEthHistory(input?: {
+  closePrices?: [number, number];
+  highPriceUsd?: number;
+  lowPriceUsd?: number;
+}): hyperliquid_market_history {
+  const closePrices = input?.closePrices ?? [2_500, 2_400];
+
+  return {
+    market: "ETH-PERP",
+    coin: "ETH",
+    interval: "1h",
+    start_time_ms: Date.parse("2026-06-25T00:00:00.000Z"),
+    end_time_ms: Date.parse("2026-06-26T00:00:00.000Z"),
+    candles: [
+      {
+        open_time_ms: Date.parse("2026-06-25T00:00:00.000Z"),
+        close_time_ms: Date.parse("2026-06-25T00:59:59.999Z"),
+        market: "ETH-PERP",
+        interval: "1h",
+        open_price_usd: closePrices[0],
+        high_price_usd: input?.highPriceUsd ?? 2_650,
+        low_price_usd: input?.lowPriceUsd ?? 2_100,
+        close_price_usd: closePrices[0],
+        volume_base: 100,
+        trade_count: 10,
+      },
+      {
+        open_time_ms: Date.parse("2026-06-25T23:00:00.000Z"),
+        close_time_ms: Date.parse("2026-06-25T23:59:59.999Z"),
+        market: "ETH-PERP",
+        interval: "1h",
+        open_price_usd: closePrices[0],
+        high_price_usd: input?.highPriceUsd ?? 2_650,
+        low_price_usd: input?.lowPriceUsd ?? 2_100,
+        close_price_usd: closePrices[1],
+        volume_base: 140,
+        trade_count: 12,
+      },
+    ],
+    funding: [],
+  };
 }
 
 test("builds high-attention cues from buffer, adverse mark, funding, and open interest", () => {
@@ -120,6 +177,34 @@ test("reports position state changes as historical review cues", () => {
         item.category === "position_state" &&
         item.title === "Position state changed since receipt" &&
         item.severity === "high",
+    ),
+  );
+});
+
+test("adds volatility-buffer cues after public market history is loaded", () => {
+  const receiptSnapshot = loadFixtureAccount("demo-safe-eth-long");
+  const currentSnapshot = normalizeAccountSnapshot({
+    ...toSnapshotInput(receiptSnapshot),
+    positions: toSnapshotInput(receiptSnapshot).positions.map((position) => ({
+      ...position,
+      mark_price_usd: 2_400,
+    })),
+  });
+  const watchlist = buildWatchlist({
+    receiptSnapshot,
+    currentSnapshot,
+    volatilityHistories: [buildEthHistory()],
+  });
+
+  assert.equal(watchlist.label, "high_attention");
+  assert.ok(
+    watchlist.items.some(
+      (item) =>
+        item.market === "ETH-PERP" &&
+        item.category === "volatility_buffer" &&
+        item.severity === "high" &&
+        item.title === "Public 24h range exceeds current listed buffer" &&
+        item.detail.includes("Public 24h range: 22.92%"),
     ),
   );
 });

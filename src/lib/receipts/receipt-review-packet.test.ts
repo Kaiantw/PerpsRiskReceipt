@@ -64,10 +64,6 @@ async function buildPacket(input?: {
     savedSnapshot: receiptSnapshot,
     currentSnapshot,
   });
-  const watchlist = buildReceiptRecheckWatchlist({
-    marketContext,
-    riskDriverComparison,
-  });
   const volatilityBuffer = input?.withVolatilityBuffer
     ? buildReceiptVolatilityBuffer({
         marketContext,
@@ -77,6 +73,11 @@ async function buildPacket(input?: {
         interval: "1h",
       })
     : null;
+  const watchlist = buildReceiptRecheckWatchlist({
+    marketContext,
+    riskDriverComparison,
+    volatilityBuffer,
+  });
   const changeSummary = buildReceiptChangeSummary({
     comparison,
     marketContext,
@@ -90,6 +91,7 @@ async function buildPacket(input?: {
       changeSummary,
       riskDriverComparison,
       recheckWatchlist: watchlist,
+      volatilityBuffer,
       hashVerified: true,
     },
     question: "What should I inspect first in the recheck watchlist?",
@@ -136,6 +138,7 @@ test("builds a copyable markdown packet with receipt, watchlist, assistant, and 
   assert.match(packet.markdown, /24h range:/);
   assert.match(packet.markdown, /## recheck watchlist/);
   assert.match(packet.markdown, /\[high\] ETH-PERP/);
+  assert.match(packet.markdown, /Public 24h range exceeds current listed buffer/);
   assert.match(packet.markdown, /## review thresholds/);
   assert.match(packet.markdown, /thin listed buffer: 5\.00%/);
   assert.match(packet.markdown, /open-interest delta: \$50,000,000\.00/);

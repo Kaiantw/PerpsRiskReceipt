@@ -21,6 +21,7 @@ informed it and forward to related feature ideas.
 - [[sources/perp-receipt-review-packet]] - source notes for copyable markdown receipt review packets after live recheck.
 - [[sources/perp-configurable-recheck-thresholds]] - source notes for local threshold controls over live receipt review cues.
 - [[sources/perp-volatility-buffer]] - source notes for comparing current listed buffers with public 24h volatility.
+- [[sources/perp-volatility-watchlist]] - source notes for ranking loaded volatility-buffer rows in the recheck watchlist.
 - [[sources/perp-account-value-history]] - Hyperliquid portfolio history and drawdown context.
 - [[sources/perp-risk-review-checklist]] - liquidation, funding, leverage, and market-condition review framing.
 - [[sources/perp-receipt-review-assistant]] - receipt-question source notes for hash scope, live recheck review, funding, liquidation, and guardrails.
@@ -51,6 +52,7 @@ informed it and forward to related feature ideas.
 - [[features/receipt-review-packet]] - copyable markdown summary of receipt hash, recheck, watchlist, assistant, driver, and market context.
 - [[features/configurable-recheck-thresholds]] - local threshold controls for what counts as meaningful current-market movement.
 - [[features/receipt-volatility-buffer]] - compares current listed liquidation buffer with public 24h range and ATR-style movement.
+- [[features/receipt-volatility-watchlist]] - feeds loaded volatility-buffer cues into the recheck watchlist, assistant, and packet.
 - [[features/portable-receipt-bundle]] - explicit full-snapshot export/import flow for reviewing local live receipts across browsers.
 - [[features/redacted-receipt-share]] - minimized receipt share that hides raw account and exact position values while preserving a hash reference and risk summary.
 - [[features/redacted-market-context]] - current public Hyperliquid mark, funding, and open-interest context for redacted shares.
@@ -75,5 +77,5 @@ informed it and forward to related feature ideas.
   modes if users want different disclosure levels.
 - [[features/configurable-recheck-thresholds]] could later persist named review
   presets if the app adds user settings without changing receipt integrity.
-- [[features/receipt-volatility-buffer]] could later feed its high/watch rows
-  into [[features/receipt-assistant-watchlist-citations]].
+- [[features/receipt-volatility-watchlist]] could later add local sensitivity
+  controls for volatility-buffer thresholds.

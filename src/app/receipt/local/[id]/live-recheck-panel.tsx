@@ -395,6 +395,7 @@ function LiveRecheckResult({
     marketContext,
     riskDriverComparison,
     thresholds,
+    volatilityBuffer,
   });
   const changeSummary = buildReceiptChangeSummary({
     comparison,
@@ -408,6 +409,7 @@ function LiveRecheckResult({
     changeSummary,
     riskDriverComparison,
     recheckWatchlist,
+    volatilityBuffer,
     accountValueContext: receiptAccountValueContext,
     hashVerified,
   };
@@ -436,6 +438,8 @@ function LiveRecheckResult({
     riskDriverComparison.current_top_driver_market ?? "no-current-driver",
     recheckWatchlist.label,
     String(recheckWatchlist.high_count),
+    volatilityBuffer?.label ?? "no-volatility-buffer",
+    String(volatilityBuffer?.high_count ?? 0),
     formatThresholdSignature(recheckWatchlist.thresholds),
     receiptAccountValueContext?.label ?? "no-account-context",
   ].join(":");

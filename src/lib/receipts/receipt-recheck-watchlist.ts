@@ -1,8 +1,15 @@
-import type { market_context, market_context_position } from "../market/market-context.ts";
+import type {
+  market_context,
+  market_context_position,
+} from "../market/market-context.ts";
 import type {
   receipt_risk_driver_comparison,
   receipt_risk_driver_market_change,
 } from "./receipt-risk-driver-comparison.ts";
+import type {
+  receipt_volatility_buffer,
+  receipt_volatility_buffer_row,
+} from "./receipt-volatility-buffer.ts";
 
 export type receipt_recheck_watch_severity = "info" | "watch" | "high";
 
@@ -10,6 +17,7 @@ export type receipt_recheck_watch_category =
   | "account_mismatch"
   | "position_state"
   | "liquidation_buffer"
+  | "volatility_buffer"
   | "adverse_mark_move"
   | "driver_score"
   | "funding_cost"
@@ -69,6 +77,7 @@ export function buildReceiptRecheckWatchlist(input: {
   marketContext: market_context;
   riskDriverComparison: receipt_risk_driver_comparison;
   thresholds?: Partial<receipt_recheck_watchlist_thresholds>;
+  volatilityBuffer?: receipt_volatility_buffer | null;
 }): receipt_recheck_watchlist {
   const thresholds = resolveThresholds(input.thresholds);
 
@@ -90,7 +99,10 @@ export function buildReceiptRecheckWatchlist(input: {
         thresholds,
       }),
   );
-  const items = [...accountItems, ...marketItems].sort(compareWatchItems);
+  const volatilityItems = getVolatilityBufferItems(input.volatilityBuffer ?? null);
+  const items = [...accountItems, ...marketItems, ...volatilityItems].sort(
+    compareWatchItems,
+  );
 
   return buildWatchlistResult({
     label: getWatchlistLabel(items),
@@ -411,6 +423,62 @@ function getOpenInterestItem(input: {
   };
 }
 
+function getVolatilityBufferItems(
+  volatilityBuffer: receipt_volatility_buffer | null,
+): receipt_recheck_watch_item[] {
+  if (!volatilityBuffer) {
+    return [];
+  }
+
+  return volatilityBuffer.rows.flatMap((row) => {
+    if (row.severity === "info" || row.status !== "same_position") {
+      return [];
+    }
+
+    return [buildVolatilityBufferItem(row)];
+  });
+}
+
+function buildVolatilityBufferItem(
+  row: receipt_volatility_buffer_row,
+): receipt_recheck_watch_item {
+  return {
+    id: `${row.market}:volatility-buffer`,
+    market: row.market,
+    severity: row.severity,
+    category: "volatility_buffer",
+    title: getVolatilityBufferTitle(row),
+    detail: [
+      `Current listed buffer: ${formatNullablePercent(row.current_liquidation_distance_percent)}.`,
+      `Public 24h range: ${formatNullablePercent(row.high_low_range_percent)}.`,
+      `Hourly ATR: ${formatNullablePercent(row.average_true_range_percent)}.`,
+      `ATR buffer multiple: ${formatNullableMultiple(row.atr_buffer_multiple)}.`,
+    ].join(" "),
+    review_points: row.review_points,
+  };
+}
+
+function getVolatilityBufferTitle(row: receipt_volatility_buffer_row) {
+  if (
+    row.high_low_range_percent !== null &&
+    row.current_liquidation_distance_percent !== null &&
+    row.high_low_range_percent >= row.current_liquidation_distance_percent
+  ) {
+    return "Public 24h range exceeds current listed buffer";
+  }
+
+  if (
+    row.adverse_price_change_percent !== null &&
+    row.current_liquidation_distance_percent !== null &&
+    row.current_liquidation_distance_percent <= 10 &&
+    row.adverse_price_change_percent >= 2
+  ) {
+    return "Adverse 24h move overlaps a tight listed buffer";
+  }
+
+  return "Public 24h range used much of current listed buffer";
+}
+
 function getMissingMarketContextItem(input: {
   marketChange: receipt_risk_driver_market_change;
   contextRow: market_context_position | null;
@@ -541,10 +609,12 @@ function getSeverityRank(severity: receipt_recheck_watch_severity) {
 function getCategoryRank(category: receipt_recheck_watch_category) {
   switch (category) {
     case "account_mismatch":
-      return 8;
+      return 9;
     case "position_state":
-      return 7;
+      return 8;
     case "liquidation_buffer":
+      return 7;
+    case "volatility_buffer":
       return 6;
     case "adverse_mark_move":
       return 5;
@@ -593,4 +663,20 @@ function formatSignedNullableBps(value: number | null) {
   }
 
   return `${formatSignedNumber(value)} bps`;
+}
+
+function formatNullablePercent(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return `${value.toFixed(2)}%`;
+}
+
+function formatNullableMultiple(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return `${value.toFixed(2)}x`;
 }

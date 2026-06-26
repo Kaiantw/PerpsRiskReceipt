@@ -14,6 +14,7 @@ instead of forcing a reviewer to scan every panel manually.
 
 - [[../sources/perp-receipt-assistant-watchlist-citations]]
 - [[receipt-recheck-watchlist]]
+- [[receipt-volatility-watchlist]]
 - [[receipt-risk-assistant]]
 - [[receipt-assistant-market-context-fusion]]
 
@@ -26,6 +27,8 @@ instead of forcing a reviewer to scan every panel manually.
 - Answers with high/watch/info counts and the top three watchlist items.
 - Cites `receipt_recheck_watchlist` headline, summary, counts, item severity,
   item detail, and item review points.
+- Includes volatility-buffer cues in those answers once public 24h volatility
+  has been loaded and added to the watchlist.
 - Keeps trade-intent refusal ahead of watchlist routing.
 
 ## related ideas
@@ -35,5 +38,7 @@ instead of forcing a reviewer to scan every panel manually.
   copyable markdown artifact.
 - [[receipt-assistant-market-context-fusion]] handles named-market follow-up
   questions after the watchlist identifies a market.
+- [[receipt-volatility-watchlist]] adds public volatility-versus-buffer cues to
+  the same inspect-first answer path.
 - [[redacted-market-watchlist]] could later get a redacted-share assistant that
   uses the same inspect-first pattern without exposing hidden fields.

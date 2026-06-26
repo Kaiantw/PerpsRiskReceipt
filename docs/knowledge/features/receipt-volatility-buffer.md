@@ -17,6 +17,7 @@ recommending a trade.
 - [[../sources/perp-volatility-buffer]]
 - [[mark-price-context]]
 - [[receipt-recheck-watchlist]]
+- [[receipt-volatility-watchlist]]
 - [[receipt-review-packet]]
 - [[redacted-market-trend]]
 
@@ -31,7 +32,8 @@ recommending a trade.
 - Labels rows as high/watch/info when public range exceeds the current listed
   buffer, uses at least half the buffer, or tight buffers overlap adverse
   movement.
-- Adds loaded volatility-buffer context to the review packet.
+- Adds loaded volatility-buffer context to the recheck watchlist, receipt
+  assistant, and review packet.
 
 ## related ideas
 
@@ -41,5 +43,5 @@ recommending a trade.
   markdown.
 - [[redacted-market-trend]] is the privacy-preserving market-only sibling for
   redacted shares.
-- [[receipt-recheck-watchlist]] could later include volatility-buffer cues in
-  its ranked inspect-first list.
+- [[receipt-volatility-watchlist]] feeds high/watch rows into the ranked
+  inspect-first list.

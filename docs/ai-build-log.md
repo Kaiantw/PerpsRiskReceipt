@@ -852,3 +852,25 @@ Review whether the default volatility thresholds feel right for the demo: high w
 - Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, mocked the read-only live snapshot and market-history responses, clicked `Recheck live account`, clicked `Load 24h volatility`, confirmed `Volatility buffer`, `range exceeds buffer`, `Current buffer`, `24h range`, `Hourly ATR`, `ATR buffer`, confirmed the review packet included `## volatility buffer` and `24h range:`, and saw zero browser console errors.
 ### remaining risks:
 The volatility buffer is descriptive public-market context only. It compares public 24h candle history with current listed liquidation distance, but it does not model Hyperliquid's exact liquidation engine, cross-margin changes, order-book depth, liquidity, oracle-price settlement, future price movement, alerting, or what a trader should do next.
+
+### task id: post-t9 receipt volatility watchlist
+### codex mode:
+product iteration + implementation
+### delegated work:
+Connected loaded volatility-buffer rows to the local receipt recheck watchlist, receipt assistant, and review packet so public 24h movement versus current listed buffer becomes part of the inspect-first workflow.
+### output accepted:
+Added `volatility_buffer` as a `receipt_recheck_watchlist` category and fed high/watch volatility-buffer rows into the ranked watchlist after public 24h history loads. Added a direct receipt assistant `Volatility` prompt and answer path that cites loaded `receipt_volatility_buffer` fields for headline, counts, listed buffer, 24h range, hourly ATR, and ATR buffer multiple. Passed `volatilityBuffer` through the local live recheck panel into the watchlist, assistant context, and review packet. Added tests for volatility-buffer watchlist items, assistant volatility answers/suggestions, and packet inclusion of the volatility watchlist cue. Added knowledge graph feature/source notes and updated source notes, limitations, README, demo script, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, data model, LLM API, backend store, wallet/RPC flow, trading/exchange endpoint, alert system, prediction model, exact Hyperliquid liquidation formula, or protocol-official risk claim was added. The watchlist only uses volatility rows after the user loads existing read-only public market history.
+### human review notes:
+Review whether the category rank is right: account mismatch, position-state changes, and listed liquidation-buffer cues remain above volatility-buffer cues; volatility-buffer cues rank above adverse mark movement, driver score, funding, open interest, and missing context. Review whether the new `Volatility` assistant prompt should stay hidden until history is loaded, as implemented.
+### tests/checks run:
+- `node --test src/lib/receipts/receipt-recheck-watchlist.test.ts src/lib/assistant/receipt-risk-assistant.test.ts src/lib/receipts/receipt-review-packet.test.ts src/lib/receipts/receipt-volatility-buffer.test.ts` passed: 28 tests, 28 passing.
+- `npm test` passed: 131 tests, 131 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]`, `/api/hyperliquid/market-history`, and the existing receipt/API routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, mocked the read-only live snapshot and market-history responses, clicked `Recheck live account`, clicked `Load 24h volatility`, confirmed the `Recheck watchlist` included `Public 24h range exceeds current listed buffer`, clicked the `Volatility` assistant prompt, confirmed `receipt_volatility_buffer.high_count` and `Hourly ATR:` in the answer, confirmed the review packet included the volatility-buffer watch item, and saw zero browser console errors.
+### remaining risks:
+The volatility watchlist cue is heuristic public-market triage. It helps reviewers inspect whether recent public movement was large relative to current listed buffer, but it is not exact liquidation monitoring, order-book depth analysis, a price forecast, a live alert, protocol-official risk attribution, or advice about what a trader should do next.

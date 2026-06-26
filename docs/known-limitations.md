@@ -23,14 +23,14 @@
 - redacted market watchlist is heuristic public-context triage over disclosed redacted fields; it cannot prove hidden receipt state, recompute the snapshot hash, or monitor exact liquidation state.
 - live receipt recheck compares against a fresh read-only snapshot but is not an exact liquidation monitor or historical account audit.
 - receipt risk-driver comparison reuses heuristic position-driver scores for saved and live snapshots; it is not protocol-official attribution and position-state changes limit direct comparison.
-- receipt recheck watchlist is heuristic triage over saved/current local fields; it cannot prove exact liquidation state, exact funding settlement, or what a trader should do next.
+- receipt recheck watchlist is heuristic triage over saved/current local fields and loaded public volatility context; it cannot prove exact liquidation state, exact funding settlement, or what a trader should do next.
 - configurable recheck thresholds are local UI sensitivity settings and are not saved, synced, or protocol-official.
 - receipt volatility buffer uses public 24-hour candle history and listed liquidation distance only; it is not exact liquidation monitoring, order-book depth analysis, a forecast, or advice.
 - receipt review packet is a markdown communication summary, not a full private snapshot, encrypted share, access-controlled artifact, or hash-recomputable portable bundle.
 - receipt account-value context uses the nearest sampled Hyperliquid portfolio point, so the visible sample gap matters for interpretation.
 - receipt change summary is heuristic and prioritizes review cues; it is not a trading recommendation or exact risk monitor.
 - receipt risk assistant is deterministic local explanation logic over visible receipt/recheck fields, not a connected LLM or financial adviser.
-- receipt assistant watchlist answers cite heuristic recheck watchlist items and do not decide what a trader should do next.
+- receipt assistant watchlist and volatility answers cite heuristic recheck/volatility fields and do not decide what a trader should do next.
 - receipt risk assistant driver answers inherit the heuristic receipt risk-driver comparison limits and do not inspect hidden fields beyond the local receipt context.
 - receipt risk assistant market drilldowns cite local per-market driver rows plus available market-context rows; they still do not combine exact protocol margin tiers, live order-book liquidity, or hidden redacted-share fields.
 - market context requires comparable saved/current positions and treats open interest as descriptive context, not a standalone direction signal.

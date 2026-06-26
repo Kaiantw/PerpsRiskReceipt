@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import type { hyperliquid_market_history } from "../hyperliquid/adapter.ts";
 import { buildAccountValueTimeline } from "../history/account-value-timeline.ts";
 import { buildReceiptAccountValueContext } from "../history/receipt-account-value-context.ts";
 import { buildMarketContext } from "../market/market-context.ts";
@@ -10,6 +11,7 @@ import { createRiskReceipt } from "../receipts/receipt.ts";
 import { buildReceiptChangeSummary } from "../receipts/receipt-change-summary.ts";
 import { compareReceiptRiskDrivers } from "../receipts/receipt-risk-driver-comparison.ts";
 import { buildReceiptRecheckWatchlist } from "../receipts/receipt-recheck-watchlist.ts";
+import { buildReceiptVolatilityBuffer } from "../receipts/receipt-volatility-buffer.ts";
 import { compareSnapshots } from "../receipts/snapshot-comparison.ts";
 import {
   answerReceiptRiskQuestion,
@@ -21,6 +23,7 @@ async function buildAssistantContext(input?: {
   receiptSnapshot?: normalized_account_snapshot;
   currentSnapshot?: normalized_account_snapshot;
   includeAccountHistory?: boolean;
+  includeVolatilityBuffer?: boolean;
   hashVerified?: boolean;
 }): Promise<receipt_risk_assistant_context> {
   const receiptSnapshot =
@@ -32,6 +35,15 @@ async function buildAssistantContext(input?: {
     savedSnapshot: receiptSnapshot,
     currentSnapshot,
   });
+  const volatilityBuffer = input?.includeVolatilityBuffer
+    ? buildReceiptVolatilityBuffer({
+        marketContext,
+        histories: [buildEthHistory()],
+        fetchedAtIso: "2026-06-26T00:00:00.000Z",
+        windowHours: 24,
+        interval: "1h",
+      })
+    : null;
   const accountValueContext = input?.includeAccountHistory
     ? buildReceiptAccountValueContext({
         receipt_data_time_iso: receiptSnapshot.data_time_iso,
@@ -64,12 +76,57 @@ async function buildAssistantContext(input?: {
     recheckWatchlist: buildReceiptRecheckWatchlist({
       marketContext,
       riskDriverComparison,
+      volatilityBuffer,
     }),
+    volatilityBuffer,
     changeSummary: buildReceiptChangeSummary({
       comparison,
       marketContext,
       accountValueContext,
     }),
+  };
+}
+
+function buildEthHistory(input?: {
+  closePrices?: [number, number];
+  highPriceUsd?: number;
+  lowPriceUsd?: number;
+}): hyperliquid_market_history {
+  const closePrices = input?.closePrices ?? [2_500, 2_400];
+
+  return {
+    market: "ETH-PERP",
+    coin: "ETH",
+    interval: "1h",
+    start_time_ms: Date.parse("2026-06-25T00:00:00.000Z"),
+    end_time_ms: Date.parse("2026-06-26T00:00:00.000Z"),
+    candles: [
+      {
+        open_time_ms: Date.parse("2026-06-25T00:00:00.000Z"),
+        close_time_ms: Date.parse("2026-06-25T00:59:59.999Z"),
+        market: "ETH-PERP",
+        interval: "1h",
+        open_price_usd: closePrices[0],
+        high_price_usd: input?.highPriceUsd ?? 2_650,
+        low_price_usd: input?.lowPriceUsd ?? 2_100,
+        close_price_usd: closePrices[0],
+        volume_base: 100,
+        trade_count: 10,
+      },
+      {
+        open_time_ms: Date.parse("2026-06-25T23:00:00.000Z"),
+        close_time_ms: Date.parse("2026-06-25T23:59:59.999Z"),
+        market: "ETH-PERP",
+        interval: "1h",
+        open_price_usd: closePrices[0],
+        high_price_usd: input?.highPriceUsd ?? 2_650,
+        low_price_usd: input?.lowPriceUsd ?? 2_100,
+        close_price_usd: closePrices[1],
+        volume_base: 140,
+        trade_count: 12,
+      },
+    ],
+    funding: [],
   };
 }
 
@@ -255,6 +312,40 @@ test("answers inspect-first questions from the recheck watchlist", async () => {
   );
 });
 
+test("answers volatility-buffer questions from loaded public history context", async () => {
+  const receiptSnapshot = loadFixtureAccount("demo-safe-eth-long");
+  const currentSnapshot = {
+    ...receiptSnapshot,
+    positions: receiptSnapshot.positions.map((position) => ({
+      ...position,
+      mark_price_usd: 2_400,
+    })),
+  } satisfies normalized_account_snapshot;
+  const context = await buildAssistantContext({
+    receiptSnapshot,
+    currentSnapshot,
+    includeVolatilityBuffer: true,
+  });
+  const response = answerReceiptRiskQuestion({
+    context,
+    question: "What does the volatility buffer say?",
+  });
+
+  assert.match(response.answer, /public 24h range/i);
+  assert.match(response.answer, /Current listed buffer: 12\.50%/);
+  assert.match(response.answer, /Public 24h range: 22\.92%/);
+  assert.match(response.answer, /Hourly ATR:/);
+  assert.match(response.answer, /not a liquidation alert/i);
+  assert.ok(
+    response.citations.includes("receipt_volatility_buffer.high_count"),
+  );
+  assert.ok(
+    response.citations.includes(
+      "receipt_volatility_buffer.rows.ETH-PERP.high_low_range_percent",
+    ),
+  );
+});
+
 test("explains when the watchlist has no ranked items", async () => {
   const context = await buildAssistantContext();
   const response = answerReceiptRiskQuestion({
@@ -351,8 +442,18 @@ test("suggestions include account history only when context exists", async () =>
     true,
   );
   assert.equal(
+    withoutHistory.some((suggestion) => suggestion.id === "volatility"),
+    false,
+  );
+  assert.equal(
     withoutHistory.some((suggestion) => suggestion.id === "history"),
     false,
+  );
+  assert.equal(
+    getReceiptRiskAssistantSuggestions(
+      await buildAssistantContext({ includeVolatilityBuffer: true }),
+    ).some((suggestion) => suggestion.id === "volatility"),
+    true,
   );
   assert.equal(
     withHistory.some((suggestion) => suggestion.id === "history"),

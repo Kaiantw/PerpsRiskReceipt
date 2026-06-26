@@ -85,13 +85,14 @@ Open `http://localhost:3000`.
    - Click `Load 24h volatility`.
    - Show `Volatility buffer`.
    - Point out current listed buffer, public 24h range, hourly ATR-style movement, ATR buffer multiple, and the no-forecast/no-advice caveat.
+   - Point out that high/watch volatility rows now feed into `Recheck watchlist`.
    - Show `Review thresholds`.
    - Point out that the reviewer can tune what counts as a thin/tight listed buffer, adverse mark move, driver-score delta, funding delta, or open-interest move for this review.
    - Change `Tight buffer bps` and point out that the watchlist and review packet update without changing the receipt hash or live data.
    - Show `Recheck watchlist`.
-   - Point out the high/watch/info counts and the ranked items for position changes, thin listed buffer, adverse mark movement, higher funding cost, driver-score movement, open-interest movement, or missing market context.
+   - Point out the high/watch/info counts and the ranked items for position changes, thin listed buffer, volatility-buffer cues, adverse mark movement, higher funding cost, driver-score movement, open-interest movement, or missing market context.
    - Show `Receipt risk assistant`.
-   - Click `Review`, `Watchlist`, `Drivers`, `Funding`, and `Hash` to show cited answers from the receipt summary, ranked recheck watchlist, risk-driver comparison, live recheck, funding delta, and snapshot hash.
+   - Click `Review`, `Watchlist`, `Volatility`, `Drivers`, `Funding`, and `Hash` to show cited answers from the receipt summary, ranked recheck watchlist, loaded volatility buffer, risk-driver comparison, live recheck, funding delta, and snapshot hash.
    - Ask `What should I inspect first?` and show that the answer cites `receipt_recheck_watchlist` item fields while preserving the no-trade-recommendation caveat.
    - Show `Review packet`, click `Copy markdown`, and point out that it packages the hash, live recheck, watchlist, active thresholds, loaded volatility buffer, assistant read, driver comparison, and market context for quick review.
    - Explain that the review packet is for communication; a full portable receipt bundle is still required when another browser needs to recompute the snapshot hash.
@@ -106,4 +107,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists and volatility-buffer context, assistant-cited watchlist priority, copyable review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists and volatility-buffer cues, assistant-cited watchlist/volatility reads, copyable review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

@@ -23,10 +23,10 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - Live receipt recheck that compares a saved receipt against a fresh read-only Hyperliquid snapshot.
 - Receipt change summary that combines live recheck, market context, funding movement, position changes, and sampled account-value context into one quick read.
 - Receipt risk-driver comparison that shows whether the saved top driver, driver score, gross exposure, listed buffer, and funding burden changed after live recheck.
-- Recheck watchlist that ranks high/watch/info cues from full saved/current driver rows and market context after live recheck.
+- Recheck watchlist that ranks high/watch/info cues from full saved/current driver rows, market context, and loaded volatility-buffer rows after live recheck.
 - Configurable review thresholds for what counts as meaningful current listed-buffer, mark-move, driver-score, funding, and open-interest movement.
-- Volatility buffer for local receipt rechecks that compares current listed liquidation distance with public 24h range and ATR-style movement.
-- Receipt risk assistant that answers cited questions about a saved live receipt after recheck, including watchlist priority, saved-vs-current risk-driver questions, and named-market drilldowns with mark, funding, liquidation-distance, and open-interest context.
+- Volatility buffer for local receipt rechecks that compares current listed liquidation distance with public 24h range and ATR-style movement, then feeds high/watch cues into the watchlist.
+- Receipt risk assistant that answers cited questions about a saved live receipt after recheck, including watchlist priority, loaded volatility-buffer reads, saved-vs-current risk-driver questions, and named-market drilldowns with mark, funding, liquidation-distance, and open-interest context.
 - Review packet that copies a markdown summary of the receipt hash, live recheck, watchlist, active thresholds, loaded volatility buffer, assistant read, driver comparison, and market context.
 - Receipt account-value context that shows whether a saved live receipt was near a sampled account peak, in drawdown, or materially different from latest sampled account value.
 - Market context since receipt: saved-vs-current mark price, liquidation direction, funding change, and open-interest change for live rechecks.
@@ -96,7 +96,7 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - EAS support is a fallback payload and manual Sepolia flow, not an in-app wallet transaction.
 - The EAS payload hashes account/protocol identifiers instead of placing raw account identifiers onchain.
 - The risk assistant is local and deterministic in this build; it does not call an LLM API.
-- The receipt risk assistant is local and deterministic in this build; it answers only from receipt, hash, live recheck, recheck watchlist, risk-driver comparison rows, market-context rows, funding, and sampled account-value context.
+- The receipt risk assistant is local and deterministic in this build; it answers only from receipt, hash, live recheck, recheck watchlist, loaded volatility-buffer rows, risk-driver comparison rows, market-context rows, funding, and sampled account-value context.
 - Position risk drivers are heuristic triage scores over listed liquidation buffer, notional exposure, positive funding burden, and unrealized loss.
 - Liquidation buffer ladder uses listed liquidation prices and does not compute exact Hyperliquid liquidation behavior.
 - Funding carry watch assumes current funding and notional stay unchanged and uses normalized mark-price notional as an estimate.
@@ -105,10 +105,10 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - Receipt account-value context uses the nearest sampled portfolio point to the receipt timestamp and shows the sample gap.
 - Receipt change summary is a heuristic review aid and does not recommend position changes.
 - Receipt risk-driver comparison reuses the heuristic dashboard driver score for saved and current snapshots; it is not protocol-official attribution.
-- Receipt recheck watchlist is heuristic review triage over saved/current local fields; it is not protocol-official risk attribution or a recommendation.
+- Receipt recheck watchlist is heuristic review triage over saved/current local fields and loaded public volatility context; it is not protocol-official risk attribution or a recommendation.
 - Configurable recheck thresholds tune the local watchlist and review packet only; they are not saved strategy settings and do not change receipt integrity.
 - Receipt volatility buffer compares public 24h candle movement with current listed liquidation distance; it is not an exact liquidation monitor, price forecast, or trade recommendation.
-- Receipt assistant watchlist answers cite ranked watchlist items only; they are inspect-first explanations, not trading instructions.
+- Receipt assistant watchlist and volatility answers cite ranked watchlist/volatility fields only; they are inspect-first explanations, not trading instructions.
 - Receipt review packets are markdown summaries for communication, not full verification bundles; they include active threshold and loaded volatility context, but full portable receipts are still required when another browser must recompute the snapshot hash.
 - Portable receipt bundles have two modes: redacted shares for minimized review and full-snapshot exports for hash recomputation/import.
 - Redacted receipt shares hide raw account and exact position values, preserve the original snapshot hash as a reference, and disclose only bucketed summary values plus market-level review cues.
@@ -150,7 +150,7 @@ Use `docs/demo-script.md` for the reviewer-facing script. The short version:
 5. Create a fixture receipt.
 6. Open the receipt page and show hash verification.
 7. Show the EAS fallback payload and documented manual attestation steps.
-8. Optionally paste a Hyperliquid address, show account value history/drawdown context, create a local live receipt, export a redacted receipt share, inspect it at `/receipt/import`, load current public market context and 24h trend history for the redacted markets, show the redacted review watchlist, switch to full bundle export/import when hash recomputation is needed, show receipt account-value context, run `Recheck live account`, show the receipt change summary, risk-driver comparison, market context, volatility buffer, review thresholds, and show that hash verification still works while the app compares the saved receipt with current live market context.
+8. Optionally paste a Hyperliquid address, show account value history/drawdown context, create a local live receipt, export a redacted receipt share, inspect it at `/receipt/import`, load current public market context and 24h trend history for the redacted markets, show the redacted review watchlist, switch to full bundle export/import when hash recomputation is needed, show receipt account-value context, run `Recheck live account`, show the receipt change summary, risk-driver comparison, market context, load the volatility buffer, show the volatility cue in the recheck watchlist and assistant, review thresholds, and show that hash verification still works while the app compares the saved receipt with current live market context.
 
 ## Known Limitations
 
@@ -164,7 +164,7 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 - Redacted market watchlist is heuristic public-context triage only and cannot prove hidden state, recompute hashes, or monitor exact liquidation state.
 - Position risk drivers are heuristic and do not prove protocol-official risk attribution.
 - Receipt risk-driver comparison is heuristic saved-vs-live attribution and cannot compare changed positions as the same risk object.
-- Receipt recheck watchlist is heuristic triage only and cannot prove exact liquidation state, funding settlement, or what a trader should do next.
+- Receipt recheck watchlist is heuristic triage only, including any loaded volatility-buffer cues, and cannot prove exact liquidation state, funding settlement, or what a trader should do next.
 - Configurable recheck thresholds are local UI sensitivity settings and are not saved, synced, or protocol-official.
 - Receipt volatility buffer is public 24h candle context only and cannot model exact liquidation, order-book depth, or future price movement.
 - Receipt review packet is a copyable markdown summary, not a full private snapshot, encrypted share, access-controlled artifact, or hash-recomputable bundle.
@@ -172,7 +172,7 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 - Receipt account-value context uses a nearest sampled point, not an exact historical account audit.
 - Receipt change summary is heuristic and descriptive; it is not a trading recommendation.
 - Receipt risk assistant responses are deterministic explanations of local receipt/recheck fields, not financial advice or LLM reasoning.
-- Receipt assistant watchlist answers cite the heuristic recheck watchlist and do not decide what a trader should do next.
+- Receipt assistant watchlist and volatility answers cite heuristic recheck/volatility fields and do not decide what a trader should do next.
 - Receipt assistant driver answers cite the heuristic saved-vs-live risk-driver comparison and do not add protocol-official attribution.
 - Receipt assistant market drilldowns cite local per-market driver rows plus available market-context rows, but they still do not model exact protocol margin tiers or live order-book liquidity.
 - Live receipt recheck compares the saved receipt to a fresh snapshot but is not an exact liquidation monitor.
@@ -196,4 +196,4 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 
 ## Resume Bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists and volatility-buffer context, assistant-cited watchlist priority, copyable review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists and volatility-buffer cues, assistant-cited watchlist/volatility reads, copyable review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

@@ -21,6 +21,10 @@ import type {
   receipt_recheck_watchlist,
 } from "../receipts/receipt-recheck-watchlist.ts";
 import type {
+  receipt_volatility_buffer,
+  receipt_volatility_buffer_row,
+} from "../receipts/receipt-volatility-buffer.ts";
+import type {
   position_risk_driver,
   position_risk_driver_category,
 } from "../risk/position-risk-drivers.ts";
@@ -36,6 +40,7 @@ export type receipt_risk_assistant_context = {
   changeSummary: receipt_change_summary;
   riskDriverComparison?: receipt_risk_driver_comparison | null;
   recheckWatchlist?: receipt_recheck_watchlist | null;
+  volatilityBuffer?: receipt_volatility_buffer | null;
   accountValueContext?: receipt_account_value_context | null;
   hashVerified?: boolean;
 };
@@ -126,6 +131,14 @@ function formatPercent(value: number | null) {
   return `${value.toFixed(2)}%`;
 }
 
+function formatMultiple(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return `${value.toFixed(2)}x`;
+}
+
 function formatMetricMove(
   metric: metric_comparison,
   formatter: (value: number | null) => string,
@@ -196,6 +209,16 @@ function formatWatchlistItem(item: receipt_recheck_watch_item) {
   const reviewPoints = item.review_points.join(" ");
 
   return `${item.severity.toUpperCase()} ${item.market}: ${item.title}. ${item.detail} Review: ${reviewPoints}`;
+}
+
+function formatVolatilityBufferRow(row: receipt_volatility_buffer_row) {
+  return [
+    `${row.severity.toUpperCase()} ${row.market}: ${row.summary}`,
+    `Current listed buffer: ${formatPercent(row.current_liquidation_distance_percent)}.`,
+    `Public 24h range: ${formatPercent(row.high_low_range_percent)}.`,
+    `Hourly ATR: ${formatPercent(row.average_true_range_percent)}.`,
+    `ATR buffer multiple: ${formatMultiple(row.atr_buffer_multiple)}.`,
+  ].join(" ");
 }
 
 function getRequestedMarketChange(input: {
@@ -391,6 +414,52 @@ function buildWatchlistAnswer(
         `receipt_recheck_watchlist.items.${item.id}.severity`,
         `receipt_recheck_watchlist.items.${item.id}.detail`,
         `receipt_recheck_watchlist.items.${item.id}.review_points`,
+      ]),
+    ],
+  };
+}
+
+function buildVolatilityAnswer(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_response {
+  const volatilityBuffer = context.volatilityBuffer ?? null;
+
+  if (!volatilityBuffer) {
+    return {
+      answer:
+        "Volatility buffer context is not loaded yet. Use Load 24h volatility after a live recheck to compare public candle range and ATR-style movement with the current listed liquidation buffer.",
+      citations: ["receipt_volatility_buffer"],
+    };
+  }
+
+  const topRows = volatilityBuffer.rows
+    .filter((row) => row.severity !== "info")
+    .slice(0, 3);
+  const rowSummary =
+    topRows.length === 0
+      ? "No volatility-buffer rows crossed high or watch thresholds."
+      : topRows.map(formatVolatilityBufferRow).join(" ");
+
+  return {
+    answer: [
+      volatilityBuffer.headline,
+      volatilityBuffer.summary,
+      `Counts: ${volatilityBuffer.high_count} high, ${volatilityBuffer.watch_count} watch, ${volatilityBuffer.info_count} info.`,
+      rowSummary,
+      "This uses public 24h candles for review context; it is not a liquidation alert, forecast, or trade recommendation.",
+    ].join(" "),
+    citations: [
+      "receipt_volatility_buffer.headline",
+      "receipt_volatility_buffer.summary",
+      "receipt_volatility_buffer.high_count",
+      "receipt_volatility_buffer.watch_count",
+      "receipt_volatility_buffer.info_count",
+      ...topRows.flatMap((row) => [
+        `receipt_volatility_buffer.rows.${row.market}.summary`,
+        `receipt_volatility_buffer.rows.${row.market}.current_liquidation_distance_percent`,
+        `receipt_volatility_buffer.rows.${row.market}.high_low_range_percent`,
+        `receipt_volatility_buffer.rows.${row.market}.average_true_range_percent`,
+        `receipt_volatility_buffer.rows.${row.market}.atr_buffer_multiple`,
       ]),
     ],
   };
@@ -631,6 +700,19 @@ export function answerReceiptRiskQuestion(input: {
 
   if (
     includesAny(normalizedQuestion, [
+      "volatility",
+      "atr",
+      "range",
+      "24h",
+      "candle",
+      "runway",
+    ])
+  ) {
+    return buildVolatilityAnswer(input.context);
+  }
+
+  if (
+    includesAny(normalizedQuestion, [
       "driver",
       "drivers",
       "top risk",
@@ -707,6 +789,7 @@ export function getReceiptRiskAssistantSuggestions(
   const currentTopDriverMarket =
     context.riskDriverComparison?.current_top_driver_market ?? null;
   const hasRecheckWatchlist = Boolean(context.recheckWatchlist);
+  const hasVolatilityBuffer = Boolean(context.volatilityBuffer);
   const suggestions = [
     {
       id: "review",
@@ -729,6 +812,15 @@ export function getReceiptRiskAssistantSuggestions(
             id: "watchlist",
             label: "Watchlist",
             question: "What should I inspect first in the recheck watchlist?",
+          },
+        ]
+      : []),
+    ...(hasVolatilityBuffer
+      ? [
+          {
+            id: "volatility",
+            label: "Volatility",
+            question: "What does the volatility buffer say?",
           },
         ]
       : []),

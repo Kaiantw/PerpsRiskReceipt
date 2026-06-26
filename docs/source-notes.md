@@ -146,6 +146,12 @@ use this file for external protocol assumptions.
   - https://www.schwab.com/learn/story/average-true-range-indicator-and-volatility
   - https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/atr
   - https://www.chainalysis.com/blog/perpetual-futures/
+- docs checked on 2026-06-26 for receipt volatility watchlist:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/contract-specifications
+  - https://www.schwab.com/learn/story/average-true-range-indicator-and-volatility
+  - https://metamask.io/news/perpetual-futures-liquidation-mechanics
+  - https://www.chainalysis.com/blog/perpetual-futures/
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -222,6 +228,7 @@ use this file for external protocol assumptions.
   - if the named-market driver row has no matching market-context row, the assistant must say that context is unavailable rather than implying it inspected mark/funding/open-interest movement.
   - when a named market changes side or size, the assistant must say the row is historical rather than directly comparable as the same risk object.
   - watchlist-priority answers cite `receipt_recheck_watchlist` fields when the local live recheck has built a watchlist.
+  - volatility-buffer answers cite loaded `receipt_volatility_buffer` fields when public 24h market history has been loaded.
   - the assistant should describe watchlist items as inspect-first review cues, not trading instructions.
 - portable receipt bundle assumptions:
   - the bundle is a user-controlled JSON export/import path; it does not call new Hyperliquid endpoints.
@@ -272,11 +279,12 @@ use this file for external protocol assumptions.
 - receipt recheck watchlist assumptions:
   - the watchlist is a synthesis layer over already-loaded `receipt_risk_driver_comparison` and `market_context` rows.
   - it does not call a new endpoint and does not change the receipt data model.
+  - loaded high/watch `receipt_volatility_buffer` rows are included after public 24h market history has been fetched.
   - configurable thresholds are local review sensitivity settings only; they do not change the risk model, saved receipt, snapshot hash, live API, or normalized data.
   - the active thresholds apply to the full local recheck watchlist and copied review packet.
   - default thresholds are 500 bps thin listed buffer, 1000 bps tight listed buffer, 2 percent adverse mark move, 10 driver-score points, 1 USD daily funding delta, 1 bps 8h funding delta, and 50 million USD open-interest delta.
   - high-attention cues include account mismatch, position-state changes, at/through or thin current listed liquidation buffers, and adverse mark movement near a tight listed buffer.
-  - watch cues include tight current listed liquidation buffers, adverse mark moves, materially higher driver score, and higher funding cost.
+  - watch cues include tight current listed liquidation buffers, adverse mark moves, volatility-buffer rows, materially higher driver score, and higher funding cost.
   - informational cues include lower driver score, material open-interest movement, and missing market-context rows.
   - open interest is displayed as participation context only, not as a standalone direction signal.
   - the watchlist is a review checklist only; it is not Hyperliquid's official risk engine or a trading recommendation.
@@ -296,6 +304,7 @@ use this file for external protocol assumptions.
   - 24h high-low range is compared with current listed liquidation distance as descriptive buffer coverage.
   - average true range percent is calculated over the loaded hourly candles and is used as volatility context, not a directional signal.
   - position-state changes are not treated as directly comparable volatility-buffer rows.
+  - high/watch rows can feed the receipt recheck watchlist after history has loaded, but they remain review cues only.
   - the panel is not Hyperliquid's exact liquidation formula, a live alerting system, a price forecast, or a trading recommendation.
 
 ## eas

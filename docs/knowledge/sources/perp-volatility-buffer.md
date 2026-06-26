@@ -13,7 +13,7 @@
   asking whether a listed buffer is large relative to recent movement.
 - Perp risk references connect high leverage, volatility, funding, and rapid
   liquidation risk, supporting a feature that compares buffer size with recent
-  public market movement.
+  public market movement and feeds material rows into an inspect-first queue.
 
 ## product assumptions
 
@@ -29,10 +29,13 @@
   rows are no longer the same risk object.
 - The panel is a review aid. It is not Hyperliquid's exact liquidation formula,
   an alerting system, a forecast, or financial advice.
+- High/watch rows can feed the receipt watchlist after history is loaded, but
+  they remain review cues rather than action instructions.
 
 ## related features
 
 - [[../features/receipt-volatility-buffer]]
+- [[../features/receipt-volatility-watchlist]]
 - [[../features/mark-price-context]]
 - [[../features/receipt-review-packet]]
 - [[../features/redacted-market-trend]]
