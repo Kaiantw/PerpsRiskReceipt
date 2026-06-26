@@ -15,8 +15,10 @@ or share a receipt before leaving a position open.
 - [[../sources/hyperliquid-live-risk-signals]]
 - [[../sources/perp-funding-mechanics]]
 - [[../sources/perp-funding-window]]
+- [[../sources/perp-funding-persistence]]
 - [[../sources/perp-position-risk-drivers]]
 - [[funding-window-read]]
+- [[funding-persistence-read]]
 - [[position-risk-drivers]]
 - [[live-receipt-recheck]]
 - [[ai-risk-assistant]]
@@ -38,5 +40,5 @@ or share a receipt before leaving a position open.
 
 [[funding-window-read]] now carries the near-term funding estimate into live
 receipt rechecks, receipt assistant answers, and review packets. A future
-version could load read-only predicted or historical funding context if the app
-needs more than the current loaded rate.
+version can build on [[funding-persistence-read]] to combine funding history
+with broader current-market reads.

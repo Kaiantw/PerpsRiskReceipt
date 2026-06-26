@@ -10,6 +10,7 @@ informed it and forward to related feature ideas.
 - [[sources/financial-risk-guardrails]] - SEC/FINRA investor-risk references used to shape assistant refusal and education copy.
 - [[sources/perp-funding-mechanics]] - funding-rate mechanics and holding-cost assumptions.
 - [[sources/perp-funding-window]] - next funding payment estimate assumptions and guardrails.
+- [[sources/perp-funding-persistence]] - public funding-history context for repeated cost/credit reads.
 - [[sources/perp-market-context]] - mark price and open-interest context for current-market receipt checks.
 - [[sources/perp-liquidation-buffer]] - Hyperliquid liquidation, margining, and listed-buffer assumptions.
 - [[sources/perp-position-risk-drivers]] - position-level risk attribution notes for notional, liquidation, funding, and unrealized loss drivers.
@@ -53,6 +54,7 @@ informed it and forward to related feature ideas.
 - [[features/ai-risk-assistant]] - local guarded chat assistant for explaining the loaded snapshot.
 - [[features/funding-carry-watch]] - dashboard panel for net funding carry, burden, and top funding drivers.
 - [[features/funding-window-read]] - dashboard and receipt read for next hourly funding estimates.
+- [[features/funding-persistence-read]] - dashboard and receipt read for recent public funding-history persistence.
 - [[features/position-risk-drivers]] - dashboard triage panel ranking position-level risk contributors.
 - [[features/receipt-risk-driver-comparison]] - local receipt recheck panel comparing saved and current risk drivers.
 - [[features/mark-price-context]] - receipt recheck panel for saved-vs-current mark, liquidation, funding, and open-interest context.
@@ -122,6 +124,7 @@ informed it and forward to related feature ideas.
 - [[features/receipt-review-packet-history-summary]] could later define a
   redacted-safe trend summary if local recheck history should cross the privacy
   boundary.
-- [[features/funding-window-read]] could later use read-only predicted or
-  historical funding endpoints if the app needs recent funding direction beyond
-  the current loaded rate.
+- [[features/funding-window-read]] now links to [[features/funding-persistence-read]]
+  for recent funding-history direction beyond the current loaded rate.
+- [[features/funding-persistence-read]] could later feed a compact
+  current-market checklist beside volatility, open interest, and mark movement.

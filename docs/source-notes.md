@@ -21,6 +21,10 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
   - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
   - https://www.coinbase.com/learn/perpetual-futures/understanding-funding-rates-in-perpetual-futures
+- docs checked on 2026-06-26 for funding persistence read:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
 - docs checked on 2026-06-25 for market context:
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
   - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
@@ -298,6 +302,15 @@ use this file for external protocol assumptions.
   - the current funding window uses already-loaded snapshot data only; it does not call `predictedFundings`, `fundingHistory`, or `userFunding`.
   - actual Hyperliquid settlement uses position size, oracle price, and funding rate; this app estimates from normalized mark-price notional.
   - the copy must stay descriptive: funding cost, funding earn, current window, and review context only. It must not recommend opening, closing, resizing, hedging, or timing a trade.
+- funding-persistence read assumptions:
+  - the dashboard and local receipt recheck can reuse the existing read-only `market-history` route, which calls public `fundingHistory` beside public candles for up to five PERP markets.
+  - the read side-adjusts public funding history so positive means cost to the current position side and negative means credit.
+  - labels are `persistent_cost`, `recent_cost`, `persistent_credit`, `mixed`, `neutral`, and `no_history`.
+  - persistence is based on bounded recent public funding points, not private account-level funding settlement history.
+  - the slice deliberately does not call `userFunding`, because that is user/account-specific ledger history and not needed for public market context.
+  - the slice deliberately does not call `predictedFundings`; recent actual `fundingHistory` is enough to answer whether loaded funding has been repeating.
+  - average daily funding from the persistence read assumes current position side and notional stay unchanged and uses normalized mark-price notional rather than Hyperliquid oracle-price settlement.
+  - the copy must stay descriptive: repeated cost, recent cost, funding credit, mixed funding, or no history. It must not forecast funding or recommend opening, closing, resizing, hedging, or timing a trade.
 - market context assumptions:
   - market context compares saved receipt positions to a fresh read-only snapshot after a local live receipt recheck.
   - mark price is the comparison price because Hyperliquid uses mark price for margining, liquidations, TP/SL triggers, and unrealized PnL.

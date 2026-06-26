@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { answerReceiptRiskQuestion } from "../assistant/receipt-risk-assistant.ts";
+import { buildFundingPersistenceRead } from "../funding/funding-persistence.ts";
 import { calculateFundingCarryWatch } from "../funding/funding-watch.ts";
 import type { hyperliquid_market_history } from "../hyperliquid/adapter.ts";
 import { buildMarketContext } from "../market/market-context.ts";
@@ -55,13 +56,27 @@ const ethHistory = {
       trade_count: 12,
     },
   ],
-  funding: [],
+  funding: [
+    {
+      time_ms: Date.parse("2026-06-25T01:00:00.000Z"),
+      market: "ETH-PERP",
+      funding_8h_bps: 1.4,
+      premium_bps: null,
+    },
+    {
+      time_ms: Date.parse("2026-06-25T02:00:00.000Z"),
+      market: "ETH-PERP",
+      funding_8h_bps: 1.8,
+      premium_bps: null,
+    },
+  ],
 } satisfies hyperliquid_market_history;
 
 async function buildPacket(input?: {
   currentSnapshot?: normalized_account_snapshot;
   receiptSnapshot?: normalized_account_snapshot;
   recheckHistorySummary?: receipt_recheck_history_summary;
+  withFundingPersistence?: boolean;
   withVolatilityBuffer?: boolean;
 }) {
   const receiptSnapshot =
@@ -116,6 +131,15 @@ async function buildPacket(input?: {
     watchlist,
   });
   const fundingCarryWatch = calculateFundingCarryWatch(currentSnapshot);
+  const fundingPersistence = input?.withFundingPersistence
+    ? buildFundingPersistenceRead({
+        snapshot: currentSnapshot,
+        histories: [ethHistory],
+        fetchedAtIso: "2026-06-26T00:00:00.000Z",
+        windowHours: 24,
+        interval: "1h",
+      })
+    : null;
   const watchlistAssistantResponse = answerReceiptRiskQuestion({
     context: {
       receipt,
@@ -128,6 +152,7 @@ async function buildPacket(input?: {
       marketRegimeDrilldown,
       volatilityBuffer,
       fundingCarryWatch,
+      fundingPersistence,
       hashVerified: true,
     },
     question: "What should I inspect first in the recheck watchlist?",
@@ -144,6 +169,7 @@ async function buildPacket(input?: {
     snapshotDrift,
     riskDriverComparison,
     fundingCarryWatch,
+    fundingPersistence,
     volatilityBuffer,
     watchlist,
     watchlistAssistantResponse,
@@ -223,6 +249,7 @@ test("builds a copyable markdown packet with receipt, watchlist, assistant, and 
   const packet = await buildPacket({
     receiptSnapshot,
     currentSnapshot,
+    withFundingPersistence: true,
     withVolatilityBuffer: true,
   });
 
@@ -245,6 +272,9 @@ test("builds a copyable markdown packet with receipt, watchlist, assistant, and 
   assert.match(packet.markdown, /## current funding window/);
   assert.match(packet.markdown, /next hourly net:/);
   assert.match(packet.markdown, /largest next cost:/);
+  assert.match(packet.markdown, /## recent funding persistence/);
+  assert.match(packet.markdown, /persistent recent funding cost/i);
+  assert.match(packet.markdown, /avg 8h/);
   assert.match(packet.markdown, /## volatility buffer/);
   assert.match(packet.markdown, /24h range:/);
   assert.match(packet.markdown, /## recheck watchlist/);

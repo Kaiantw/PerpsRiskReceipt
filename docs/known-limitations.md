@@ -51,4 +51,5 @@
 - market context requires comparable saved/current positions and treats open interest as descriptive context, not a standalone direction signal.
 - risk assistant is deterministic local explanation logic, not a connected LLM, and it must not be treated as financial advice.
 - funding carry watch and current funding window assume current funding and notional stay unchanged and estimate from normalized mark-price notional rather than Hyperliquid oracle-price settlement.
+- funding persistence uses bounded public Hyperliquid `fundingHistory` market points only; it is not private `userFunding` ledger history, predicted funding, exact settlement accounting, a funding forecast, or trading advice.
 - eas fallback payload is generated, but no schema registration or attestation transaction is sent by the app.

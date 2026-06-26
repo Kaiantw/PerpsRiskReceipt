@@ -23,6 +23,7 @@ import {
   type account_value_history_state,
 } from "./account-value-history-panel.tsx";
 import { FundingCarryWatchPanel } from "./funding-carry-watch-panel.tsx";
+import { FundingPersistencePanel } from "./funding-persistence-panel.tsx";
 import { LiquidationBufferPanel } from "./liquidation-buffer-panel.tsx";
 import { PositionRiskDriversPanel } from "./position-risk-drivers-panel.tsx";
 import { RiskAssistantPanel } from "./risk-assistant-panel.tsx";
@@ -423,6 +424,11 @@ export function DashboardClient({
         <LiquidationBufferPanel snapshot={selectedSnapshot} />
 
         <FundingCarryWatchPanel snapshot={selectedSnapshot} />
+
+        <FundingPersistencePanel
+          key={`${selectedSnapshot.account}-${selectedSnapshot.data_time_iso}-funding-history`}
+          snapshot={selectedSnapshot}
+        />
 
         <RiskAssistantPanel
           key={`${selectedSnapshot.account}-${selectedSnapshot.data_time_iso}`}

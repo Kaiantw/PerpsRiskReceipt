@@ -6,6 +6,7 @@ import {
   truncateMiddle,
 } from "../formatters.ts";
 import type { funding_carry_watch } from "../funding/funding-watch.ts";
+import type { funding_persistence_read } from "../funding/funding-persistence.ts";
 import type { receipt_account_value_context } from "../history/receipt-account-value-context.ts";
 import type {
   market_context,
@@ -56,6 +57,7 @@ export type receipt_risk_assistant_context = {
   marketRegimeDrilldown?: receipt_market_regime_drilldown | null;
   volatilityBuffer?: receipt_volatility_buffer | null;
   fundingCarryWatch?: funding_carry_watch | null;
+  fundingPersistence?: funding_persistence_read | null;
   accountValueContext?: receipt_account_value_context | null;
   recheckHistorySummary?: receipt_recheck_history_summary | null;
   hashVerified?: boolean;
@@ -717,6 +719,7 @@ function buildFundingAnswer(
     context.marketContext.total_daily_funding_delta_usd,
   );
   const fundingCarryWatch = context.fundingCarryWatch ?? null;
+  const fundingPersistence = context.fundingPersistence ?? null;
   const nextWindowCopy = fundingCarryWatch
     ? ` Current next-hour net estimate is ${formatSignedUsd(fundingCarryWatch.next_hour_net_funding_usd)}, with an 8h-rate basis of ${formatSignedUsd(fundingCarryWatch.eight_hour_rate_net_funding_usd)}.`
     : "";
@@ -726,6 +729,9 @@ function buildFundingAnswer(
   const topEarnCopy = fundingCarryWatch?.top_earning_position
     ? ` Largest next estimated earn is ${fundingCarryWatch.top_earning_position.market} at ${formatSignedUsd(fundingCarryWatch.top_earning_position.next_hour_funding_usd)}.`
     : "";
+  const persistenceCopy = fundingPersistence
+    ? ` Recent funding history read: ${fundingPersistence.headline} ${fundingPersistence.focus_position?.summary ?? fundingPersistence.summary}`
+    : " Recent funding-history persistence is not loaded yet.";
   const citations = [
     "receipt.snapshot.aggregate.daily_funding_usd",
     "snapshot_comparison.metrics.daily_funding_usd",
@@ -741,11 +747,19 @@ function buildFundingAnswer(
     );
   }
 
+  if (fundingPersistence) {
+    citations.push(
+      "funding_persistence.label",
+      "funding_persistence.focus_position",
+      "funding_persistence.positions",
+    );
+  }
+
   return {
     answer: [
       `Receipt daily funding was ${formatSignedUsd(context.receipt.snapshot.aggregate.daily_funding_usd)}.`,
       `The live recheck daily funding moved ${formatMetricMove(context.comparison.metrics.daily_funding_usd, formatNullableSignedUsd)}.`,
-      `Market-context total daily funding delta is ${fundingDelta}.${nextWindowCopy}${topCostCopy}${topEarnCopy} Funding is a holding-cost signal and can change while the position stays open.`,
+      `Market-context total daily funding delta is ${fundingDelta}.${nextWindowCopy}${topCostCopy}${topEarnCopy}${persistenceCopy} Funding is a holding-cost signal and can change while the position stays open.`,
     ].join(" "),
     citations,
   };

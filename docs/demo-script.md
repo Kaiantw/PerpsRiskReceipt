@@ -37,6 +37,9 @@ Open `http://localhost:3000`.
    - Show `Funding carry watch`.
    - Point out next hourly funding, 8-hour rate-basis funding, net daily funding, 30-day estimate, hourly burden, largest cost, and largest earn.
    - Explain that the estimate assumes current funding and notional stay unchanged.
+   - Show `Recent funding persistence`.
+   - Click `Load 24h funding` and point out whether the public funding-history points show persistent cost, recent cost, persistent credit, mixed funding, neutral funding, or no history.
+   - Explain that positive side-adjusted funding means cost to the current side and that this is public market history, not a private user funding ledger.
 
 6. Use the risk assistant.
    - Click `Liquidation` and show the assistant explains the closest listed liquidation distance with snapshot-field citations.
@@ -111,6 +114,9 @@ Open `http://localhost:3000`.
    - Point out saved mark price vs current mark price, whether the move is toward or away from liquidation, 8-hour funding change, and open-interest change.
    - Show `Current funding window`.
    - Point out next hourly net funding, 8-hour rate-basis net funding, hourly burden, largest next cost, largest next earn, and the oracle-price settlement caveat.
+   - Show `Recent funding persistence`.
+   - Click `Load 24h funding`.
+   - Point out focus market, matched markets, history window, average 8-hour funding, latest 8-hour funding, average daily estimate, and whether the funding cost or credit has been persistent.
    - Click `Load 24h volatility`.
    - Show `Volatility buffer`.
    - Point out current listed buffer, public 24h range, hourly ATR-style movement, ATR buffer multiple, and the no-forecast/no-advice caveat.
@@ -123,7 +129,7 @@ Open `http://localhost:3000`.
    - Show `Receipt risk assistant`.
    - Click `Review`, `Regime`, `Regime rows`, `Watchlist`, `Volatility`, `Rechecks`, `Drivers`, `Funding`, and `Hash` to show cited answers from the receipt summary, market-regime read, per-market regime rows, ranked recheck watchlist, loaded volatility buffer, local recheck history, risk-driver comparison, live recheck, funding delta, and snapshot hash.
    - Ask `What should I inspect first?` and show that the answer cites `receipt_recheck_watchlist` item fields while preserving the no-trade-recommendation caveat.
-   - Show `Review packet`, click `Copy markdown`, click `Download .md`, and point out that it packages the hash, live recheck, snapshot drift, compact local recheck-history and drift trend, market regime, per-market regime rows, current funding window, watchlist, active thresholds, loaded volatility buffer, assistant read, driver comparison, and market context for quick review.
+   - Show `Review packet`, click `Copy markdown`, click `Download .md`, and point out that it packages the hash, live recheck, snapshot drift, compact local recheck-history and drift trend, market regime, per-market regime rows, current funding window, recent funding persistence, watchlist, active thresholds, loaded volatility buffer, assistant read, driver comparison, and market context for quick review.
    - Point out that the packet includes only the local-history summary, not raw local history rows or full private snapshots.
    - Explain that the review packet is for communication; a full portable receipt bundle is still required when another browser needs to recompute the snapshot hash.
    - Click `Top market` or ask `Why is ETH-PERP the current risk driver?` to show a named-market driver drilldown with saved/current component scores plus mark, listed-buffer, funding, and open-interest context.
@@ -137,4 +143,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, snapshot-drift freshness reads, local recheck history with drift trends, history-aware assistant and packet reads, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable/downloadable full receipt review packets and compact/full redacted review packets, redacted freshness verdicts, redacted snapshot comparison, redacted public-only sensitivity profiles, redacted-share assistant answers, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, snapshot-drift freshness reads, local recheck history with drift trends, history-aware assistant and packet reads, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable/downloadable full receipt review packets and compact/full redacted review packets, redacted freshness verdicts, redacted snapshot comparison, redacted public-only sensitivity profiles, redacted-share assistant answers, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch with next-hour funding-window and recent funding-persistence reads, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

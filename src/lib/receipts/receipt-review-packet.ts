@@ -8,6 +8,7 @@ import {
 } from "../formatters.ts";
 import type { receipt_risk_assistant_response } from "../assistant/receipt-risk-assistant.ts";
 import type { funding_carry_watch } from "../funding/funding-watch.ts";
+import type { funding_persistence_read } from "../funding/funding-persistence.ts";
 import type {
   market_context,
   market_context_position,
@@ -51,6 +52,7 @@ export function buildReceiptReviewPacket(input: {
   marketRegime?: receipt_market_regime | null;
   marketRegimeDrilldown?: receipt_market_regime_drilldown | null;
   fundingCarryWatch?: funding_carry_watch | null;
+  fundingPersistence?: funding_persistence_read | null;
   receipt: risk_receipt;
   recheckHistorySummary?: receipt_recheck_history_summary | null;
   riskDriverComparison: receipt_risk_driver_comparison;
@@ -96,6 +98,7 @@ export function buildReceiptReviewPacket(input: {
     `- daily funding delta: ${formatSignedNullableUsd(input.riskDriverComparison.daily_funding_delta_usd)}`,
     "",
     ...formatFundingCarryWatchSection(input.fundingCarryWatch ?? null),
+    ...formatFundingPersistenceSection(input.fundingPersistence ?? null),
     ...formatVolatilityBufferSection(input.volatilityBuffer ?? null),
     "## recheck watchlist",
     `- label: ${input.watchlist.label.replaceAll("_", " ")}`,
@@ -317,6 +320,47 @@ function formatFundingPosition(
   }
 
   return `${position.market} ${formatSignedUsd(position.next_hour_funding_usd)}`;
+}
+
+function formatFundingPersistenceSection(
+  fundingPersistence: funding_persistence_read | null,
+) {
+  if (!fundingPersistence) {
+    return [];
+  }
+
+  const lines = [
+    "## recent funding persistence",
+    `- label: ${fundingPersistence.label.replaceAll("_", " ")}`,
+    `- headline: ${fundingPersistence.headline}`,
+    `- summary: ${fundingPersistence.summary}`,
+    `- focus market: ${fundingPersistence.focus_market ?? "n/a"}`,
+    `- matched markets: ${fundingPersistence.matched_market_count}/${fundingPersistence.positions.length}`,
+    `- window: ${fundingPersistence.window_hours}h ${fundingPersistence.interval}`,
+    `- fetched: ${formatIsoDate(fundingPersistence.fetched_at_iso)}`,
+    ...fundingPersistence.review_points
+      .slice(0, 5)
+      .map((point) => `- review: ${point}`),
+  ];
+
+  if (fundingPersistence.positions.length > 0) {
+    lines.push(
+      "- positions:",
+      ...fundingPersistence.positions.slice(0, 5).map((position) =>
+        [
+          `  - ${position.market} ${position.side}`,
+          `label ${position.label.replaceAll("_", " ")}`,
+          `avg 8h ${formatNullableSignedBps(position.average_funding_8h_bps_user_perspective)}`,
+          `latest 8h ${formatNullableSignedBps(position.latest_funding_8h_bps_user_perspective)}`,
+          `avg daily ${formatSignedNullableUsd(position.estimated_average_daily_funding_usd)}`,
+        ].join("; "),
+      ),
+    );
+  }
+
+  lines.push("");
+
+  return lines;
 }
 
 function formatVolatilityBufferSection(

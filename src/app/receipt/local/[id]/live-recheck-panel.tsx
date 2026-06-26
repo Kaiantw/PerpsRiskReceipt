@@ -21,6 +21,10 @@ import {
   calculateFundingCarryWatch,
   type funding_carry_watch,
 } from "@/lib/funding/funding-watch.ts";
+import {
+  buildFundingPersistenceRead,
+  type funding_persistence_read,
+} from "@/lib/funding/funding-persistence.ts";
 import type { receipt_account_value_context } from "@/lib/history/receipt-account-value-context.ts";
 import type { hyperliquid_market_history } from "@/lib/hyperliquid/adapter.ts";
 import {
@@ -214,6 +218,26 @@ const fundingWindowTone: Record<funding_carry_watch["label"], string> = {
   low_cost: "border-yellow-200 bg-yellow-100 text-yellow-950",
   elevated_cost: "border-amber-200 bg-amber-100 text-amber-950",
   heavy_cost: "border-red-200 bg-red-100 text-red-950",
+};
+
+const fundingPersistenceLabels: Record<funding_persistence_read["label"], string> = {
+  no_positions: "no positions",
+  no_history: "no history",
+  persistent_cost: "persistent cost",
+  recent_cost: "recent cost",
+  persistent_credit: "persistent credit",
+  mixed: "mixed",
+  neutral: "near flat",
+};
+
+const fundingPersistenceTone: Record<funding_persistence_read["label"], string> = {
+  no_positions: "border-stone-300 bg-white text-stone-700",
+  no_history: "border-stone-300 bg-white text-stone-700",
+  persistent_cost: "border-red-200 bg-red-100 text-red-950",
+  recent_cost: "border-amber-200 bg-amber-100 text-amber-950",
+  persistent_credit: "border-emerald-200 bg-emerald-100 text-emerald-950",
+  mixed: "border-yellow-200 bg-yellow-100 text-yellow-950",
+  neutral: "border-stone-300 bg-white text-stone-700",
 };
 
 const snapshotDriftLabels: Record<receipt_snapshot_drift_label, string> = {
@@ -564,6 +588,16 @@ function LiveRecheckResult({
           interval: marketHistoryState.interval,
         })
       : null;
+  const fundingPersistence =
+    marketHistoryState.status === "loaded"
+      ? buildFundingPersistenceRead({
+          snapshot: currentSnapshot,
+          histories: marketHistoryState.histories,
+          fetchedAtIso: marketHistoryState.fetchedAtIso,
+          windowHours: marketHistoryState.windowHours,
+          interval: marketHistoryState.interval,
+        })
+      : null;
   const riskDriverComparison = compareReceiptRiskDrivers({
     savedSnapshot: receipt.snapshot,
     currentSnapshot,
@@ -613,6 +647,7 @@ function LiveRecheckResult({
     marketRegimeDrilldown,
     volatilityBuffer,
     fundingCarryWatch,
+    fundingPersistence,
     accountValueContext: receiptAccountValueContext,
     recheckHistorySummary,
     hashVerified,
@@ -633,6 +668,7 @@ function LiveRecheckResult({
     recheckHistorySummary,
     volatilityBuffer,
     fundingCarryWatch,
+    fundingPersistence,
     watchlist: recheckWatchlist,
     watchlistAssistantResponse,
     hashVerified,
@@ -667,6 +703,8 @@ function LiveRecheckResult({
     String(marketRegimeDrilldown.high_count),
     fundingCarryWatch.label,
     String(fundingCarryWatch.next_hour_net_funding_usd),
+    fundingPersistence?.label ?? "no-funding-persistence",
+    fundingPersistence?.focus_market ?? "no-funding-persistence-focus",
     volatilityBuffer?.label ?? "no-volatility-buffer",
     String(volatilityBuffer?.high_count ?? 0),
     recheckHistorySummary.label,
@@ -761,6 +799,12 @@ function LiveRecheckResult({
       <ReceiptRiskDriverComparisonResult comparison={riskDriverComparison} />
       <MarketContextResult context={marketContext} />
       <ReceiptFundingWindowResult watch={fundingCarryWatch} />
+      <ReceiptFundingPersistenceResult
+        fundingPersistence={fundingPersistence}
+        marketHistoryMarkets={marketHistoryMarkets}
+        onLoadMarketHistory={loadMarketHistory}
+        state={marketHistoryState}
+      />
       <ReceiptVolatilityBufferResult
         marketHistoryMarkets={marketHistoryMarkets}
         onLoadMarketHistory={loadMarketHistory}
@@ -1020,6 +1064,172 @@ function ThresholdInput({
       />
       <span className="text-xs leading-5 text-stone-600">{description}</span>
     </label>
+  );
+}
+
+function ReceiptFundingPersistenceResult({
+  fundingPersistence,
+  marketHistoryMarkets,
+  onLoadMarketHistory,
+  state,
+}: {
+  fundingPersistence: funding_persistence_read | null;
+  marketHistoryMarkets: string[];
+  onLoadMarketHistory: () => void;
+  state: market_history_state;
+}) {
+  const canLoad = marketHistoryMarkets.length > 0 && state.status !== "loading";
+
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-stone-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Recent funding persistence</h3>
+          <p className="mt-1 text-sm text-stone-600">
+            Compare the latest recheck positions with public 24h Hyperliquid
+            funding history to see whether cost or credit has been repeating.
+          </p>
+        </div>
+        <button
+          className="inline-flex min-h-10 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-stone-400"
+          disabled={!canLoad}
+          onClick={onLoadMarketHistory}
+          type="button"
+        >
+          {state.status === "loading" ? "Loading..." : "Load 24h funding"}
+        </button>
+      </div>
+
+      {state.status === "idle" ? (
+        <p className="px-4 py-3 text-sm text-stone-600">
+          {marketHistoryMarkets.length === 0
+            ? "No comparable live positions are available for funding-history context."
+            : `Ready to load public funding history for ${marketHistoryMarkets.join(", ")}.`}
+        </p>
+      ) : null}
+
+      {state.status === "loading" ? (
+        <p className="px-4 py-3 text-sm text-stone-600">
+          Loading public funding history from the read-only Hyperliquid info
+          endpoint.
+        </p>
+      ) : null}
+
+      {state.status === "error" ? (
+        <p className="border-t border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-950">
+          {state.message}
+        </p>
+      ) : null}
+
+      {state.status === "loaded" && fundingPersistence ? (
+        <>
+          <div className="flex flex-col gap-3 border-t border-stone-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-stone-800">
+                {fundingPersistence.headline}
+              </p>
+              <p className="mt-1 text-sm text-stone-600">
+                {fundingPersistence.summary}
+              </p>
+            </div>
+            <span
+              className={`w-fit rounded-lg border px-3 py-2 text-sm font-semibold ${fundingPersistenceTone[fundingPersistence.label]}`}
+            >
+              {fundingPersistenceLabels[fundingPersistence.label]}
+            </span>
+          </div>
+
+          <dl className="grid gap-3 border-t border-stone-200 p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+            <MiniMetric
+              label="Focus market"
+              value={fundingPersistence.focus_market ?? "n/a"}
+            />
+            <MiniMetric
+              label="Matched"
+              value={`${fundingPersistence.matched_market_count}/${fundingPersistence.positions.length}`}
+            />
+            <MiniMetric
+              label="Window"
+              value={`${fundingPersistence.window_hours}h ${fundingPersistence.interval}`}
+            />
+            <MiniMetric
+              label="Fetched"
+              value={formatIsoDate(fundingPersistence.fetched_at_iso)}
+            />
+          </dl>
+
+          {fundingPersistence.positions.length > 0 ? (
+            <div className="overflow-x-auto border-t border-stone-200">
+              <table className="w-full min-w-[1080px] text-left text-sm">
+                <thead className="bg-stone-100 text-xs uppercase text-stone-600">
+                  <tr>
+                    <th className="px-4 py-3">Market</th>
+                    <th className="px-4 py-3">Side</th>
+                    <th className="px-4 py-3">Label</th>
+                    <th className="px-4 py-3">Points</th>
+                    <th className="px-4 py-3">Cost share</th>
+                    <th className="px-4 py-3">Avg 8h</th>
+                    <th className="px-4 py-3">Latest 8h</th>
+                    <th className="px-4 py-3">Avg daily</th>
+                    <th className="px-4 py-3">Read</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fundingPersistence.positions.map((position) => (
+                    <tr
+                      className="border-t border-stone-200 align-top"
+                      key={position.market}
+                    >
+                      <td className="px-4 py-3 font-mono">{position.market}</td>
+                      <td className="px-4 py-3 capitalize">{position.side}</td>
+                      <td className="px-4 py-3">
+                        {position.label.replaceAll("_", " ")}
+                      </td>
+                      <td className="px-4 py-3">
+                        {position.funding_point_count}
+                      </td>
+                      <td className="px-4 py-3">
+                        {formatNullablePlainPercent(
+                          position.cost_persistence_percent,
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {formatNullableSignedBps(
+                          position.average_funding_8h_bps_user_perspective,
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {formatNullableSignedBps(
+                          position.latest_funding_8h_bps_user_perspective,
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {formatSignedNullableUsd(
+                          position.estimated_average_daily_funding_usd,
+                        )}
+                      </td>
+                      <td className="px-4 py-3">{position.summary}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+
+          <ul className="space-y-2 border-t border-stone-200 px-4 py-3 text-xs leading-5 text-stone-600">
+            {fundingPersistence.review_points.map((point) => (
+              <li className="flex gap-2" key={point}>
+                <span
+                  aria-hidden="true"
+                  className="mt-2 h-1.5 w-1.5 rounded-full bg-stone-400"
+                />
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+    </section>
   );
 }
 

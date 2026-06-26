@@ -4,112 +4,125 @@
 
 - `t0` through `t9` are complete.
 - Post-t9 live receipt UX, live recheck, risk assistant, funding carry watch,
-  market context, liquidation buffer ladder, account-value context, receipt
-  summaries, portable bundles, redacted shares, redacted public
-  market/trend/watchlist/freshness/review/assistant flows, position drivers,
-  driver comparison, full-recheck watchlists, thresholds, volatility buffer,
-  market regime, regime drilldown, local recheck history, review-packet history
-  summaries, redacted two-snapshot compare, redacted comparison
-  assistant/packet, redacted review thresholds, compact redacted packet mode,
-  markdown packet downloads, receipt snapshot drift, and receipt recheck drift
-  history are complete.
-- Post-t9 funding-window read is complete.
+  funding-window read, market context, liquidation buffer ladder,
+  account-value context, receipt summaries, portable bundles, redacted shares,
+  redacted public market/trend/watchlist/freshness/review/assistant flows,
+  position drivers, driver comparison, full-recheck watchlists, thresholds,
+  volatility buffer, market regime, regime drilldown, local recheck history,
+  review-packet history summaries, redacted two-snapshot compare, redacted
+  comparison assistant/packet, redacted review thresholds, compact redacted
+  packet mode, markdown packet downloads, receipt snapshot drift, and receipt
+  recheck drift history are complete.
+- Post-t9 funding persistence read is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote tracking: `main` tracks `origin/main`.
-- Baseline before this slice: `ef654d4`.
-- The funding carry derivation now includes next hourly funding, 8h rate-basis
-  funding, hourly account-value burden, largest next cost, largest next earn,
-  and review points explaining estimate assumptions.
-- The dashboard funding panel shows next-hour and 8h-basis funding beside daily
-  and 30-day carry.
-- Local receipt live rechecks now show `Current funding window`, and the receipt
-  assistant plus copied/downloaded review packet include the same current
-  funding-window context.
-- The implementation uses already-loaded normalized snapshots only. It does not
-  add endpoints, dependencies, persisted receipt fields, wallet/RPC flows,
-  trading endpoints, predicted funding calls, funding-history calls, exact
-  settlement accounting, or advice surfaces.
+- Baseline before this slice: `39ec19f`.
+- The dashboard now has `Recent funding persistence`, which loads bounded
+  public 24h Hyperliquid `fundingHistory` through the existing
+  `/api/hyperliquid/market-history` route.
+- The local receipt live recheck now has `Recent funding persistence` beside
+  `Current funding window` and `Volatility buffer`; it reuses the same loaded
+  market-history response.
+- Receipt assistant funding answers and full receipt review packets now include
+  loaded funding-persistence context.
+- The implementation remains read-only and does not add trading endpoints,
+  private `userFunding`, `predictedFundings`, wallet/RPC flows, backend
+  persistence, dependencies, exact settlement accounting, forecasts, alerts, or
+  advice surfaces.
 
 ## files changed
 
-- `src/lib/funding/funding-watch.ts`: derives next hourly funding, 8h rate-basis
-  funding, hourly burden, largest next cost/earn, and review points.
-- `src/lib/funding/funding-watch.test.ts`: covers next-hour, 8h-basis, burden,
-  and top-driver funding math.
-- `src/app/funding-carry-watch-panel.tsx`: renders the next-hour funding window
-  in the dashboard panel and keeps the wide table horizontally scrollable.
-- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: renders `Current funding
-  window` after live recheck and passes the read into assistant/packet context.
-- `src/lib/assistant/risk-assistant.ts`: includes next-hour funding in the
-  dashboard assistant funding answer.
+- `src/lib/funding/funding-persistence.ts`: new pure recent funding-history
+  read with side-adjusted labels, point counts, cost/credit shares, average and
+  latest 8h funding, average daily estimate, focus market, and review points.
+- `src/lib/funding/funding-persistence.test.ts`: covers persistent cost,
+  short-side credit adjustment, recent cost, no history, and no positions.
+- `package.json`: registers the new funding-persistence test in `npm test`.
+- `src/app/funding-persistence-panel.tsx`: new dashboard panel with
+  `Load 24h funding`.
+- `src/app/dashboard-client.tsx`: renders the dashboard funding-persistence
+  panel keyed by selected snapshot.
+- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: derives and renders
+  receipt funding persistence from loaded market history, and passes it to
+  assistant/packet context.
 - `src/lib/assistant/receipt-risk-assistant.ts` and
   `src/lib/assistant/receipt-risk-assistant.test.ts`: include and verify
-  next-hour funding in receipt assistant funding answers.
+  funding-persistence context in funding answers.
 - `src/lib/receipts/receipt-review-packet.ts` and
   `src/lib/receipts/receipt-review-packet.test.ts`: include and verify the
-  `current funding window` markdown section.
-- `docs/knowledge/sources/perp-funding-window.md` and
-  `docs/knowledge/features/funding-window-read.md`: new source-backed notes.
-- `docs/knowledge/index.md`, `docs/knowledge/features/funding-carry-watch.md`,
-  and `docs/knowledge/sources/perp-funding-mechanics.md`: link the new source
-  and implemented feature.
-- `docs/source-notes.md`: records funding-window assumptions and sources.
-- `README.md` and `docs/demo-script.md`: document the dashboard, receipt,
-  assistant, packet, demo, and limitation updates.
-- `docs/known-limitations.md`: clarifies that funding window remains estimated
-  holding-cost context.
+  `recent funding persistence` markdown section.
+- `docs/knowledge/sources/perp-funding-persistence.md` and
+  `docs/knowledge/features/funding-persistence-read.md`: new source-backed
+  notes.
+- `docs/knowledge/index.md`,
+  `docs/knowledge/features/funding-carry-watch.md`,
+  `docs/knowledge/features/funding-window-read.md`,
+  `docs/knowledge/sources/perp-funding-mechanics.md`, and
+  `docs/knowledge/sources/perp-funding-window.md`: link the new feature/source.
+- `docs/source-notes.md`: records funding-persistence endpoint assumptions and
+  guardrails.
+- `README.md` and `docs/demo-script.md`: document dashboard/receipt demo,
+  architecture, assumptions, and resume bullet updates.
+- `docs/known-limitations.md`: documents public funding-history limits.
 - `docs/ai-build-log.md`: records this slice, verification, human review
   points, and remaining risks.
 - `docs/session-handoff.md`: this current handoff.
 
 ## tests/checks run
 
-- `node --test src/lib/funding/funding-watch.test.ts src/lib/assistant/risk-assistant.test.ts src/lib/assistant/receipt-risk-assistant.test.ts src/lib/receipts/receipt-review-packet.test.ts` passed: 31 tests, 31 passing.
+- `node --test src/lib/funding/funding-persistence.test.ts` passed: 5 tests, 5
+  passing.
+- `node --test src/lib/funding/funding-persistence.test.ts src/lib/assistant/receipt-risk-assistant.test.ts src/lib/receipts/receipt-review-packet.test.ts`
+  passed: 28 tests, 28 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm test` passed: 190 tests, 190 passing.
+- `npm test` passed: 196 tests, 196 passing.
 - `npm run build` passed and listed `/`, `/receipt/import`,
   `/receipt/local/[id]`, `/api/hyperliquid/markets`,
   `/api/hyperliquid/market-history`, `/api/hyperliquid/portfolio`,
   `/api/hyperliquid/snapshot`, and the fixture receipt routes.
 - `git diff --check` passed.
-- Browser verification used `http://localhost:3000`, confirmed the dashboard
-  `Funding carry watch` showed next hourly funding, 8h rate basis, hourly
-  burden in bps, per-position next-hour rows, review points, and the
-  oracle-price settlement caveat.
-- Browser verification used
-  `http://localhost:3000/receipt/local/rr_2f6b3a2ad298c698`, clicked
-  `Recheck live account`, confirmed `Current funding window` rendered for the
-  current live snapshot, confirmed the review packet textarea included
-  `## current funding window` and `next hourly net`, clicked the receipt
-  assistant `Funding` prompt, and confirmed the answer cited
-  `funding_carry_watch.next_hour_net_funding_usd`.
+- Browser verification used `http://localhost:3000`, selected
+  `demo-mixed-book`, clicked `Load 24h funding`, and confirmed
+  `Recent funding persistence` loaded public 24h funding-history rows for
+  BTC-PERP, SOL-PERP, and ETH-PERP with focus market, matched markets,
+  average/latest 8h funding, average daily estimates, and no-advice review
+  points.
+- Browser verification created a local live receipt from
+  `0x102a618b36c32b338c03526255dcf2a39eb1897f`, clicked
+  `Recheck live account`, confirmed `Current funding window` and
+  `Recent funding persistence` rendered, and confirmed `Load 24h funding` was
+  disabled with no-comparable-position/no-open-position copy for the no-position
+  live account.
 - Browser console verification captured 0 error logs.
-- Mobile-width browser verification at 390px confirmed the dashboard funding
-  table remains horizontally scrollable and still shows the new funding-window
-  fields.
+- Mobile-width browser verification at 390px confirmed the dashboard
+  funding-persistence table stays inside a horizontal scroll container and the
+  page does not overflow horizontally.
 
 ## blockers
 
 - No hard blocker for this slice.
-- The current funding window is an estimate over normalized mark-price notional,
-  not Hyperliquid's exact oracle-price settlement accounting.
-- The feature does not load predicted funding, user funding history, or recent
-  funding-history direction yet.
-- The verified live local receipt used during browser QA currently rechecked to
-  no open positions, so the receipt panel's no-position state was browser-tested;
-  position-bearing receipt states are covered by unit tests and dashboard
-  browser checks.
+- Funding persistence is public market-history context only. It is not private
+  `userFunding` ledger history, predicted funding, exact Hyperliquid
+  oracle-price settlement, order-book/liquidity context, forecasting, alerting,
+  or trading advice.
+- The existing history route caps reads to five markets.
+- Live reads depend on Hyperliquid API availability and response-shape
+  stability.
+- The live local receipt used during browser QA had no open positions, so the
+  receipt no-position state was browser-tested; position-bearing receipt
+  funding-persistence behavior is covered by unit tests and dashboard browser
+  checks.
 - EAS schema registration and attestation transactions are still documented
   fallback steps only.
 
 ## exact next recommended action
 
-Add optional read-only predicted/recent funding context for disclosed markets,
-using `predictedFundings` or bounded `fundingHistory`, so the current funding
-window can show whether the latest rate looks isolated or persistent without
-turning into trade-timing advice.
+Add a compact current-market checklist that combines recent funding persistence,
+volatility-buffer status, mark movement, open-interest movement, and listed
+liquidation buffer into one "what changed in the market?" panel for dashboard
+and receipt review, while keeping each underlying detail panel available.

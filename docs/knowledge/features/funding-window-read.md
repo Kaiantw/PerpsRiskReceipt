@@ -14,7 +14,9 @@ still open, what is the immediate funding cost or earn direction?"
 
 - [[../sources/perp-funding-window]]
 - [[../sources/perp-funding-mechanics]]
+- [[../sources/perp-funding-persistence]]
 - [[funding-carry-watch]]
+- [[funding-persistence-read]]
 - [[live-receipt-recheck]]
 - [[receipt-risk-assistant]]
 - [[receipt-review-packet]]
@@ -42,8 +44,8 @@ still open, what is the immediate funding cost or earn direction?"
   oracle-price settlement notional.
 - Uses no-advice language and keeps the read descriptive.
 
-## next connected feature
+## connected feature
 
-A future slice could optionally load `predictedFundings` or recent
-`fundingHistory` for disclosed markets, but only as read-only context with
-explicit "not a trade timing signal" copy.
+[[funding-persistence-read]] now loads bounded public `fundingHistory` context
+to show whether current funding looks isolated or persistent, with explicit
+no-advice copy and no private `userFunding` history.

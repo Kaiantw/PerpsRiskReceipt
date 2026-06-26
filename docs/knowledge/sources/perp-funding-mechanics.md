@@ -17,12 +17,14 @@
   which is mark-price based in the local model.
 - Funding should be framed as a holding-cost or earned-carry estimate, not as a
   trading recommendation.
-- Historical and predicted funding endpoints exist, but this slice uses only the
-  current funding already mapped through `metaAndAssetCtxs`.
+- Historical and predicted funding endpoints exist. The carry/watch read uses
+  current funding from `metaAndAssetCtxs`; [[perp-funding-persistence]] adds
+  bounded public `fundingHistory` context for recent persistence.
 
 ## linked feature ideas
 
 - [[../features/funding-carry-watch]]
 - [[../features/funding-window-read]]
+- [[../features/funding-persistence-read]]
 - [[../features/live-receipt-recheck]]
 - [[../features/ai-risk-assistant]]

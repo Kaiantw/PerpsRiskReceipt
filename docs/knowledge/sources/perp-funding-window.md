@@ -18,9 +18,11 @@
   if the position state remains open.
 - Hyperliquid's exact payment uses oracle-price notional. The app estimates from
   normalized mark-price notional and must say so.
-- `predictedFundings`, `fundingHistory`, and `userFunding` exist as read-only
-  context sources, but this feature deliberately uses only the current funding
-  already present in the loaded snapshot.
+- `fundingHistory` can add recent actual funding context without user-specific
+  ledger history. [[perp-funding-persistence]] uses it in a later read.
+- `predictedFundings` and `userFunding` exist as possible context sources, but
+  this feature deliberately uses only the current funding already present in the
+  loaded snapshot.
 
 ## product constraint
 
@@ -31,6 +33,7 @@ resize, or time a position.
 ## linked feature ideas
 
 - [[../features/funding-window-read]]
+- [[../features/funding-persistence-read]]
 - [[../features/funding-carry-watch]]
 - [[../features/live-receipt-recheck]]
 - [[../features/receipt-risk-assistant]]

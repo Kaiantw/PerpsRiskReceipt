@@ -1227,3 +1227,29 @@ Review whether the labels `Next hourly est.` and `8h rate basis` are intuitive f
 - Mobile-width browser verification at 390px confirmed the dashboard funding table remains horizontally scrollable and still shows the new funding-window fields.
 ### remaining risks:
 Funding-window values assume current funding and notional stay unchanged, use normalized mark-price notional, and are not Hyperliquid's exact oracle-price settlement accounting. The slice does not yet show predicted funding or recent funding persistence from `predictedFundings`, `fundingHistory`, or `userFunding`. The live receipt used for browser QA rechecked to no open positions, so the receipt no-position state was browser-tested while position-bearing receipt states are covered by unit tests and dashboard browser checks.
+
+### task id: post-t9 funding persistence read
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a recent funding-persistence read so the dashboard and local receipt recheck can show whether current funding cost or credit has repeated across bounded public Hyperliquid funding history.
+### output accepted:
+Added `src/lib/funding/funding-persistence.ts` with a pure side-adjusted funding-history read over normalized positions and `hyperliquid_market_history` points. The read labels positions and account context as persistent cost, recent cost, persistent credit, mixed, neutral, no history, or no positions; it also derives point counts, cost/credit shares, average/latest 8h funding, average daily estimate, focus market, and review points. Added dashboard `Recent funding persistence` with `Load 24h funding`, wired local receipt rechecks to reuse the existing `market-history` route, and passed the read into receipt assistant funding answers and full receipt review packets. Added tests, package test registration, README/demo updates, source notes, knowledge-graph source/feature notes, known limitations, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, backend store, receipt/hash data model change, wallet/RPC flow, trading/exchange endpoint, `userFunding` lookup, `predictedFundings` lookup, exact settlement accounting, forecast, alert, or advice surface was added. Browser QA used the existing dashboard fixture and live no-position local receipt states; position-bearing receipt packet/assistant behavior is covered by unit tests.
+### human review notes:
+Review whether the persistence thresholds are intuitive: material funding is 1 bps, neutral average funding is 0.25 bps, and persistent cost/credit requires at least 67% of loaded points plus material average/latest funding. Review whether `persistent credit` is clearer than `persistent earn` for reviewers. Review whether a later current-market checklist should combine funding persistence with volatility, mark movement, and open-interest movement.
+### tests/checks run:
+- `node --test src/lib/funding/funding-persistence.test.ts` passed: 5 tests, 5 passing.
+- `node --test src/lib/funding/funding-persistence.test.ts src/lib/assistant/receipt-risk-assistant.test.ts src/lib/receipts/receipt-review-packet.test.ts` passed: 28 tests, 28 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 196 tests, 196 passing.
+- `npm run build` passed and listed `/`, `/receipt/import`, `/receipt/local/[id]`, `/api/hyperliquid/markets`, `/api/hyperliquid/market-history`, `/api/hyperliquid/portfolio`, `/api/hyperliquid/snapshot`, and the fixture receipt routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000`, selected `demo-mixed-book`, clicked `Load 24h funding`, and confirmed `Recent funding persistence` loaded public 24h funding-history rows for BTC-PERP, SOL-PERP, and ETH-PERP with near-flat labels, focus market, matched markets, average/latest 8h funding, average daily estimates, and no-advice review points.
+- Browser verification created a local live receipt from `0x102a618b36c32b338c03526255dcf2a39eb1897f`, clicked `Recheck live account`, confirmed `Current funding window` and `Recent funding persistence` rendered, and confirmed `Load 24h funding` was disabled with no-comparable-position/no-open-position copy for the no-position live account.
+- Browser console verification captured 0 error logs.
+- Mobile-width browser verification at 390px confirmed the dashboard funding-persistence table stays inside a horizontal scroll container and the page does not overflow horizontally.
+### remaining risks:
+Funding persistence is public market-history context only. It does not use private `userFunding` ledger history, predicted funding, exact Hyperliquid oracle-price settlement, order-book/liquidity context, forecasting, alerting, or trading advice. The existing history route caps reads to five markets, and live reads depend on Hyperliquid API availability and funding-history response stability.

@@ -13,6 +13,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - Position risk drivers that rank positions by listed liquidation buffer, notional exposure, positive funding burden, and unrealized loss.
 - Liquidation buffer ladder ranking positions by closest listed liquidation buffer.
 - Funding carry watch for next hourly funding, 8h rate-basis funding, net daily funding, 30-day estimate, funding burden, and largest cost/earn drivers.
+- Recent funding persistence for dashboard and receipt rechecks that loads public 24h Hyperliquid funding history and labels repeated cost, recent cost, persistent credit, mixed funding, neutral funding, or no history.
 - Six scenario moves: `-10%`, `-5%`, `-2%`, `+2%`, `+5%`, and `+10%`.
 - Deterministic fixture receipt pages with snapshot hash verification.
 - Browser-local receipt pages for live Hyperliquid lookups.
@@ -31,6 +32,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - Snapshot drift label that tells whether a verified receipt is still close, meaningfully drifted, stale versus current market context, or not comparable after live recheck.
 - Receipt risk-driver comparison that shows whether the saved top driver, driver score, gross exposure, listed buffer, and funding burden changed after live recheck.
 - Current funding window for live receipt rechecks that estimates the next hourly funding cost or earn from the fresh snapshot.
+- Recent funding persistence for live receipt rechecks that reuses the public 24h market-history read to show whether current funding looks isolated or persistent.
 - Recheck watchlist that ranks high/watch/info cues from full saved/current driver rows, market context, and loaded volatility-buffer rows after live recheck.
 - Configurable review thresholds for what counts as meaningful current listed-buffer, mark-move, driver-score, funding, and open-interest movement.
 - Volatility buffer for local receipt rechecks that compares current listed liquidation distance with public 24h range and ATR-style movement, then feeds high/watch cues into the watchlist.
@@ -53,11 +55,12 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/app/dashboard-client.tsx` renders the dashboard, address lookup states, position table, scenario simulator, and fixture receipt link.
 - `src/app/account-value-history-panel.tsx` renders live Hyperliquid account-value history and drawdown context.
 - `src/app/funding-carry-watch-panel.tsx` renders the dashboard funding carry panel.
+- `src/app/funding-persistence-panel.tsx` renders the dashboard 24h funding-history persistence panel.
 - `src/app/risk-assistant-panel.tsx` renders the local assistant chat for the selected snapshot.
 - `src/app/api/hyperliquid/snapshot/route.ts` validates addresses and calls the read-only Hyperliquid snapshot adapter.
 - `src/app/api/hyperliquid/portfolio/route.ts` validates addresses and calls the read-only Hyperliquid portfolio-history adapter.
 - `src/app/api/hyperliquid/markets/route.ts` fetches read-only market context for disclosed redacted-share markets without a user address.
-- `src/app/api/hyperliquid/market-history/route.ts` fetches read-only 24h candle and funding history for disclosed redacted-share markets without a user address.
+- `src/app/api/hyperliquid/market-history/route.ts` fetches read-only 24h candle and funding history for disclosed/current markets without a user address.
 - `src/app/receipt/[id]/page.tsx` renders deterministic fixture receipts, recomputes the snapshot hash, and shows the EAS fallback payload.
 - `src/app/receipt/import/page.tsx` inspects portable receipt bundles, previews redacted shares, imports full bundles, recomputes full-bundle hashes, and stores verified full receipts locally.
 - `src/app/receipt/local/[id]/page.tsx` renders browser-local live receipts created from pasted Hyperliquid addresses and supports live rechecks.
@@ -81,6 +84,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/lib/history/receipt-account-value-context.ts` positions a receipt inside sampled account-value history.
 - `src/lib/liquidation/liquidation-buffer.ts` derives the dashboard liquidation buffer ladder.
 - `src/lib/funding/funding-watch.ts` derives funding carry labels, next hourly funding, burden, and top funding drivers.
+- `src/lib/funding/funding-persistence.ts` derives public funding-history persistence labels for current positions.
 - `src/lib/market/market-context.ts` derives plain-English saved-vs-current market context for receipt rechecks.
 - `src/lib/market/redacted-market-context.ts` derives current public market context for redacted receipt shares.
 - `src/lib/market/redacted-market-trend.ts` derives 24h public price/funding trend context for redacted receipt shares.
@@ -119,10 +123,11 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - EAS support is a fallback payload and manual Sepolia flow, not an in-app wallet transaction.
 - The EAS payload hashes account/protocol identifiers instead of placing raw account identifiers onchain.
 - The risk assistant is local and deterministic in this build; it does not call an LLM API.
-- The receipt risk assistant is local and deterministic in this build; it answers only from receipt, hash, live recheck, local recheck history, snapshot-drift history, market regime rows, recheck watchlist, loaded volatility-buffer rows, risk-driver comparison rows, market-context rows, funding, and sampled account-value context.
+- The receipt risk assistant is local and deterministic in this build; it answers only from receipt, hash, live recheck, local recheck history, snapshot-drift history, market regime rows, recheck watchlist, loaded volatility-buffer rows, loaded funding-persistence rows, risk-driver comparison rows, market-context rows, funding, and sampled account-value context.
 - Position risk drivers are heuristic triage scores over listed liquidation buffer, notional exposure, positive funding burden, and unrealized loss.
 - Liquidation buffer ladder uses listed liquidation prices and does not compute exact Hyperliquid liquidation behavior.
 - Funding carry watch assumes current funding and notional stay unchanged; its next-hour, 8h-basis, daily, and 30-day estimates use normalized mark-price notional rather than exact oracle-price settlement notional.
+- Funding persistence uses bounded public `fundingHistory` points only; it does not call private `userFunding`, predicted funding, or exact settlement accounting.
 - Market context uses mark price for saved-vs-current comparison and treats open interest as descriptive context, not a standalone direction signal.
 - Account value history uses sampled Hyperliquid portfolio windows and is not complete accounting or a trade journal import.
 - Receipt account-value context uses the nearest sampled portfolio point to the receipt timestamp and shows the sample gap.
@@ -138,7 +143,7 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - Configurable recheck thresholds tune the local watchlist and review packet only; they are not saved strategy settings and do not change receipt integrity.
 - Receipt volatility buffer compares public 24h candle movement with current listed liquidation distance; it is not an exact liquidation monitor, price forecast, or trade recommendation.
 - Receipt assistant watchlist, volatility, regime, and regime-row answers cite ranked local fields only; they are inspect-first explanations, not trading instructions.
-- Receipt review packets are markdown summaries for communication, not full verification bundles; they include active thresholds, snapshot drift, compact local-history and drift trends, market regime rows, and loaded volatility context, but full portable receipts are still required when another browser must recompute the snapshot hash.
+- Receipt review packets are markdown summaries for communication, not full verification bundles; they include active thresholds, snapshot drift, compact local-history and drift trends, market regime rows, loaded funding-persistence context, and loaded volatility context, but full portable receipts are still required when another browser must recompute the snapshot hash.
 - Receipt review packet local-history sections include only compact trend fields, not raw local history rows or full private snapshots.
 - Portable receipt bundles have two modes: redacted shares for minimized review and full-snapshot exports for hash recomputation/import.
 - Redacted receipt shares hide raw account and exact position values, preserve the original snapshot hash as a reference, and disclose only bucketed summary values plus market-level review cues.
@@ -181,12 +186,12 @@ Use `docs/demo-script.md` for the reviewer-facing script. The short version:
 
 1. Open the dashboard.
 2. Switch between fixture accounts.
-3. Explain account risk, position risk drivers, liquidation buffer ladder, funding carry watch, and scenarios.
+3. Explain account risk, position risk drivers, liquidation buffer ladder, funding carry watch, recent funding persistence, and scenarios.
 4. Ask the risk assistant about liquidation, funding, and whether it can recommend a trade.
 5. Create a fixture receipt.
 6. Open the receipt page and show hash verification.
 7. Show the EAS fallback payload and documented manual attestation steps.
-8. Optionally paste a Hyperliquid address, show account value history/drawdown context, create a local live receipt, export a redacted receipt share, inspect it at `/receipt/import`, load current public market context and 24h trend history for the redacted markets, switch redacted review sensitivity between strict/standard/relaxed, show the redacted review watchlist and freshness verdict, paste a second redacted share into the redacted snapshot compare panel, ask the redacted share assistant about thresholds/comparison/freshness/current market context/watchlist/funding/privacy, show the compact redacted review packet for short sharing, download the selected `.md` packet, switch to full redacted packet mode for detailed threshold/comparison sections, switch to full bundle export/import when hash recomputation is needed, show receipt account-value context, run `Recheck live account`, show local recheck history with drift score/delta and the `Rechecks` assistant prompt, show the receipt change summary, snapshot drift, market regime, regime by market, risk-driver comparison, market context, current funding window, load the volatility buffer, show the volatility cue in the recheck watchlist and assistant, review thresholds, show the review packet's local-history and drift trend section, download the full receipt review packet `.md`, and show that hash verification still works while the app compares the saved receipt with current live market context.
+8. Optionally paste a Hyperliquid address, show account value history/drawdown context and recent funding persistence, create a local live receipt, export a redacted receipt share, inspect it at `/receipt/import`, load current public market context and 24h trend history for the redacted markets, switch redacted review sensitivity between strict/standard/relaxed, show the redacted review watchlist and freshness verdict, paste a second redacted share into the redacted snapshot compare panel, ask the redacted share assistant about thresholds/comparison/freshness/current market context/watchlist/funding/privacy, show the compact redacted review packet for short sharing, download the selected `.md` packet, switch to full redacted packet mode for detailed threshold/comparison sections, switch to full bundle export/import when hash recomputation is needed, show receipt account-value context, run `Recheck live account`, show local recheck history with drift score/delta and the `Rechecks` assistant prompt, show the receipt change summary, snapshot drift, market regime, regime by market, risk-driver comparison, market context, current funding window, load recent funding persistence and the volatility buffer, show the volatility cue in the recheck watchlist and assistant, review thresholds, show the review packet's local-history and drift trend section, download the full receipt review packet `.md`, and show that hash verification still works while the app compares the saved receipt with current live market context.
 
 ## Known Limitations
 
@@ -214,6 +219,7 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 - Receipt assistant recheck-history answers inherit the compact local-history and drift-history limits and are not live alerts, full account history, or trading advice.
 - Configurable recheck thresholds are local UI sensitivity settings and are not saved, synced, or protocol-official.
 - Receipt volatility buffer is public 24h candle context only and cannot model exact liquidation, order-book depth, or future price movement.
+- Receipt funding persistence is public `fundingHistory` context only and cannot forecast future funding, inspect private user funding ledger entries, or prove exact settlement.
 - Receipt review packet is a copyable markdown summary, not a full private snapshot, encrypted share, access-controlled artifact, or hash-recomputable bundle.
 - Receipt review packet local-history context is compact trend-only context, including drift-score movement, and does not export raw local history rows.
 - Account value history is sampled from Hyperliquid portfolio windows and is not complete accounting.
@@ -228,7 +234,7 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 - Market context is descriptive and depends on a comparable saved/current position pair.
 - Liquidation buffer ladder ranks listed buffer only; actual liquidation behavior can change with cross margin, funding, and other open-position PnL.
 - Risk assistant responses are deterministic explanations of loaded fields, not financial advice or LLM reasoning.
-- Funding carry watch and current funding window assume current funding and notional stay unchanged and are not exact settlement accounting.
+- Funding carry watch, current funding window, and funding persistence assume current notional and side stay unchanged and are not exact settlement accounting.
 - EAS schema registration and attestation transactions are not sent by the app.
 - Scenario results apply the same percentage move to every position.
 - Liquidation distance and risk score are heuristic and not exchange-official.
@@ -245,4 +251,4 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 
 ## Resume Bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, snapshot-drift freshness reads, local recheck history with drift trends, history-aware assistant and packet reads, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable/downloadable full receipt review packets and compact/full redacted review packets, redacted freshness verdicts, redacted snapshot comparison, redacted public-only sensitivity profiles, redacted-share assistant answers, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch with next-hour funding-window reads, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, snapshot-drift freshness reads, local recheck history with drift trends, history-aware assistant and packet reads, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable/downloadable full receipt review packets and compact/full redacted review packets, redacted freshness verdicts, redacted snapshot comparison, redacted public-only sensitivity profiles, redacted-share assistant answers, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch with next-hour funding-window and recent funding-persistence reads, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

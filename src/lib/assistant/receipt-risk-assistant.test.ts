@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { buildFundingPersistenceRead } from "../funding/funding-persistence.ts";
 import { calculateFundingCarryWatch } from "../funding/funding-watch.ts";
 import type { hyperliquid_market_history } from "../hyperliquid/adapter.ts";
 import { buildAccountValueTimeline } from "../history/account-value-timeline.ts";
@@ -30,6 +31,7 @@ async function buildAssistantContext(input?: {
   receiptSnapshot?: normalized_account_snapshot;
   currentSnapshot?: normalized_account_snapshot;
   includeAccountHistory?: boolean;
+  includeFundingPersistence?: boolean;
   includeVolatilityBuffer?: boolean;
   hashVerified?: boolean;
 }): Promise<receipt_risk_assistant_context> {
@@ -46,6 +48,15 @@ async function buildAssistantContext(input?: {
     ? buildReceiptVolatilityBuffer({
         marketContext,
         histories: [buildEthHistory()],
+        fetchedAtIso: "2026-06-26T00:00:00.000Z",
+        windowHours: 24,
+        interval: "1h",
+      })
+    : null;
+  const fundingPersistence = input?.includeFundingPersistence
+    ? buildFundingPersistenceRead({
+        snapshot: currentSnapshot,
+        histories: [buildEthHistory({ fundingBps: [1.3, 1.6, 1.8] })],
         fetchedAtIso: "2026-06-26T00:00:00.000Z",
         windowHours: 24,
         interval: "1h",
@@ -106,6 +117,7 @@ async function buildAssistantContext(input?: {
     marketRegimeDrilldown,
     volatilityBuffer,
     fundingCarryWatch,
+    fundingPersistence,
     changeSummary: buildReceiptChangeSummary({
       comparison,
       marketContext,
@@ -116,6 +128,7 @@ async function buildAssistantContext(input?: {
 
 function buildEthHistory(input?: {
   closePrices?: [number, number];
+  fundingBps?: number[];
   highPriceUsd?: number;
   lowPriceUsd?: number;
 }): hyperliquid_market_history {
@@ -153,7 +166,12 @@ function buildEthHistory(input?: {
         trade_count: 12,
       },
     ],
-    funding: [],
+    funding: (input?.fundingBps ?? []).map((fundingBps, index) => ({
+      time_ms: Date.parse("2026-06-25T00:00:00.000Z") + index * 60 * 60 * 1000,
+      market: "ETH-PERP",
+      funding_8h_bps: fundingBps,
+      premium_bps: null,
+    })),
   };
 }
 
@@ -397,6 +415,20 @@ test("surfaces funding deltas from receipt and live recheck", async () => {
   assert.ok(
     response.citations.includes("funding_carry_watch.next_hour_net_funding_usd"),
   );
+});
+
+test("answers funding questions with recent funding persistence when loaded", async () => {
+  const context = await buildAssistantContext({
+    includeFundingPersistence: true,
+  });
+  const response = answerReceiptRiskQuestion({
+    context,
+    question: "Has funding been persistent?",
+  });
+
+  assert.match(response.answer, /Recent funding history read/);
+  assert.match(response.answer, /persistent recent funding cost/i);
+  assert.ok(response.citations.includes("funding_persistence.focus_position"));
 });
 
 test("answers risk-driver questions from the receipt driver comparison", async () => {
