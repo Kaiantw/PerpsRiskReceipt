@@ -1050,3 +1050,25 @@ Review whether the default age thresholds of four hours for watch and 24 hours f
 - `npm audit --audit-level=moderate` still reports the known `postcss` advisory through Next; the suggested `npm audit fix --force` would install a breaking/incorrect Next version, so it remains documented instead of force-applied.
 ### remaining risks:
 The redacted freshness verdict is heuristic public/disclosed context only. It cannot inspect hidden account state, recompute the hidden full-snapshot hash, certify that a stale redacted share is current, replace a full portable bundle or live account recheck, provide cryptographic selective disclosure, monitor exact liquidation state, or tell a trader what to do next. Live public context still depends on Hyperliquid API availability and response-shape stability.
+
+### task id: post-t9 redacted two-snapshot compare
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a redacted two-snapshot comparison flow so reviewers can paste two minimized redacted receipt shares and see visible risk cue movement without exposing full private snapshots.
+### output accepted:
+Added `src/lib/market/redacted-snapshot-comparison.ts` with deterministic comparison over risk score, risk label, margin usage, minimum disclosed liquidation buffer, redacted-only watch severity, redacted-only freshness, disclosed position count, account/notional/funding buckets, and disclosed market rows. Added tests for visible improvement, visible worsening, reverse timestamp ordering, protocol/source mismatch, and redacted-copy boundaries. Wired `/receipt/import` to render `Redacted snapshot compare`, accept a second redacted bundle, reject full bundles for this comparison path, show previous/latest receipt ids, risk-score delta, cue counts, freshness labels, notable metrics, disclosed market-row changes, and review points. Updated package test registration, README, demo script, source notes, knowledge graph, known limitations, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, bundle format, backend store, LLM API, wallet/RPC flow, trading/exchange endpoint, raw account lookup, full-snapshot import, cryptographic selective-disclosure proof, EAS transaction, exact Hyperliquid liquidation formula, live alert, or protocol-official risk claim was added. A redundant compare-state field was removed during review, and market-row copy was tightened from internal field-style wording to reader-facing labels.
+### human review notes:
+Review whether the comparison should require same snapshot hash lineage or account commitment before showing an improved/worsened label. Review whether the redacted-only watch severity thresholds of 5% high and 10% watch are intuitive enough for public review. Review whether a later slice should feed comparison context into the redacted assistant and redacted review packet.
+### tests/checks run:
+- `node --test src/lib/market/redacted-snapshot-comparison.test.ts` passed: 5 tests, 5 passing.
+- `npm test` passed: 174 tests, 174 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/import`, `/receipt/local/[id]`, `/api/hyperliquid/markets`, `/api/hyperliquid/market-history`, and the existing receipt/API routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted a generated Hyperliquid-shaped redacted bundle for `rr_browser_previous_compare`, confirmed `Redacted snapshot compare` rendered, pasted a second redacted bundle for `rr_browser_latest_improved_compare`, confirmed the comparison showed the improved headline, `risk improved` badge, `-36` risk-score delta, 7.00% to 20.00% disclosed buffer movement, ETH-PERP funding movement, BTC-PERP removed row, no visible private full-snapshot field names, and zero browser console errors.
+### remaining risks:
+The redacted snapshot comparison is heuristic public/disclosed context only. It cannot inspect hidden account state, prove exact account improvement or worsening, compare hidden exact values, recompute hidden full-snapshot hashes, provide cryptographic selective disclosure, monitor exact liquidation state, or tell a trader what to do next. Redacted-only freshness in this comparison does not load current public market context; it uses the redacted bundle and disclosed watch cues only.

@@ -30,6 +30,14 @@ import {
   type redacted_freshness_verdict_driver,
   type redacted_freshness_verdict_label,
 } from "@/lib/market/redacted-freshness-verdict.ts";
+import {
+  buildRedactedSnapshotComparison,
+  type redacted_snapshot_comparison,
+  type redacted_snapshot_comparison_direction,
+  type redacted_snapshot_comparison_label,
+  type redacted_snapshot_comparison_metric,
+  type redacted_snapshot_market_change,
+} from "@/lib/market/redacted-snapshot-comparison.ts";
 import { buildRedactedReviewPacket } from "@/lib/market/redacted-review-packet.ts";
 import {
   answerRedactedShareQuestion,
@@ -79,6 +87,14 @@ type redacted_market_trend_state =
   | { status: "loading" }
   | { status: "loaded"; trend: redacted_market_trend }
   | { status: "error"; message: string };
+
+type redacted_snapshot_compare_state =
+  | { status: "empty" }
+  | { status: "invalid"; message: string }
+  | {
+      status: "ready";
+      comparison: redacted_snapshot_comparison;
+    };
 
 type hyperliquid_markets_payload = {
   fetched_at_iso: string;
@@ -565,6 +581,8 @@ export function ReceiptImportClient() {
               marketTrendState={redactedMarketTrendState}
             />
 
+            <RedactedSnapshotComparePanel bundle={state.bundle} />
+
             <RedactedShareAssistantPanel
               bundle={state.bundle}
               marketContextState={redactedMarketContextState}
@@ -981,6 +999,268 @@ function RedactedFreshnessVerdictPanel({
   );
 }
 
+function RedactedSnapshotComparePanel({
+  bundle,
+}: {
+  bundle: redacted_receipt_bundle;
+}) {
+  const [compareText, setCompareText] = useState("");
+  const [compareState, setCompareState] =
+    useState<redacted_snapshot_compare_state>({ status: "empty" });
+
+  function updateCompareText(value: string) {
+    setCompareText(value);
+
+    if (!value.trim()) {
+      setCompareState({ status: "empty" });
+      return;
+    }
+
+    const parsed = parsePortableReceiptBundleJson(value);
+
+    if (parsed.status === "invalid") {
+      setCompareState({ status: "invalid", message: parsed.message });
+      return;
+    }
+
+    if (!isRedactedReceiptBundle(parsed.bundle)) {
+      setCompareState({
+        status: "invalid",
+        message:
+          "Paste a redacted receipt bundle. Full bundles should be imported separately for hash recomputation.",
+      });
+      return;
+    }
+
+    setCompareState({
+      status: "ready",
+      comparison: buildRedactedSnapshotComparison({
+        firstBundle: bundle,
+        secondBundle: parsed.bundle,
+      }),
+    });
+  }
+
+  return (
+    <div className="mt-4 rounded-lg border border-stone-300 bg-white p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">
+            Redacted snapshot compare
+          </h3>
+          <p className="mt-1 text-sm text-stone-600">
+            Paste another redacted bundle to compare visible risk buckets,
+            disclosed buffers, freshness, watch severity, funding, and market
+            rows without exposing the full snapshot.
+          </p>
+        </div>
+        <span className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-semibold uppercase text-stone-600">
+          Redacted-only
+        </span>
+      </div>
+
+      <label
+        className="mt-4 block text-sm font-semibold text-stone-900"
+        htmlFor="redacted-compare-bundle"
+      >
+        Second redacted bundle JSON
+      </label>
+      <textarea
+        className="mt-3 h-44 w-full resize-y rounded-lg border border-stone-300 bg-stone-50 p-3 font-mono text-xs text-stone-950"
+        id="redacted-compare-bundle"
+        onChange={(event) => updateCompareText(event.target.value)}
+        placeholder="Paste another redacted receipt bundle JSON export."
+        value={compareText}
+      />
+
+      {compareState.status === "empty" ? (
+        <p className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-700">
+          Compare two redacted exports from the same review lane to see what
+          changed between snapshots. This does not recompute hidden hashes or
+          inspect private account fields.
+        </p>
+      ) : null}
+
+      {compareState.status === "invalid" ? (
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-950">
+          {compareState.message}
+        </p>
+      ) : null}
+
+      {compareState.status === "ready" ? (
+        <RedactedSnapshotComparisonResult
+          comparison={compareState.comparison}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function RedactedSnapshotComparisonResult({
+  comparison,
+}: {
+  comparison: redacted_snapshot_comparison;
+}) {
+  const notableMetrics =
+    comparison.metrics.filter((metric) => metric.direction !== "unchanged")
+      .length > 0
+      ? comparison.metrics.filter((metric) => metric.direction !== "unchanged")
+      : comparison.metrics.slice(0, 4);
+  const displayedMarketChanges = comparison.market_changes.slice(0, 6);
+
+  return (
+    <div className="mt-4">
+      <div
+        className={`rounded-lg border p-3 ${getSnapshotComparisonSummaryClassName(
+          comparison.label,
+        )}`}
+      >
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold">{comparison.headline}</p>
+            <p className="mt-1 text-sm">{comparison.summary}</p>
+          </div>
+          <span className="rounded-md border border-current px-2 py-1 text-xs font-semibold uppercase">
+            {formatSnapshotComparisonLabel(comparison.label)}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <ImportMetric
+          label="Previous"
+          value={truncateMiddle(comparison.previous_receipt_id, 18)}
+        />
+        <ImportMetric
+          label="Latest"
+          value={truncateMiddle(comparison.latest_receipt_id, 18)}
+        />
+        <ImportMetric
+          label="Risk score delta"
+          value={formatSignedNumber(comparison.risk_score_delta)}
+        />
+        <ImportMetric
+          label="Cue counts"
+          value={`${comparison.worsened_count} worse · ${comparison.improved_count} better`}
+        />
+        <ImportMetric
+          label="Previous time"
+          value={formatIsoDate(comparison.previous_data_time_iso)}
+        />
+        <ImportMetric
+          label="Latest time"
+          value={formatIsoDate(comparison.latest_data_time_iso)}
+        />
+        <ImportMetric
+          label="Previous freshness"
+          value={formatFreshnessVerdictLabel(
+            comparison.previous_freshness_verdict.label,
+          )}
+        />
+        <ImportMetric
+          label="Latest freshness"
+          value={formatFreshnessVerdictLabel(
+            comparison.latest_freshness_verdict.label,
+          )}
+        />
+      </div>
+
+      <div className="mt-4 grid gap-3">
+        {notableMetrics.slice(0, 8).map((metric) => (
+          <SnapshotComparisonMetricCard metric={metric} key={metric.id} />
+        ))}
+      </div>
+
+      {displayedMarketChanges.length > 0 ? (
+        <div className="mt-4">
+          <h4 className="text-sm font-semibold text-stone-950">
+            Disclosed market-row changes
+          </h4>
+          <div className="mt-3 grid gap-3">
+            {displayedMarketChanges.map((change) => (
+              <SnapshotMarketChangeCard change={change} key={change.id} />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <p className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-950">
+          No disclosed market-row changes were visible between these redacted
+          shares.
+        </p>
+      )}
+
+      <div className="mt-4 grid gap-2 text-sm text-stone-700">
+        {comparison.review_points.map((reviewPoint) => (
+          <p
+            className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2"
+            key={reviewPoint}
+          >
+            {reviewPoint}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SnapshotComparisonMetricCard({
+  metric,
+}: {
+  metric: redacted_snapshot_comparison_metric;
+}) {
+  return (
+    <article className="rounded-lg border border-stone-200 bg-stone-50 p-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-md border px-2 py-1 text-xs font-semibold uppercase ${getSnapshotDirectionClassName(
+                metric.direction,
+              )}`}
+            >
+              {formatSnapshotDirection(metric.direction)}
+            </span>
+            <span className="text-sm font-semibold text-stone-950">
+              {metric.label}
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-stone-700">{metric.detail}</p>
+        </div>
+        <span className="rounded-md bg-white px-2 py-1 font-mono text-xs font-medium text-stone-600">
+          {metric.previous_value} {"->"} {metric.latest_value}
+        </span>
+      </div>
+    </article>
+  );
+}
+
+function SnapshotMarketChangeCard({
+  change,
+}: {
+  change: redacted_snapshot_market_change;
+}) {
+  return (
+    <article className="rounded-lg border border-stone-200 bg-stone-50 p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className={`rounded-md border px-2 py-1 text-xs font-semibold uppercase ${getSnapshotDirectionClassName(
+            change.direction,
+          )}`}
+        >
+          {formatSnapshotDirection(change.direction)}
+        </span>
+        <span className="font-mono text-sm font-semibold text-stone-950">
+          {change.market}
+        </span>
+      </div>
+      <h4 className="mt-3 text-sm font-semibold text-stone-950">
+        {change.title}
+      </h4>
+      <p className="mt-2 text-sm text-stone-700">{change.detail}</p>
+    </article>
+  );
+}
+
 function RedactedShareAssistantPanel({
   bundle,
   marketContextState,
@@ -1337,6 +1617,21 @@ function getFreshnessSummaryClassName(
   }
 }
 
+function getSnapshotComparisonSummaryClassName(
+  label: redacted_snapshot_comparison_label,
+) {
+  switch (label) {
+    case "risk_worsened":
+      return "border-red-200 bg-red-50 text-red-950";
+    case "risk_changed":
+    case "not_comparable":
+      return "border-amber-200 bg-amber-50 text-amber-950";
+    case "risk_improved":
+    case "unchanged":
+      return "border-emerald-200 bg-emerald-50 text-emerald-950";
+  }
+}
+
 function getWatchlistSeverityClassName(
   severity: redacted_market_watch_severity,
 ) {
@@ -1347,6 +1642,22 @@ function getWatchlistSeverityClassName(
       return "border-amber-200 bg-amber-100 text-amber-950";
     case "info":
       return "border-sky-200 bg-sky-100 text-sky-950";
+  }
+}
+
+function getSnapshotDirectionClassName(
+  direction: redacted_snapshot_comparison_direction,
+) {
+  switch (direction) {
+    case "worsened":
+      return "border-red-200 bg-red-100 text-red-950";
+    case "changed":
+    case "not_comparable":
+      return "border-amber-200 bg-amber-100 text-amber-950";
+    case "improved":
+      return "border-emerald-200 bg-emerald-100 text-emerald-950";
+    case "unchanged":
+      return "border-stone-200 bg-stone-100 text-stone-700";
   }
 }
 
@@ -1375,10 +1686,30 @@ function formatFreshnessVerdictLabel(
   return label.replaceAll("_", " ");
 }
 
+function formatSnapshotComparisonLabel(
+  label: redacted_snapshot_comparison_label,
+) {
+  return label.replaceAll("_", " ");
+}
+
+function formatSnapshotDirection(
+  direction: redacted_snapshot_comparison_direction,
+) {
+  return direction.replaceAll("_", " ");
+}
+
 function formatFreshnessCategory(
   category: redacted_freshness_verdict_driver["category"],
 ) {
   return category.replaceAll("_", " ");
+}
+
+function formatSignedNumber(value: number) {
+  if (value === 0) {
+    return "0";
+  }
+
+  return `${value > 0 ? "+" : ""}${value}`;
 }
 
 function MarketTrendSparkline({ values }: { values: number[] }) {

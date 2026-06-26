@@ -23,6 +23,7 @@ hash-reference-only caveats.
 - [[redacted-market-trend]]
 - [[redacted-market-watchlist]]
 - [[redacted-freshness-verdict]]
+- [[redacted-snapshot-comparison]]
 - [[redacted-share-assistant]]
 - [[receipt-review-packet]]
 
@@ -51,6 +52,8 @@ hash-reference-only caveats.
 - [[redacted-market-watchlist]] ranks public/disclosed review cues.
 - [[redacted-freshness-verdict]] supplies the reviewable/stale/full-recheck
   verdict.
+- [[redacted-snapshot-comparison]] could later add a copyable compare section for
+  two redacted shares.
 - [[redacted-share-assistant]] answers cited questions from the same public and
   disclosed fields.
 - [[receipt-review-packet]] is the full-snapshot sibling used after local live

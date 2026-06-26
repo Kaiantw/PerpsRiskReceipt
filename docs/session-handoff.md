@@ -2,108 +2,59 @@
 
 ## completed task
 
-- `t0` repo setup is complete.
-- `t1` agent rules/evidence docs is complete.
-- `t2` fixtures + types is complete.
-- `t3` risk engine is complete.
-- `t4` dashboard UI is complete.
-- `t5` scenario simulator is complete.
-- `t6` receipt system is complete.
-- `t7` Hyperliquid read-only adapter is complete with graceful error states.
-- `t8` EAS attestation fallback path is complete; no transaction was sent.
-- `t9` review + evidence is complete.
-- Post-t9 live receipt UX fix is complete.
-- Post-t9 live receipt recheck is complete.
-- Post-t9 risk assistant is complete.
-- Post-t9 funding carry watch is complete.
-- Post-t9 market context is complete.
-- Post-t9 liquidation buffer ladder is complete.
-- Post-t9 account value history is complete.
-- Post-t9 receipt account-value context is complete.
-- Post-t9 receipt change summary is complete.
-- Post-t9 receipt risk assistant is complete.
-- Post-t9 portable receipt bundle is complete.
-- Post-t9 redacted receipt share is complete.
-- Post-t9 redacted market context is complete.
-- Post-t9 redacted market trend history is complete.
-- Post-t9 redacted market watchlist is complete.
-- Post-t9 position risk drivers is complete.
-- Post-t9 receipt risk-driver comparison is complete.
-- Post-t9 receipt assistant driver citations is complete.
-- Post-t9 receipt assistant market-driver drilldowns is complete.
-- Post-t9 receipt assistant market-context fusion is complete.
-- Post-t9 full receipt recheck watchlist is complete.
-- Post-t9 receipt assistant watchlist citations is complete.
-- Post-t9 receipt review packet is complete.
-- Post-t9 configurable receipt review thresholds is complete.
-- Post-t9 receipt volatility buffer is complete.
-- Post-t9 receipt volatility watchlist is complete.
-- Post-t9 receipt market regime summary is complete.
-- Post-t9 receipt market regime drilldown is complete.
-- Post-t9 local receipt recheck history is complete.
-- Post-t9 receipt assistant recheck-history answer is complete.
-- Post-t9 receipt review packet local-history summary is complete.
-- Post-t9 redacted review packet is complete.
-- Post-t9 redacted share assistant is complete.
-- Post-t9 redacted freshness verdict is complete.
+- `t0` through `t9` are complete.
+- Post-t9 live receipt UX, live recheck, risk assistant, funding carry watch, market context, liquidation buffer ladder, account-value context, receipt summaries, portable bundles, redacted shares, redacted public market/trend/watchlist/freshness/review/assistant flows, position drivers, driver comparison, full-recheck watchlists, thresholds, volatility buffer, market regime, regime drilldown, local recheck history, and review-packet history summaries are complete.
+- Post-t9 redacted two-snapshot compare is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote tracking: `main` tracks `origin/main`.
-- Baseline before this slice: `41d1a2b`.
-- Current work adds a deterministic redacted freshness verdict to `/receipt/import`.
-- The verdict classifies imported redacted receipt shares as `reviewable`, `stale but informative`, or `needs full recheck`.
-- Inputs are receipt age, disclosed liquidation buffers, loaded public Hyperliquid current market context, loaded public 24-hour trend context, funding movement, and redacted watchlist severity.
-- The verdict feeds the import UI, redacted share assistant, and redacted review packet.
-- Browser verification loaded real public Hyperliquid current market and 24-hour trend data for disclosed ETH-PERP and BTC-PERP rows.
+- Baseline before this slice: `dee789b`.
+- Current work adds a deterministic redacted comparison panel to `/receipt/import`.
+- The comparison accepts a second redacted receipt bundle and orders the two bundles by `data_time_iso` so the result reads previous to latest.
+- It compares visible redacted fields only: risk score, risk label, margin usage, minimum disclosed liquidation buffer, redacted-only watch severity, redacted-only freshness label, disclosed position count, account/notional/funding buckets, and disclosed market rows.
+- It rejects full bundles in the redacted compare input and points reviewers to full bundles or live rechecks when exact hidden-state proof or hash recomputation is needed.
 - No endpoint, dependency, bundle format, backend store, LLM API, wallet/RPC flow, trading endpoint, raw account lookup, exact liquidation formula, protocol-official risk claim, or cryptographic selective-disclosure proof was added.
 
 ## files changed
 
-- `src/lib/market/redacted-freshness-verdict.ts`: new pure verdict builder, driver model, age/context/trend/buffer/range/adverse-trend/funding checks, signal score, citations, and review points.
-- `src/lib/market/redacted-freshness-verdict.test.ts`: coverage for reviewable, stale, full-recheck, funding movement, adverse trend, range-vs-buffer, and redacted-copy cases.
-- `src/app/receipt/import/receipt-import-client.tsx`: renders `Freshness verdict`, passes the verdict into the redacted assistant, and includes it in the redacted review packet.
-- `src/lib/assistant/redacted-share-assistant.ts`: adds freshness verdict context, a `Freshness` suggestion, cited freshness answers, and summary context.
-- `src/lib/assistant/redacted-share-assistant.test.ts`: adds verdict context and assistant freshness-answer coverage.
-- `src/lib/market/redacted-review-packet.ts`: includes the freshness verdict section when computed.
-- `src/lib/market/redacted-review-packet.test.ts`: covers freshness verdict packet output.
-- `package.json`: adds the new verdict test to `npm test`.
-- `docs/knowledge/features/redacted-freshness-verdict.md`: new implemented feature note.
-- `docs/knowledge/sources/redacted-freshness-verdict.md`: new source-backed assumption note.
-- `docs/knowledge/index.md`: links the new source and feature.
-- `docs/knowledge/features/redacted-receipt-share.md`: links redacted shares to the freshness verdict.
-- `docs/knowledge/features/redacted-market-watchlist.md`: links watchlist severity to the freshness verdict.
-- `docs/knowledge/features/redacted-review-packet.md`: links packets to the freshness verdict.
-- `docs/knowledge/features/redacted-share-assistant.md`: links assistant answers to the freshness verdict.
-- `docs/knowledge/sources/redacted-share-assistant.md`: links the freshness verdict as a related feature.
-- `docs/source-notes.md`: records sources for the redacted freshness verdict.
-- `docs/known-limitations.md`: records verdict limits.
+- `src/lib/market/redacted-snapshot-comparison.ts`: new pure redacted comparison builder, metric/model types, previous/latest ordering, redacted-only freshness calculation, bucket/funding parsing, market-row comparison, labels, review points, and citations.
+- `src/lib/market/redacted-snapshot-comparison.test.ts`: coverage for visible improvement, visible worsening, reverse input ordering, source/protocol mismatch, and redacted-copy boundaries.
+- `src/app/receipt/import/receipt-import-client.tsx`: renders `Redacted snapshot compare`, parses the second redacted bundle, rejects full bundles for this path, and displays summary, metrics, market-row changes, and review points.
+- `package.json`: adds the redacted snapshot comparison test to `npm test`.
 - `README.md`: documents the feature, architecture, assumptions, demo flow, limitations, and resume bullet.
-- `docs/demo-script.md`: adds the freshness verdict walkthrough and resume bullet.
+- `docs/demo-script.md`: adds the compare walkthrough and resume-bullet wording.
+- `docs/source-notes.md`: records source links for timestamped risk comparison, funding, liquidation, mark-price, and data-minimization assumptions.
+- `docs/known-limitations.md`: records the redacted comparison limits.
+- `docs/knowledge/index.md`: links the new source and feature note.
+- `docs/knowledge/sources/redacted-snapshot-comparison.md`: new source-backed assumption note.
+- `docs/knowledge/features/redacted-snapshot-comparison.md`: new implemented feature note.
+- `docs/knowledge/features/redacted-freshness-verdict.md`: links redacted-only freshness to comparison.
+- `docs/knowledge/features/redacted-receipt-share.md`: links redacted shares to comparison.
+- `docs/knowledge/features/redacted-review-packet.md`: notes a future copyable comparison section.
 - `docs/ai-build-log.md`: records this feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `node --test src/lib/market/redacted-freshness-verdict.test.ts src/lib/assistant/redacted-share-assistant.test.ts src/lib/market/redacted-review-packet.test.ts` passed: 20 tests, 20 passing.
-- `npm test` passed: 169 tests, 169 passing.
+- `node --test src/lib/market/redacted-snapshot-comparison.test.ts` passed: 5 tests, 5 passing.
+- `npm test` passed: 174 tests, 174 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
 - `npm run build` passed and listed `/receipt/import`, `/receipt/local/[id]`, `/api/hyperliquid/markets`, `/api/hyperliquid/market-history`, and the existing receipt/API routes.
 - `git diff --check` passed.
-- Browser verification used `http://localhost:3000/receipt/import`, pasted a generated Hyperliquid-shaped redacted bundle for `rr_browser_redacted_freshness`, confirmed `Freshness verdict` rendered, loaded current markets and 24h trends, confirmed the verdict classified the share as `needs full recheck` after public ETH-PERP adverse trend and 24h range crossed the disclosed 8.00% buffer, clicked `Freshness` in the redacted assistant, confirmed signal score, no-live-monitor caveat, and `redacted_freshness_verdict.label` citation, and saw zero browser console errors.
-- `npm audit --audit-level=moderate` still reports the known `postcss` advisory through Next. The suggested `npm audit fix --force` would install a breaking/incorrect Next version, so it remains documented instead of force-applied.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted generated Hyperliquid-shaped redacted bundles for `rr_browser_previous_compare` and `rr_browser_latest_improved_compare`, confirmed the compare panel showed the improved headline, `risk improved` badge, `-36` risk-score delta, 7.00% to 20.00% disclosed buffer movement, ETH-PERP funding movement, BTC-PERP removed row, no visible private full-snapshot field names, and zero browser console errors.
 
 ## blockers
 
-- No hard blocker for this feature slice.
-- Redacted freshness verdict is heuristic public/disclosed context only.
-- The verdict cannot inspect hidden account state, recompute the hidden full-snapshot hash, certify that a stale share is current, replace a full portable bundle or live account recheck, act as a live alert, or tell a trader what to do next.
-- Live public context still depends on Hyperliquid API availability and response-shape stability.
+- No hard blocker for this slice.
+- Redacted snapshot comparison is heuristic public/disclosed context only.
+- It cannot inspect hidden account state, prove exact account improvement or worsening, compare hidden exact values, recompute hidden full-snapshot hashes, provide cryptographic selective disclosure, monitor exact liquidation state, or tell a trader what to do next.
+- Redacted-only freshness in this comparison does not load current public market context; it uses the redacted bundle and disclosed watch cues only.
 - EAS schema registration and attestation transactions are still documented fallback steps only.
 
 ## exact next recommended action
 
-Add a redacted two-snapshot compare view that accepts two redacted receipt bundles and shows whether risk bucket, disclosed buffer, freshness verdict, watchlist severity, and disclosed market rows improved, worsened, or changed without exposing full snapshots.
+Feed redacted snapshot comparison context into the redacted share assistant and redacted review packet so a reviewer can ask or copy "what changed between these two redacted shares?" without exposing full snapshots.

@@ -103,6 +103,17 @@ use this file for external protocol assumptions.
   - https://www.coinbase.com/learn/perpetual-futures/understanding-funding-rates-in-perpetual-futures
   - https://www.chainalysis.com/blog/perpetual-futures/
   - https://w3c-ccg.github.io/data-minimization/
+- docs checked on 2026-06-26 for redacted snapshot comparison:
+  - https://www.binance.com/en/academy/articles/what-is-a-trading-journal-and-how-to-use-one
+  - https://www.cmegroup.com/education/courses/things-to-know-before-trading-cme-futures/position-and-risk-management
+  - https://help.coinbase.com/en/coinbase/derivatives/us-derivatives-risk-management-and-liquidations
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://www.coinbase.com/learn/perpetual-futures/understanding-funding-rates-in-perpetual-futures
+  - https://www.coinbase.com/advanced-perpetuals
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://w3c-ccg.github.io/data-minimization/
 - docs checked on 2026-06-25 for position risk drivers:
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding

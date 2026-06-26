@@ -21,6 +21,7 @@ review while keeping the full bundle available for trusted verification.
 - [[redacted-market-trend]]
 - [[redacted-market-watchlist]]
 - [[redacted-freshness-verdict]]
+- [[redacted-snapshot-comparison]]
 - [[redacted-review-packet]]
 - [[redacted-share-assistant]]
 - docs/product-spec.md#4-receipt-page
@@ -47,6 +48,8 @@ review while keeping the full bundle available for trusted verification.
   review watchlist without sending a raw account address.
 - Hyperliquid redacted previews classify the share as reviewable, stale but
   informative, or needing a full recheck without exposing hidden account fields.
+- Redacted previews can compare against another redacted bundle to show visible
+  risk cue movement without exposing hidden account fields.
 - Redacted previews can copy a markdown review packet that includes disclosed
   buckets, public context, freshness verdict, watchlist cues, and
   hash-reference-only caveats.
@@ -65,6 +68,8 @@ review while keeping the full bundle available for trusted verification.
   reviewer-facing cues.
 - [[redacted-freshness-verdict]] classifies whether the redacted share is still
   reviewable against loaded public context.
+- [[redacted-snapshot-comparison]] compares two redacted shares as a lightweight
+  public review trail.
 - [[redacted-share-assistant]] lets a reviewer ask cited questions without
   receiving the full snapshot.
 - [[redacted-review-packet]] packages the redacted preview into a copyable

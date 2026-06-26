@@ -22,6 +22,7 @@ classification: `reviewable`, `stale but informative`, or `needs full recheck`.
 - [[redacted-market-context]]
 - [[redacted-market-trend]]
 - [[redacted-market-watchlist]]
+- [[redacted-snapshot-comparison]]
 - [[redacted-share-assistant]]
 - [[redacted-review-packet]]
 
@@ -54,6 +55,8 @@ classification: `reviewable`, `stale but informative`, or `needs full recheck`.
 - [[redacted-market-trend]] supplies public 24-hour range, adverse trend, and
   funding-history rows.
 - [[redacted-market-watchlist]] supplies high/watch/info review severity.
+- [[redacted-snapshot-comparison]] uses redacted-only freshness labels to compare
+  two minimized snapshots without loading public context.
 - [[redacted-share-assistant]] answers whether a redacted receipt is still
   reviewable with verdict citations.
 - [[redacted-review-packet]] carries the freshness verdict into copyable markdown.
