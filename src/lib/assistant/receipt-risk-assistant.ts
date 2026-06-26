@@ -21,6 +21,10 @@ import type {
   receipt_recheck_watchlist,
 } from "../receipts/receipt-recheck-watchlist.ts";
 import type {
+  receipt_market_regime,
+  receipt_market_regime_signal,
+} from "../receipts/receipt-market-regime.ts";
+import type {
   receipt_volatility_buffer,
   receipt_volatility_buffer_row,
 } from "../receipts/receipt-volatility-buffer.ts";
@@ -40,6 +44,7 @@ export type receipt_risk_assistant_context = {
   changeSummary: receipt_change_summary;
   riskDriverComparison?: receipt_risk_driver_comparison | null;
   recheckWatchlist?: receipt_recheck_watchlist | null;
+  marketRegime?: receipt_market_regime | null;
   volatilityBuffer?: receipt_volatility_buffer | null;
   accountValueContext?: receipt_account_value_context | null;
   hashVerified?: boolean;
@@ -219,6 +224,12 @@ function formatVolatilityBufferRow(row: receipt_volatility_buffer_row) {
     `Hourly ATR: ${formatPercent(row.average_true_range_percent)}.`,
     `ATR buffer multiple: ${formatMultiple(row.atr_buffer_multiple)}.`,
   ].join(" ");
+}
+
+function formatMarketRegimeSignal(signal: receipt_market_regime_signal) {
+  const reviewPoints = signal.review_points.join(" ");
+
+  return `${signal.severity.toUpperCase()} ${signal.category.replaceAll("_", " ")}: ${signal.title}. ${signal.detail} Review: ${reviewPoints}`;
 }
 
 function getRequestedMarketChange(input: {
@@ -414,6 +425,53 @@ function buildWatchlistAnswer(
         `receipt_recheck_watchlist.items.${item.id}.severity`,
         `receipt_recheck_watchlist.items.${item.id}.detail`,
         `receipt_recheck_watchlist.items.${item.id}.review_points`,
+      ]),
+    ],
+  };
+}
+
+function buildMarketRegimeAnswer(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_response {
+  const marketRegime = context.marketRegime ?? null;
+
+  if (!marketRegime) {
+    return {
+      answer:
+        "Market regime context is not loaded for this receipt. Run a live recheck to combine watchlist severity, listed buffers, funding burden, account drawdown, and volatility context.",
+      citations: ["receipt_market_regime"],
+    };
+  }
+
+  const topSignals = marketRegime.signals
+    .filter((signal) => signal.severity !== "info")
+    .slice(0, 3);
+  const signalSummary =
+    topSignals.length === 0
+      ? "No high or watch regime signals crossed the current app thresholds."
+      : topSignals.map(formatMarketRegimeSignal).join(" ");
+
+  return {
+    answer: [
+      marketRegime.headline,
+      marketRegime.summary,
+      `Regime label: ${marketRegime.label.replaceAll("_", " ")}. Focus market: ${marketRegime.focus_market ?? "n/a"}. Counts: ${marketRegime.critical_count} critical, ${marketRegime.high_count} high, ${marketRegime.watch_count} watch, ${marketRegime.info_count} info.`,
+      signalSummary,
+      "This combines local receipt recheck signals and loaded public context; it is not a forecast, liquidation alert, or trade recommendation.",
+    ].join(" "),
+    citations: [
+      "receipt_market_regime.headline",
+      "receipt_market_regime.summary",
+      "receipt_market_regime.label",
+      "receipt_market_regime.focus_market",
+      "receipt_market_regime.critical_count",
+      "receipt_market_regime.high_count",
+      "receipt_market_regime.watch_count",
+      "receipt_market_regime.info_count",
+      ...topSignals.flatMap((signal) => [
+        `receipt_market_regime.signals.${signal.id}.severity`,
+        `receipt_market_regime.signals.${signal.id}.detail`,
+        `receipt_market_regime.signals.${signal.id}.review_points`,
       ]),
     ],
   };
@@ -684,6 +742,19 @@ export function answerReceiptRiskQuestion(input: {
 
   if (
     includesAny(normalizedQuestion, [
+      "regime",
+      "conditions",
+      "environment",
+      "stretched",
+      "stress",
+      "calm",
+    ])
+  ) {
+    return buildMarketRegimeAnswer(input.context);
+  }
+
+  if (
+    includesAny(normalizedQuestion, [
       "watchlist",
       "inspect first",
       "review first",
@@ -789,6 +860,7 @@ export function getReceiptRiskAssistantSuggestions(
   const currentTopDriverMarket =
     context.riskDriverComparison?.current_top_driver_market ?? null;
   const hasRecheckWatchlist = Boolean(context.recheckWatchlist);
+  const hasMarketRegime = Boolean(context.marketRegime);
   const hasVolatilityBuffer = Boolean(context.volatilityBuffer);
   const suggestions = [
     {
@@ -812,6 +884,15 @@ export function getReceiptRiskAssistantSuggestions(
             id: "watchlist",
             label: "Watchlist",
             question: "What should I inspect first in the recheck watchlist?",
+          },
+        ]
+      : []),
+    ...(hasMarketRegime
+      ? [
+          {
+            id: "regime",
+            label: "Regime",
+            question: "What market regime is this receipt in?",
           },
         ]
       : []),

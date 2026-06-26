@@ -19,6 +19,7 @@ rank concrete review cues and show what deserves attention first.
 - [[mark-price-context]]
 - [[configurable-recheck-thresholds]]
 - [[receipt-volatility-watchlist]]
+- [[receipt-market-regime]]
 - [[redacted-market-watchlist]]
 
 ## implemented behavior
@@ -51,5 +52,7 @@ rank concrete review cues and show what deserves attention first.
   watchlist threshold in the current review.
 - [[receipt-volatility-watchlist]] adds public volatility-versus-buffer cues
   after the reviewer loads 24h market history.
+- [[receipt-market-regime]] summarizes watchlist severity alongside funding,
+  volatility, drawdown, and market movement.
 - [[receipt-risk-driver-comparison]] and [[mark-price-context]] remain the
   underlying sources of truth.

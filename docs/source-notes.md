@@ -152,6 +152,13 @@ use this file for external protocol assumptions.
   - https://www.schwab.com/learn/story/average-true-range-indicator-and-volatility
   - https://metamask.io/news/perpetual-futures-liquidation-mechanics
   - https://www.chainalysis.com/blog/perpetual-futures/
+- docs checked on 2026-06-26 for receipt market regime:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://metamask.io/news/open-interest-perps-explained
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://docs.dune.com/data-catalog/community/hyperliquid/market-data
+  - https://www.coinapi.io/blog/historical-data-for-perpetual-futures
+  - https://arxiv.org/html/2212.06888v5
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -229,6 +236,7 @@ use this file for external protocol assumptions.
   - when a named market changes side or size, the assistant must say the row is historical rather than directly comparable as the same risk object.
   - watchlist-priority answers cite `receipt_recheck_watchlist` fields when the local live recheck has built a watchlist.
   - volatility-buffer answers cite loaded `receipt_volatility_buffer` fields when public 24h market history has been loaded.
+  - market-regime answers cite `receipt_market_regime` fields after a local live recheck has built the regime read.
   - the assistant should describe watchlist items as inspect-first review cues, not trading instructions.
 - portable receipt bundle assumptions:
   - the bundle is a user-controlled JSON export/import path; it does not call new Hyperliquid endpoints.
@@ -293,7 +301,7 @@ use this file for external protocol assumptions.
   - it does not call a new endpoint, change the receipt model, or store packet state.
   - it includes a truncated account identifier, full snapshot hash, hash verification state, receipt change summary, risk-driver comparison, watchlist cues, assistant watchlist answer, assistant citations, and market-context rows.
   - it includes the active review threshold profile so the copied markdown says what counted as meaningful movement.
-  - it includes volatility-buffer context only after the reviewer loads public 24h market history on the receipt page.
+  - it includes market-regime context after live recheck and volatility-buffer context only after the reviewer loads public 24h market history on the receipt page.
   - the first version caps watchlist and market-context rows at five each for readability.
   - the packet is a communication summary only; a full portable receipt bundle remains required for another browser to recompute the snapshot hash.
 - receipt volatility buffer assumptions:
@@ -306,6 +314,15 @@ use this file for external protocol assumptions.
   - position-state changes are not treated as directly comparable volatility-buffer rows.
   - high/watch rows can feed the receipt recheck watchlist after history has loaded, but they remain review cues only.
   - the panel is not Hyperliquid's exact liquidation formula, a live alerting system, a price forecast, or a trading recommendation.
+- receipt market regime assumptions:
+  - the regime read is a synthesis layer over already-loaded local live receipt objects: snapshot comparison, market context, risk-driver comparison, recheck watchlist, optional volatility buffer, and optional sampled account-value context.
+  - it does not call new endpoints, change the receipt model, change the risk model, save state, or change the snapshot hash.
+  - labels are `calm`, `active`, `stretched`, `stress`, and `not_comparable`.
+  - account mismatch and changed-position state outrank ordinary market-regime labels because the saved receipt is no longer directly comparable as the same risk object.
+  - current positive daily funding burden is estimated as current daily funding cost divided by current account value in bps/day.
+  - unloaded public 24h volatility is an informational context gap only; it does not by itself make the regime active or stressed.
+  - open interest is participation context only and not a standalone direction signal.
+  - the regime panel and assistant answer are not forecasts, liquidation alerts, protocol-official risk labels, or trade recommendations.
 
 ## eas
 

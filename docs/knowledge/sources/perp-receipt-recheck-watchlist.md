@@ -33,5 +33,6 @@
 - [[../features/receipt-recheck-watchlist]]
 - [[../features/receipt-risk-driver-comparison]]
 - [[../features/receipt-assistant-market-context-fusion]]
+- [[../features/receipt-market-regime]]
 - [[../features/receipt-volatility-watchlist]]
 - [[../features/redacted-market-watchlist]]

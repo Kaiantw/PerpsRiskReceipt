@@ -52,6 +52,12 @@ import {
   type receipt_review_packet,
 } from "@/lib/receipts/receipt-review-packet.ts";
 import {
+  buildReceiptMarketRegime,
+  type receipt_market_regime,
+  type receipt_market_regime_label,
+  type receipt_market_regime_severity,
+} from "@/lib/receipts/receipt-market-regime.ts";
+import {
   buildReceiptVolatilityBuffer,
   type receipt_volatility_buffer,
   type receipt_volatility_buffer_label,
@@ -259,6 +265,21 @@ const volatilityBufferSeverityTone: Record<
   info: "border-stone-200 bg-stone-100 text-stone-700",
 };
 
+const marketRegimeLabels: Record<receipt_market_regime_label, string> = {
+  not_comparable: "not comparable",
+  calm: "calm",
+  active: "active",
+  stretched: "stretched",
+  stress: "stress",
+};
+
+const marketRegimeTone: Record<receipt_market_regime_severity, string> = {
+  critical: "border-red-200 bg-red-100 text-red-950",
+  high: "border-red-200 bg-red-100 text-red-950",
+  watch: "border-yellow-200 bg-yellow-100 text-yellow-950",
+  info: "border-emerald-200 bg-emerald-100 text-emerald-950",
+};
+
 export function LiveRecheckPanel({
   hashVerified,
   receipt,
@@ -402,6 +423,14 @@ function LiveRecheckResult({
     marketContext,
     accountValueContext: receiptAccountValueContext,
   });
+  const marketRegime = buildReceiptMarketRegime({
+    accountValueContext: receiptAccountValueContext,
+    comparison,
+    marketContext,
+    riskDriverComparison,
+    volatilityBuffer,
+    watchlist: recheckWatchlist,
+  });
   const assistantContext: receipt_risk_assistant_context = {
     receipt,
     comparison,
@@ -409,6 +438,7 @@ function LiveRecheckResult({
     changeSummary,
     riskDriverComparison,
     recheckWatchlist,
+    marketRegime,
     volatilityBuffer,
     accountValueContext: receiptAccountValueContext,
     hashVerified,
@@ -423,6 +453,7 @@ function LiveRecheckResult({
     marketContext,
     changeSummary,
     riskDriverComparison,
+    marketRegime,
     volatilityBuffer,
     watchlist: recheckWatchlist,
     watchlistAssistantResponse,
@@ -438,6 +469,8 @@ function LiveRecheckResult({
     riskDriverComparison.current_top_driver_market ?? "no-current-driver",
     recheckWatchlist.label,
     String(recheckWatchlist.high_count),
+    marketRegime.label,
+    String(marketRegime.high_count),
     volatilityBuffer?.label ?? "no-volatility-buffer",
     String(volatilityBuffer?.high_count ?? 0),
     formatThresholdSignature(recheckWatchlist.thresholds),
@@ -513,6 +546,7 @@ function LiveRecheckResult({
       </div>
 
       <ReceiptChangeSummaryResult summary={changeSummary} />
+      <ReceiptMarketRegimeResult regime={marketRegime} />
       <ReceiptRiskDriverComparisonResult comparison={riskDriverComparison} />
       <MarketContextResult context={marketContext} />
       <ReceiptVolatilityBufferResult
@@ -1286,6 +1320,109 @@ function ReceiptChangeSummaryResult({
   );
 }
 
+function ReceiptMarketRegimeResult({
+  regime,
+}: {
+  regime: receipt_market_regime;
+}) {
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-stone-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Market regime</h3>
+          <p className="mt-1 text-sm font-medium text-stone-800">
+            {regime.headline}
+          </p>
+          <p className="mt-1 text-sm text-stone-600">{regime.summary}</p>
+        </div>
+        <span
+          className={`rounded-lg border px-3 py-2 text-sm font-semibold ${marketRegimeTone[regime.severity]}`}
+        >
+          {marketRegimeLabels[regime.label]}
+        </span>
+      </div>
+
+      <dl className="grid gap-3 p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+        <MiniMetric label="Focus market" value={regime.focus_market ?? "n/a"} />
+        <MiniMetric label="Critical" value={String(regime.critical_count)} />
+        <MiniMetric label="High" value={String(regime.high_count)} />
+        <MiniMetric label="Watch" value={String(regime.watch_count)} />
+        <MiniMetric label="Info" value={String(regime.info_count)} />
+        <MiniMetric
+          label="Current min buffer"
+          value={formatPercentFromBps(
+            regime.metrics.current_min_liquidation_distance_bps,
+          )}
+        />
+        <MiniMetric
+          label="Funding burden"
+          value={formatNullablePlainBps(
+            regime.metrics.current_funding_burden_bps,
+          )}
+        />
+        <MiniMetric
+          label="Current drawdown"
+          value={formatNullablePlainPercent(
+            regime.metrics.current_drawdown_percent,
+          )}
+        />
+        <MiniMetric
+          label="Max mark move"
+          value={formatAbsPercent(regime.metrics.max_mark_move_percent)}
+        />
+      </dl>
+
+      {regime.signals.length === 0 ? (
+        <p className="border-t border-stone-200 px-4 py-3 text-sm text-stone-600">
+          No market-regime signals crossed the current app thresholds.
+        </p>
+      ) : (
+        <div className="divide-y divide-stone-200 border-t border-stone-200">
+          {regime.signals.map((signal) => (
+            <article className="px-4 py-3" key={signal.id}>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="font-mono text-xs text-stone-500">
+                    {signal.category.replaceAll("_", " ")}
+                  </p>
+                  <h4 className="mt-1 text-sm font-semibold text-stone-950">
+                    {signal.title}
+                  </h4>
+                  <p className="mt-1 text-sm text-stone-700">
+                    {signal.detail}
+                  </p>
+                </div>
+                <span
+                  className={`w-fit rounded-lg border px-2 py-1 text-xs font-semibold uppercase ${marketRegimeTone[signal.severity]}`}
+                >
+                  {signal.severity}
+                </span>
+              </div>
+              <ul className="mt-3 space-y-1 text-xs leading-5 text-stone-600">
+                {signal.review_points.map((point) => (
+                  <li className="flex gap-2" key={point}>
+                    <span
+                      aria-hidden="true"
+                      className="mt-2 h-1.5 w-1.5 rounded-full bg-stone-400"
+                    />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+      )}
+
+      <p className="border-t border-stone-200 px-4 py-3 text-xs text-stone-500">
+        Market regime combines local receipt recheck signals, funding burden,
+        sampled account drawdown, and loaded public volatility context. It is
+        not a forecast, liquidation alert, or trade recommendation.
+      </p>
+    </section>
+  );
+}
+
 function MarketContextResult({ context }: { context: market_context }) {
   return (
     <section className="rounded-lg border border-stone-200 bg-white">
@@ -1498,6 +1635,14 @@ function formatNullablePlainPercent(value: number | null) {
   }
 
   return `${value.toFixed(2)}%`;
+}
+
+function formatNullablePlainBps(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return `${value.toFixed(2)} bps`;
 }
 
 function formatNullableMultiple(value: number | null) {

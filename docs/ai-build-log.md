@@ -874,3 +874,25 @@ Review whether the category rank is right: account mismatch, position-state chan
 - Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, mocked the read-only live snapshot and market-history responses, clicked `Recheck live account`, clicked `Load 24h volatility`, confirmed the `Recheck watchlist` included `Public 24h range exceeds current listed buffer`, clicked the `Volatility` assistant prompt, confirmed `receipt_volatility_buffer.high_count` and `Hourly ATR:` in the answer, confirmed the review packet included the volatility-buffer watch item, and saw zero browser console errors.
 ### remaining risks:
 The volatility watchlist cue is heuristic public-market triage. It helps reviewers inspect whether recent public movement was large relative to current listed buffer, but it is not exact liquidation monitoring, order-book depth analysis, a price forecast, a live alert, protocol-official risk attribution, or advice about what a trader should do next.
+
+### task id: post-t9 receipt market regime summary
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a compact market-regime read for local receipt live rechecks that combines watchlist severity, current listed liquidation buffer, loaded volatility context, funding burden, sampled account drawdown, mark movement, and open-interest context into one current-environment summary.
+### output accepted:
+Added a pure `receipt_market_regime` builder and tests, including explicit critical-count coverage for account mismatch. Mounted a `Market regime` panel in the local live receipt recheck flow. Added a `Regime` receipt assistant prompt and cited answer path. Added market-regime context to copyable review packets. Updated package test registration, source notes, knowledge docs, known limitations, README, demo script, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, backend store, data model migration, LLM API, wallet/RPC flow, trading/exchange endpoint, forecast, alert system, exact Hyperliquid liquidation formula, or protocol-official regime label was added. The first keyword pass would have routed broad `current market` questions away from the existing market-context answer, so the new route was narrowed to regime/conditions/environment wording.
+### human review notes:
+Review the market-regime thresholds and labels: funding burden watch at 5 bps/day and high at 25 bps/day; sampled drawdown watch at 10% and high at 20%; labels `calm`, `active`, `stretched`, `stress`, and `not_comparable`. Review whether `Market regime` is trader-clear enough or should be renamed to `Current environment`.
+### tests/checks run:
+- `node --test src/lib/receipts/receipt-market-regime.test.ts src/lib/assistant/receipt-risk-assistant.test.ts src/lib/receipts/receipt-review-packet.test.ts` passed: 23 tests, 23 passing.
+- `npm test` passed: 137 tests, 137 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]`, `/api/hyperliquid/market-history`, and the existing receipt/API routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, mocked the read-only live snapshot and market-history responses, clicked `Recheck live account`, confirmed `Market regime`, clicked `Load 24h volatility`, confirmed `Public volatility is large versus listed buffer`, clicked the `Regime` assistant prompt, confirmed `receipt_market_regime.label`, confirmed the no-forecast caveat, confirmed the review packet included `## market regime`, and saw zero browser console errors.
+### remaining risks:
+The market-regime read is heuristic synthesis over already-loaded local receipt fields. It is not a forecast, liquidation alert, order-book/depth model, exact funding settlement accounting, protocol-official risk label, or advice about what a trader should do next.

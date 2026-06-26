@@ -18,6 +18,7 @@ recommending a trade.
 - [[mark-price-context]]
 - [[receipt-recheck-watchlist]]
 - [[receipt-volatility-watchlist]]
+- [[receipt-market-regime]]
 - [[receipt-review-packet]]
 - [[redacted-market-trend]]
 
@@ -45,3 +46,5 @@ recommending a trade.
   redacted shares.
 - [[receipt-volatility-watchlist]] feeds high/watch rows into the ranked
   inspect-first list.
+- [[receipt-market-regime]] includes loaded volatility severity in the compact
+  current-environment read.

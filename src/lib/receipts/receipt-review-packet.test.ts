@@ -8,6 +8,7 @@ import { loadFixtureAccount } from "../perps/fixtures.ts";
 import type { normalized_account_snapshot } from "../perps/types.ts";
 import { createRiskReceipt } from "./receipt.ts";
 import { buildReceiptChangeSummary } from "./receipt-change-summary.ts";
+import { buildReceiptMarketRegime } from "./receipt-market-regime.ts";
 import { compareReceiptRiskDrivers } from "./receipt-risk-driver-comparison.ts";
 import { buildReceiptRecheckWatchlist } from "./receipt-recheck-watchlist.ts";
 import { buildReceiptReviewPacket } from "./receipt-review-packet.ts";
@@ -83,6 +84,14 @@ async function buildPacket(input?: {
     marketContext,
     accountValueContext: null,
   });
+  const marketRegime = buildReceiptMarketRegime({
+    accountValueContext: null,
+    comparison,
+    marketContext,
+    riskDriverComparison,
+    volatilityBuffer,
+    watchlist,
+  });
   const watchlistAssistantResponse = answerReceiptRiskQuestion({
     context: {
       receipt,
@@ -91,6 +100,7 @@ async function buildPacket(input?: {
       changeSummary,
       riskDriverComparison,
       recheckWatchlist: watchlist,
+      marketRegime,
       volatilityBuffer,
       hashVerified: true,
     },
@@ -101,6 +111,7 @@ async function buildPacket(input?: {
     receipt,
     comparison,
     marketContext,
+    marketRegime,
     changeSummary,
     riskDriverComparison,
     volatilityBuffer,
@@ -133,6 +144,10 @@ test("builds a copyable markdown packet with receipt, watchlist, assistant, and 
   assert.match(packet.markdown, /## receipt/);
   assert.match(packet.markdown, /snapshot hash: 0x/);
   assert.match(packet.markdown, /hash verification: verified on this page/);
+  assert.match(packet.markdown, /## market regime/);
+  assert.match(packet.markdown, /label: stress/);
+  assert.match(packet.markdown, /counts: 0 critical/);
+  assert.match(packet.markdown, /Public volatility is large versus listed buffer/);
   assert.match(packet.markdown, /## risk drivers since receipt/);
   assert.match(packet.markdown, /## volatility buffer/);
   assert.match(packet.markdown, /24h range:/);

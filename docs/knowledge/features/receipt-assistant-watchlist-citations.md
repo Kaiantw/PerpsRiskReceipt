@@ -15,6 +15,7 @@ instead of forcing a reviewer to scan every panel manually.
 - [[../sources/perp-receipt-assistant-watchlist-citations]]
 - [[receipt-recheck-watchlist]]
 - [[receipt-volatility-watchlist]]
+- [[receipt-market-regime]]
 - [[receipt-risk-assistant]]
 - [[receipt-assistant-market-context-fusion]]
 
@@ -29,6 +30,8 @@ instead of forcing a reviewer to scan every panel manually.
   item detail, and item review points.
 - Includes volatility-buffer cues in those answers once public 24h volatility
   has been loaded and added to the watchlist.
+- The same assistant context now also supports a `Regime` prompt from
+  `receipt_market_regime` fields.
 - Keeps trade-intent refusal ahead of watchlist routing.
 
 ## related ideas
@@ -40,5 +43,7 @@ instead of forcing a reviewer to scan every panel manually.
   questions after the watchlist identifies a market.
 - [[receipt-volatility-watchlist]] adds public volatility-versus-buffer cues to
   the same inspect-first answer path.
+- [[receipt-market-regime]] answers broader current-environment questions using
+  the watchlist, volatility, funding, and sampled account-value context.
 - [[redacted-market-watchlist]] could later get a redacted-share assistant that
   uses the same inspect-first pattern without exposing hidden fields.

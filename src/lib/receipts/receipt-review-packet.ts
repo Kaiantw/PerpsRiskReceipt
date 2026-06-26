@@ -13,6 +13,10 @@ import type {
 } from "../market/market-context.ts";
 import type { risk_receipt } from "../perps/types.ts";
 import type { receipt_change_summary } from "./receipt-change-summary.ts";
+import type {
+  receipt_market_regime,
+  receipt_market_regime_signal,
+} from "./receipt-market-regime.ts";
 import type { receipt_risk_driver_comparison } from "./receipt-risk-driver-comparison.ts";
 import type {
   receipt_recheck_watch_item,
@@ -35,6 +39,7 @@ export function buildReceiptReviewPacket(input: {
   comparison: snapshot_comparison;
   hashVerified?: boolean;
   marketContext: market_context;
+  marketRegime?: receipt_market_regime | null;
   receipt: risk_receipt;
   riskDriverComparison: receipt_risk_driver_comparison;
   volatilityBuffer?: receipt_volatility_buffer | null;
@@ -63,6 +68,7 @@ export function buildReceiptReviewPacket(input: {
     `- changed positions: ${input.comparison.changed_position_count}`,
     `- largest comparable mark move: ${input.comparison.max_abs_mark_price_change_percent.toFixed(2)}%`,
     "",
+    ...formatMarketRegimeSection(input.marketRegime ?? null),
     "## risk drivers since receipt",
     `- saved top driver: ${input.riskDriverComparison.saved_top_driver_market ?? "n/a"}`,
     `- current top driver: ${input.riskDriverComparison.current_top_driver_market ?? "n/a"}`,
@@ -188,6 +194,34 @@ function formatVolatilityBufferSection(
     ...formatVolatilityBufferRows(volatilityBuffer.rows),
     "",
   ];
+}
+
+function formatMarketRegimeSection(marketRegime: receipt_market_regime | null) {
+  if (!marketRegime) {
+    return [];
+  }
+
+  return [
+    "## market regime",
+    `- label: ${marketRegime.label.replaceAll("_", " ")}`,
+    `- headline: ${marketRegime.headline}`,
+    `- focus market: ${marketRegime.focus_market ?? "n/a"}`,
+    `- counts: ${marketRegime.critical_count} critical, ${marketRegime.high_count} high, ${marketRegime.watch_count} watch, ${marketRegime.info_count} info`,
+    ...formatMarketRegimeSignals(marketRegime.signals),
+    "",
+  ];
+}
+
+function formatMarketRegimeSignals(signals: receipt_market_regime_signal[]) {
+  if (signals.length === 0) {
+    return ["- no market-regime signals crossed the current app thresholds"];
+  }
+
+  return signals.slice(0, 5).flatMap((signal) => [
+    `- [${signal.severity}] ${signal.category.replaceAll("_", " ")}: ${signal.title}`,
+    `  - detail: ${signal.detail}`,
+    ...signal.review_points.map((point) => `  - review: ${point}`),
+  ]);
 }
 
 function formatVolatilityBufferRows(rows: receipt_volatility_buffer_row[]) {

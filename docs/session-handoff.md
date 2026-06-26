@@ -38,59 +38,66 @@
 - Post-t9 configurable receipt review thresholds is complete.
 - Post-t9 receipt volatility buffer is complete.
 - Post-t9 receipt volatility watchlist is complete.
+- Post-t9 receipt market regime summary is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote tracking: `main` tracks `origin/main`.
-- Baseline before this slice: `e4555c3`.
-- Current work feeds loaded volatility-buffer rows into the local receipt recheck watchlist, receipt assistant, and copyable review packet.
-- The `Recheck watchlist` now includes high/watch `volatility_buffer` cues after the reviewer loads public 24h Hyperliquid market history.
-- The local receipt assistant shows a `Volatility` prompt only when volatility context is loaded and answers from cited `receipt_volatility_buffer` fields.
-- The review packet preserves the volatility-derived watchlist item as part of the copied inspect-first summary.
+- Baseline before this slice: `8543487`.
+- Current work adds a local `Market regime` summary to the receipt live recheck flow.
+- The regime read combines the existing receipt comparison, risk-driver comparison, recheck watchlist, current listed buffer, positive funding burden, sampled account drawdown, market movement, open-interest movement, and optional loaded volatility-buffer context.
+- Labels are `calm`, `active`, `stretched`, `stress`, and `not_comparable`.
+- Account mismatch and changed-position state outrank ordinary regime labels because the saved receipt is no longer directly comparable as the same risk object.
+- The local receipt assistant now has a `Regime` prompt that cites `receipt_market_regime` fields.
+- The copyable review packet now includes a `## market regime` section.
 - It does not alter the saved receipt, snapshot hash, live snapshot data, normalized data model, or risk model.
 - No trading endpoint, order placement, private key, wallet/RPC flow, backend store, alerting system, prediction model, exact Hyperliquid liquidation formula, LLM API, new dependency, or protocol-official risk claim was added.
 - A Next dev server was already running on `http://localhost:3000` for browser smoke verification.
 
 ## files changed
 
-- `src/lib/receipts/receipt-recheck-watchlist.ts`: adds the `volatility_buffer` category and maps loaded high/watch volatility rows into ranked watchlist items.
-- `src/lib/receipts/receipt-recheck-watchlist.test.ts`: covers volatility-buffer watchlist items after public history is loaded.
-- `src/lib/assistant/receipt-risk-assistant.ts`: adds loaded volatility context, `Volatility` prompt support, and a cited volatility answer path.
-- `src/lib/assistant/receipt-risk-assistant.test.ts`: covers volatility answers, citations, and prompt visibility.
-- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: passes loaded volatility context into the watchlist, assistant, and packet.
-- `src/lib/receipts/receipt-review-packet.test.ts`: asserts the copied packet includes the volatility-derived watchlist cue.
-- `docs/knowledge/features/receipt-volatility-watchlist.md`: implemented feature note.
-- `docs/knowledge/sources/perp-volatility-watchlist.md`: source-backed product assumptions.
-- `docs/knowledge/index.md`: links the new source and feature notes.
-- `docs/knowledge/features/receipt-recheck-watchlist.md`: documents loaded volatility-buffer watch cues.
-- `docs/knowledge/features/receipt-volatility-buffer.md`: links the panel to the watchlist integration.
-- `docs/knowledge/features/receipt-assistant-watchlist-citations.md`: documents assistant watchlist answers with volatility cues.
-- `docs/knowledge/sources/perp-receipt-recheck-watchlist.md`: adds volatility-buffer watchlist rationale.
-- `docs/knowledge/sources/perp-volatility-buffer.md`: links high/watch rows to inspect-first cues.
-- `docs/source-notes.md`: records external sources and volatility-watchlist assumptions.
-- `docs/known-limitations.md`: records volatility-watchlist/assistant limitations.
-- `README.md`: documents volatility-buffer cues in the watchlist and assistant.
-- `docs/demo-script.md`: adds the volatility-watchlist and assistant walkthrough.
+- `src/lib/receipts/receipt-market-regime.ts`: new pure market-regime builder and typed signal model.
+- `src/lib/receipts/receipt-market-regime.test.ts`: covers calm, stressed volatility, changed-position, account-mismatch, funding, and sampled drawdown regimes.
+- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: mounts the `Market regime` panel and feeds regime context into the assistant and review packet.
+- `src/lib/assistant/receipt-risk-assistant.ts`: adds market-regime context, answer routing, citations, and the `Regime` suggestion.
+- `src/lib/assistant/receipt-risk-assistant.test.ts`: covers market-regime assistant answers and suggestion visibility.
+- `src/lib/receipts/receipt-review-packet.ts`: adds the `## market regime` markdown section.
+- `src/lib/receipts/receipt-review-packet.test.ts`: asserts packet inclusion of regime label and volatility-derived regime signals.
+- `package.json`: includes the market-regime test file in `npm test`.
+- `docs/knowledge/features/receipt-market-regime.md`: implemented feature note.
+- `docs/knowledge/sources/perp-market-regime.md`: source-backed product assumptions.
+- `docs/knowledge/index.md`: links the new feature and source notes.
+- `docs/knowledge/features/receipt-review-packet.md`: documents packet market-regime context.
+- `docs/knowledge/features/receipt-assistant-watchlist-citations.md`: documents assistant regime citations.
+- `docs/knowledge/features/receipt-volatility-watchlist.md`: links volatility cues to regime synthesis.
+- `docs/knowledge/features/receipt-recheck-watchlist.md`: links watchlist severity to the regime read.
+- `docs/knowledge/features/receipt-volatility-buffer.md`: links loaded volatility buffer to the regime read.
+- `docs/knowledge/sources/perp-receipt-recheck-watchlist.md`: records regime usage of watchlist cues.
+- `docs/knowledge/sources/perp-volatility-watchlist.md`: records regime usage of loaded volatility cues.
+- `docs/source-notes.md`: records external sources and market-regime assumptions.
+- `docs/known-limitations.md`: records market-regime and assistant-regime limitations.
+- `README.md`: documents the market-regime feature, architecture, demo, and resume bullet.
+- `docs/demo-script.md`: adds the market-regime walkthrough.
 - `docs/ai-build-log.md`: records this feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `node --test src/lib/receipts/receipt-recheck-watchlist.test.ts src/lib/assistant/receipt-risk-assistant.test.ts src/lib/receipts/receipt-review-packet.test.ts src/lib/receipts/receipt-volatility-buffer.test.ts` passed: 28 tests, 28 passing.
-- `npm test` passed: 131 tests, 131 passing.
+- `node --test src/lib/receipts/receipt-market-regime.test.ts src/lib/assistant/receipt-risk-assistant.test.ts src/lib/receipts/receipt-review-packet.test.ts` passed: 23 tests, 23 passing.
+- `npm test` passed: 137 tests, 137 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
 - `npm run build` passed and listed `/receipt/local/[id]`, `/api/hyperliquid/market-history`, and the existing receipt/API routes.
 - `git diff --check` passed.
-- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, mocked the read-only live snapshot and market-history responses, clicked `Recheck live account`, clicked `Load 24h volatility`, confirmed the `Recheck watchlist` included `Public 24h range exceeds current listed buffer`, clicked the `Volatility` assistant prompt, confirmed `receipt_volatility_buffer.high_count` and `Hourly ATR:` in the answer, confirmed the review packet included the volatility-buffer watch item, and saw zero browser console errors.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, mocked the read-only live snapshot and market-history responses, clicked `Recheck live account`, confirmed `Market regime`, clicked `Load 24h volatility`, confirmed `Public volatility is large versus listed buffer`, clicked the `Regime` assistant prompt, confirmed `receipt_market_regime.label`, confirmed the no-forecast caveat, confirmed the review packet included `## market regime`, and saw zero browser console errors.
 
 ## blockers
 
 - No hard blocker for this feature slice.
-- The volatility watchlist is descriptive public-market context only.
-- It is not Hyperliquid's exact liquidation formula, order-book depth analysis, a live alerting system, price forecast, protocol-official risk attribution, or trading advice.
+- The market-regime read is descriptive local synthesis only.
+- It is not Hyperliquid's exact liquidation formula, order-book depth analysis, a live alerting system, price forecast, protocol-official risk label, exact funding settlement accounting, or trading advice.
 - The comparison still uses listed liquidation price and public candle history; it does not model cross-margin changes, margin tiers, liquidity, other open-position PnL, or oracle-price funding settlement.
 - Live Hyperliquid data still depends on API availability and response shape.
 - Live receipts remain browser-local unless explicitly exported/imported.
@@ -98,4 +105,4 @@
 
 ## exact next recommended action
 
-Add a compact local `Market regime` summary that combines account drawdown, funding burden, public volatility cues, and watchlist severity into one reviewer-facing headline, if the next slice should keep improving current-market usefulness.
+Add a per-market regime drilldown row that groups each comparable market's current listed buffer, funding burden, 24h volatility-buffer status, watchlist severity, and market-context movement so a reviewer can see why the account-level regime label was assigned.

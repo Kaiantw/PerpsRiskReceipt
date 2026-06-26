@@ -40,5 +40,6 @@
 - [[../features/receipt-volatility-watchlist]]
 - [[../features/receipt-volatility-buffer]]
 - [[../features/receipt-recheck-watchlist]]
+- [[../features/receipt-market-regime]]
 - [[../features/receipt-assistant-watchlist-citations]]
 - [[../features/receipt-review-packet]]

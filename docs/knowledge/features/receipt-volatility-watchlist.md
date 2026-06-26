@@ -20,6 +20,7 @@ liquidation buffer.
 - [[../sources/perp-receipt-recheck-watchlist]]
 - [[receipt-volatility-buffer]]
 - [[receipt-recheck-watchlist]]
+- [[receipt-market-regime]]
 - [[receipt-assistant-watchlist-citations]]
 - [[receipt-review-packet]]
 
@@ -44,3 +45,5 @@ liquidation buffer.
 - [[receipt-assistant-watchlist-citations]] explains the same ranked queue in
   the local assistant.
 - [[receipt-review-packet]] makes the volatility cue shareable in markdown.
+- [[receipt-market-regime]] can escalate the overall regime when loaded
+  volatility rows are high or watch.

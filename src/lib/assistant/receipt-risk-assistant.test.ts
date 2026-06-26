@@ -9,6 +9,7 @@ import { loadFixtureAccount } from "../perps/fixtures.ts";
 import type { normalized_account_snapshot } from "../perps/types.ts";
 import { createRiskReceipt } from "../receipts/receipt.ts";
 import { buildReceiptChangeSummary } from "../receipts/receipt-change-summary.ts";
+import { buildReceiptMarketRegime } from "../receipts/receipt-market-regime.ts";
 import { compareReceiptRiskDrivers } from "../receipts/receipt-risk-driver-comparison.ts";
 import { buildReceiptRecheckWatchlist } from "../receipts/receipt-recheck-watchlist.ts";
 import { buildReceiptVolatilityBuffer } from "../receipts/receipt-volatility-buffer.ts";
@@ -65,6 +66,19 @@ async function buildAssistantContext(input?: {
         ],
       })
     : null;
+  const recheckWatchlist = buildReceiptRecheckWatchlist({
+    marketContext,
+    riskDriverComparison,
+    volatilityBuffer,
+  });
+  const marketRegime = buildReceiptMarketRegime({
+    accountValueContext,
+    comparison,
+    marketContext,
+    riskDriverComparison,
+    volatilityBuffer,
+    watchlist: recheckWatchlist,
+  });
 
   return {
     receipt: await createRiskReceipt(receiptSnapshot),
@@ -73,11 +87,8 @@ async function buildAssistantContext(input?: {
     accountValueContext,
     hashVerified: input?.hashVerified ?? true,
     riskDriverComparison,
-    recheckWatchlist: buildReceiptRecheckWatchlist({
-      marketContext,
-      riskDriverComparison,
-      volatilityBuffer,
-    }),
+    recheckWatchlist,
+    marketRegime,
     volatilityBuffer,
     changeSummary: buildReceiptChangeSummary({
       comparison,
@@ -346,6 +357,41 @@ test("answers volatility-buffer questions from loaded public history context", a
   );
 });
 
+test("answers market-regime questions from the synthesized regime context", async () => {
+  const receiptSnapshot = loadFixtureAccount("demo-safe-eth-long");
+  const currentSnapshot = {
+    ...receiptSnapshot,
+    positions: receiptSnapshot.positions.map((position) => ({
+      ...position,
+      mark_price_usd: 2_400,
+    })),
+  } satisfies normalized_account_snapshot;
+  const context = await buildAssistantContext({
+    receiptSnapshot,
+    currentSnapshot,
+    includeVolatilityBuffer: true,
+  });
+  const response = answerReceiptRiskQuestion({
+    context,
+    question: "What market regime is this receipt in?",
+  });
+
+  assert.match(response.answer, /market regime/i);
+  assert.match(response.answer, /Regime label: stress/);
+  assert.match(response.answer, /Focus market: ETH-PERP/);
+  assert.match(response.answer, /Counts: 0 critical/);
+  assert.match(response.answer, /not a forecast/i);
+  assert.ok(response.citations.includes("receipt_market_regime.label"));
+  assert.ok(
+    response.citations.includes("receipt_market_regime.critical_count"),
+  );
+  assert.ok(
+    response.citations.some((citation) =>
+      citation.startsWith("receipt_market_regime.signals."),
+    ),
+  );
+});
+
 test("explains when the watchlist has no ranked items", async () => {
   const context = await buildAssistantContext();
   const response = answerReceiptRiskQuestion({
@@ -435,6 +481,10 @@ test("suggestions include account history only when context exists", async () =>
   );
   assert.equal(
     withoutHistory.some((suggestion) => suggestion.id === "watchlist"),
+    true,
+  );
+  assert.equal(
+    withoutHistory.some((suggestion) => suggestion.id === "regime"),
     true,
   );
   assert.equal(
