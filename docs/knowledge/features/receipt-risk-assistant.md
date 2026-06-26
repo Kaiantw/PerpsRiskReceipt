@@ -22,6 +22,7 @@ than giving uncited trading advice.
 - [[mark-price-context]]
 - [[funding-carry-watch]]
 - [[receipt-assistant-driver-citations]]
+- [[receipt-assistant-market-driver-drilldowns]]
 
 ## implemented behavior
 
@@ -29,8 +30,8 @@ than giving uncited trading advice.
 - Opens with a receipt-specific summary that cites the receipt change summary,
   saved risk score, live recheck status, and snapshot hash.
 - Quick prompts cover review points, market context, risk drivers,
-  liquidation distance, funding carry, receipt hash scope, and account-value
-  history when loaded.
+  named top-market drilldowns, liquidation distance, funding carry, receipt hash
+  scope, and account-value history when loaded.
 - Free-form questions route through deterministic local logic.
 - Trade-intent questions are refused while still explaining receipt signals.
 - Responses cite local evidence keys such as `receipt_change_summary`,
@@ -44,6 +45,8 @@ than giving uncited trading advice.
 - [[receipt-change-summary]] is now the assistant's primary "what changed" source.
 - [[receipt-assistant-driver-citations]] makes [[receipt-risk-driver-comparison]]
   a direct citation source for driver-specific receipt questions.
+- [[receipt-assistant-market-driver-drilldowns]] extends those citations to
+  individual market rows.
 - [[account-value-timeline]] could later add richer account-history citations if
   the app imports more complete portfolio history.
 - [[portable-receipt-bundle]] lets the same assistant workflow apply after a

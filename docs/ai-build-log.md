@@ -697,3 +697,25 @@ Review the keyword routing for broad terms like `factor` and `exposure`, and con
 - Browser verification used `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_b849aedef1a09287`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Receipt change summary`, `Risk drivers since receipt`, `Receipt risk assistant`, and `Drivers`, clicked `Drivers`, confirmed `Saved top driver`, `Current top driver`, `Top score delta`, `receipt_risk_driver_comparison.top_driver_score_delta`, and the heuristic caveat, asked `Should I increase leverage?`, confirmed the trade-advice refusal, and saw zero severe captured tab logs.
 ### remaining risks:
 The assistant is deterministic local routing and not an LLM. Driver answers inherit the heuristic receipt risk-driver comparison limits: not protocol-official attribution, exact liquidation monitoring, exact funding settlement, or trade advice.
+
+### task id: post-t9 receipt assistant market-driver drilldowns
+### codex mode:
+product iteration + implementation
+### delegated work:
+Extended the receipt risk assistant from aggregate saved-vs-live driver answers into named-market drilldowns from the per-market driver comparison rows.
+### output accepted:
+Added market detection for questions that name a `*-PERP` market or base coin. Named-market answers now cite `receipt_risk_driver_comparison.market_changes`, show saved/current driver rows, score label, primary factor, component scores, notional, listed buffer, daily funding, score/notional/listed-buffer/funding deltas, and whether the row is directly comparable or historical because side/size changed. Added a `Top market` quick prompt when a current top driver market exists. Updated tests, source notes, limitations, knowledge graph, README, demo script, and this handoff.
+### output rejected or changed:
+No LLM API, new endpoint, dependency, trading/exchange endpoint, wallet/RPC flow, backend persistence, or new risk model was added. Browser verification used a fixture-shaped Hyperliquid portable bundle imported through the normal `/receipt/import` UI instead of directly writing localStorage.
+### human review notes:
+Review whether base-coin detection is too broad for short market symbols, and whether the named-market answer should also merge in `Market context since receipt` rows in a later slice.
+### tests/checks run:
+- `node --test src/lib/assistant/receipt-risk-assistant.test.ts` passed: 12 tests, 12 passing.
+- `npm test` passed: 115 tests, 115 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]`.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Receipt change summary`, `Risk drivers since receipt`, `Receipt risk assistant`, and `ETH-PERP`, asked `Why is ETH-PERP the current risk driver?`, confirmed `per-market drilldown`, `Saved row: score`, `Current row:`, `Score delta`, `receipt_risk_driver_comparison.market_changes.ETH-PERP`, the no-advice caveat, and saw zero severe captured tab logs.
+### remaining risks:
+Named-market assistant drilldowns inherit the heuristic receipt risk-driver comparison limits. They cite local per-market rows only and do not model Hyperliquid's exact liquidation engine, margin tiers, live order-book liquidity, exact funding settlement, hidden redacted-share fields, or trade advice.

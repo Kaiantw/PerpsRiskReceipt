@@ -14,6 +14,7 @@ informed it and forward to related feature ideas.
 - [[sources/perp-position-risk-drivers]] - position-level risk attribution notes for notional, liquidation, funding, and unrealized loss drivers.
 - [[sources/perp-receipt-risk-driver-comparison]] - saved-vs-live risk-driver comparison notes for local receipt rechecks.
 - [[sources/perp-receipt-assistant-driver-citations]] - source notes for assistant answers that cite receipt driver comparisons.
+- [[sources/perp-receipt-assistant-market-driver-drilldowns]] - source notes for assistant answers about individual market driver rows.
 - [[sources/perp-account-value-history]] - Hyperliquid portfolio history and drawdown context.
 - [[sources/perp-risk-review-checklist]] - liquidation, funding, leverage, and market-condition review framing.
 - [[sources/perp-receipt-review-assistant]] - receipt-question source notes for hash scope, live recheck review, funding, liquidation, and guardrails.
@@ -37,6 +38,7 @@ informed it and forward to related feature ideas.
 - [[features/receipt-change-summary]] - single live-recheck summary combining position, market, funding, and account-history signals.
 - [[features/receipt-risk-assistant]] - local receipt-page assistant that answers cited questions from the receipt summary and live recheck context.
 - [[features/receipt-assistant-driver-citations]] - receipt assistant answers for saved-vs-current risk-driver questions.
+- [[features/receipt-assistant-market-driver-drilldowns]] - named-market receipt assistant answers from per-market driver rows.
 - [[features/portable-receipt-bundle]] - explicit full-snapshot export/import flow for reviewing local live receipts across browsers.
 - [[features/redacted-receipt-share]] - minimized receipt share that hides raw account and exact position values while preserving a hash reference and risk summary.
 - [[features/redacted-market-context]] - current public Hyperliquid mark, funding, and open-interest context for redacted shares.
@@ -53,3 +55,5 @@ informed it and forward to related feature ideas.
   thresholds without requiring a raw account address.
 - [[features/receipt-assistant-driver-citations]] could later expand into
   side-by-side cited answers for each per-market driver row.
+- [[features/receipt-assistant-market-driver-drilldowns]] could later combine
+  driver rows with mark-price and open-interest row context for the same market.

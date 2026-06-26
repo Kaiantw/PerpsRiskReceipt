@@ -40,5 +40,7 @@ materially, and which markets deserve inspection first.
 
 - [[receipt-assistant-driver-citations]] lets [[receipt-risk-assistant]] cite
   this panel directly.
+- [[receipt-assistant-market-driver-drilldowns]] lets the assistant explain a
+  specific per-market row from this panel.
 - [[receipt-change-summary]] remains the highest-level verdict.
 - [[mark-price-context]] remains the detailed mark/funding/open-interest table.

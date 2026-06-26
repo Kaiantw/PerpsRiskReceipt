@@ -174,7 +174,10 @@ test("surfaces funding deltas from receipt and live recheck", async () => {
         position.funding_8h_bps_user_perspective + 3,
     })),
   } satisfies normalized_account_snapshot;
-  const context = await buildAssistantContext({ receiptSnapshot, currentSnapshot });
+  const context = await buildAssistantContext({
+    receiptSnapshot,
+    currentSnapshot,
+  });
   const response = answerReceiptRiskQuestion({
     context,
     question: "What changed around funding carry?",
@@ -210,6 +213,53 @@ test("answers risk-driver questions from the receipt driver comparison", async (
   );
 });
 
+test("answers market-specific driver drilldown questions", async () => {
+  const context = await buildAssistantContext();
+  const response = answerReceiptRiskQuestion({
+    context,
+    question: "Why is ETH-PERP the current risk driver?",
+  });
+
+  assert.match(response.answer, /ETH-PERP/);
+  assert.match(response.answer, /Saved row: score/);
+  assert.match(response.answer, /Current row: score/);
+  assert.match(response.answer, /Score delta/);
+  assert.match(response.answer, /per-market drilldown/i);
+  assert.ok(
+    response.citations.includes(
+      "receipt_risk_driver_comparison.market_changes.ETH-PERP.driver_score_delta",
+    ),
+  );
+});
+
+test("explains when a named market changed position state", async () => {
+  const receiptSnapshot = loadFixtureAccount("demo-safe-eth-long");
+  const currentSnapshot = {
+    ...receiptSnapshot,
+    positions: receiptSnapshot.positions.map((position) => ({
+      ...position,
+      size: position.size * 2,
+    })),
+  } satisfies normalized_account_snapshot;
+  const context = await buildAssistantContext({ receiptSnapshot, currentSnapshot });
+  const response = answerReceiptRiskQuestion({
+    context,
+    question: "What changed for ETH?",
+  });
+
+  assert.match(response.answer, /ETH-PERP has a different side or size/);
+  assert.match(
+    response.answer,
+    /historical rather than the same live risk object/,
+  );
+  assert.match(response.answer, /Notional delta/);
+  assert.ok(
+    response.citations.includes(
+      "receipt_risk_driver_comparison.market_changes.ETH-PERP.status",
+    ),
+  );
+});
+
 test("suggestions include account history only when context exists", async () => {
   const withoutHistory = getReceiptRiskAssistantSuggestions(
     await buildAssistantContext(),
@@ -220,6 +270,10 @@ test("suggestions include account history only when context exists", async () =>
 
   assert.equal(
     withoutHistory.some((suggestion) => suggestion.id === "drivers"),
+    true,
+  );
+  assert.equal(
+    withoutHistory.some((suggestion) => suggestion.id === "top-driver-market"),
     true,
   );
   assert.equal(

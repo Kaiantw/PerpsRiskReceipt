@@ -27,10 +27,14 @@ the reviewer to scan the table manually.
   closest listed-buffer delta, daily funding delta, and review points.
 - Adds the risk-driver headline to the general review answer.
 - Keeps trade-intent refusals ahead of driver routing.
+- Links forward to named-market drilldowns when the reviewer wants to inspect
+  one market row instead of the aggregate driver summary.
 
 ## related ideas
 
 - [[receipt-risk-driver-comparison]] remains the source panel.
+- [[receipt-assistant-market-driver-drilldowns]] lets the assistant cite
+  individual market rows from that panel.
 - [[receipt-change-summary]] remains the high-level receipt verdict.
 - [[receipt-risk-assistant]] can later become a real LLM layer if the app adds a
   server-side citation and privacy boundary.

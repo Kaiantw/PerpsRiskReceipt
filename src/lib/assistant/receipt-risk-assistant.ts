@@ -1,13 +1,21 @@
 import {
   formatPercentFromBps,
   formatSignedUsd,
+  formatUsd,
   truncateMiddle,
 } from "../formatters.ts";
 import type { receipt_account_value_context } from "../history/receipt-account-value-context.ts";
 import type { market_context } from "../market/market-context.ts";
 import type { risk_receipt } from "../perps/types.ts";
 import type { receipt_change_summary } from "../receipts/receipt-change-summary.ts";
-import type { receipt_risk_driver_comparison } from "../receipts/receipt-risk-driver-comparison.ts";
+import type {
+  receipt_risk_driver_comparison,
+  receipt_risk_driver_market_change,
+} from "../receipts/receipt-risk-driver-comparison.ts";
+import type {
+  position_risk_driver,
+  position_risk_driver_category,
+} from "../risk/position-risk-drivers.ts";
 import type {
   metric_comparison,
   snapshot_comparison,
@@ -53,6 +61,10 @@ function includesAdviceIntent(value: string) {
   return advicePatterns.some((pattern) => pattern.test(value));
 }
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function formatNullableSignedUsd(value: number | null) {
   if (value === null) {
     return "n/a";
@@ -94,6 +106,68 @@ function formatMetricMove(
   formatter: (value: number | null) => string,
 ) {
   return `${formatter(metric.receipt_value)} to ${formatter(metric.current_value)}`;
+}
+
+function formatDriverFactor(category: position_risk_driver_category) {
+  switch (category) {
+    case "liquidation_buffer":
+      return "listed liquidation buffer";
+    case "missing_liquidation":
+      return "missing liquidation price";
+    case "notional_concentration":
+      return "notional exposure";
+    case "funding_cost":
+      return "positive funding cost";
+    case "unrealized_loss":
+      return "unrealized loss";
+  }
+}
+
+function formatDriverRow(
+  label: "Saved" | "Current",
+  driver: position_risk_driver | null,
+) {
+  if (!driver) {
+    return `${label} row: no position driver row.`;
+  }
+
+  const componentScores = [
+    `L ${driver.liquidation_score}`,
+    `N ${driver.notional_score}`,
+    `F ${driver.funding_score}`,
+    `PnL ${driver.unrealized_loss_score}`,
+  ].join(" · ");
+
+  return [
+    `${label} row: score ${driver.driver_score} (${driver.driver_label}), primary factor ${formatDriverFactor(driver.primary_driver)}`,
+    `components ${componentScores}`,
+    `notional ${formatUsd(driver.notional_usd)}`,
+    `listed buffer ${formatPercentFromBps(driver.liquidation_distance_bps)}`,
+    `daily funding ${formatSignedUsd(driver.daily_funding_usd)}`,
+  ].join("; ") + ".";
+}
+
+function getRequestedMarketChange(input: {
+  normalizedQuestion: string;
+  riskDriverComparison: receipt_risk_driver_comparison | null;
+}) {
+  if (!input.riskDriverComparison) {
+    return null;
+  }
+
+  const upperQuestion = input.normalizedQuestion.toUpperCase();
+
+  return (
+    input.riskDriverComparison.market_changes.find((marketChange) => {
+      const market = marketChange.market.toUpperCase();
+      const baseCoin = market.replace(/-PERP$/, "");
+      const baseCoinPattern = new RegExp(`\\b${escapeRegex(baseCoin)}\\b`);
+
+      return (
+        upperQuestion.includes(market) || baseCoinPattern.test(upperQuestion)
+      );
+    }) ?? null
+  );
 }
 
 function getHashStatus(hashVerified: boolean | undefined) {
@@ -194,6 +268,41 @@ function buildDriverAnswer(
       "receipt_risk_driver_comparison.closest_liquidation_distance_delta_bps",
       "receipt_risk_driver_comparison.daily_funding_delta_usd",
       "receipt_risk_driver_comparison.review_points",
+    ],
+  };
+}
+
+function buildMarketDriverAnswer(
+  marketChange: receipt_risk_driver_market_change,
+): receipt_risk_assistant_response {
+  const comparablePositionText =
+    marketChange.status === "same_position"
+      ? "This is the same market/side/size, so the app compares the saved and current driver components directly."
+      : "This position state changed, so the app treats the receipt row as historical rather than the same live risk object.";
+
+  return {
+    answer: [
+      marketChange.summary,
+      comparablePositionText,
+      formatDriverRow("Saved", marketChange.saved_driver),
+      formatDriverRow("Current", marketChange.current_driver),
+      [
+        `Score delta: ${formatSignedNumber(marketChange.driver_score_delta)}.`,
+        `Notional delta: ${formatNullableSignedUsd(marketChange.notional_delta_usd)}.`,
+        `Listed-buffer delta: ${formatSignedPercentFromBps(marketChange.liquidation_distance_delta_bps)}.`,
+        `Daily funding delta: ${formatNullableSignedUsd(marketChange.daily_funding_delta_usd)}.`,
+      ].join(" "),
+      "This is a per-market drilldown from the receipt risk-driver comparison, not protocol-official attribution or a trade recommendation.",
+    ].join(" "),
+    citations: [
+      `receipt_risk_driver_comparison.market_changes.${marketChange.market}.summary`,
+      `receipt_risk_driver_comparison.market_changes.${marketChange.market}.status`,
+      `receipt_risk_driver_comparison.market_changes.${marketChange.market}.saved_driver`,
+      `receipt_risk_driver_comparison.market_changes.${marketChange.market}.current_driver`,
+      `receipt_risk_driver_comparison.market_changes.${marketChange.market}.driver_score_delta`,
+      `receipt_risk_driver_comparison.market_changes.${marketChange.market}.notional_delta_usd`,
+      `receipt_risk_driver_comparison.market_changes.${marketChange.market}.liquidation_distance_delta_bps`,
+      `receipt_risk_driver_comparison.market_changes.${marketChange.market}.daily_funding_delta_usd`,
     ],
   };
 }
@@ -340,6 +449,10 @@ export function answerReceiptRiskQuestion(input: {
   question: string;
 }): receipt_risk_assistant_response {
   const normalizedQuestion = input.question.trim().toLowerCase();
+  const requestedMarketChange = getRequestedMarketChange({
+    normalizedQuestion,
+    riskDriverComparison: input.context.riskDriverComparison ?? null,
+  });
 
   if (normalizedQuestion.length === 0) {
     return buildSummaryAnswer(input.context);
@@ -360,6 +473,10 @@ export function answerReceiptRiskQuestion(input: {
     ])
   ) {
     return buildHashAnswer(input.context);
+  }
+
+  if (requestedMarketChange) {
+    return buildMarketDriverAnswer(requestedMarketChange);
   }
 
   if (
@@ -437,6 +554,8 @@ export function answerReceiptRiskQuestion(input: {
 export function getReceiptRiskAssistantSuggestions(
   context: receipt_risk_assistant_context,
 ): receipt_risk_assistant_suggestion[] {
+  const currentTopDriverMarket =
+    context.riskDriverComparison?.current_top_driver_market ?? null;
   const suggestions = [
     {
       id: "review",
@@ -453,6 +572,15 @@ export function getReceiptRiskAssistantSuggestions(
       label: "Drivers",
       question: "Which risk drivers changed since the receipt?",
     },
+    ...(currentTopDriverMarket
+      ? [
+          {
+            id: "top-driver-market",
+            label: "Top market",
+            question: `Why is ${currentTopDriverMarket} the current risk driver?`,
+          },
+        ]
+      : []),
     {
       id: "liquidation",
       label: "Liquidation",

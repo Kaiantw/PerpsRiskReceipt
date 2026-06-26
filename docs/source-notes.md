@@ -101,6 +101,13 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
   - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
   - https://metamask.io/news/leverage-margin-perpetual-futures-trading
+- docs checked on 2026-06-25 for receipt assistant market-driver drilldowns:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://metamask.io/news/leverage-margin-perpetual-futures-trading
+  - https://metamask.io/news/perpetual-futures-funding-frequency-strategies
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -172,6 +179,8 @@ use this file for external protocol assumptions.
   - trade-intent questions are refused while still explaining the receipt signals.
   - account-value history answers are only available after the receipt account-value context panel has loaded sampled portfolio context.
   - driver-specific answers are available after live recheck and cite saved/current top driver, driver-score delta, gross exposure delta, closest listed-buffer delta, daily funding delta, and driver review points.
+  - named-market driver answers cite the matching `market_changes` row and show saved/current component scores, notional, listed buffer, daily funding, and deltas.
+  - when a named market changes side or size, the assistant must say the row is historical rather than directly comparable as the same risk object.
 - portable receipt bundle assumptions:
   - the bundle is a user-controlled JSON export/import path; it does not call new Hyperliquid endpoints.
   - the bundle contains the full `risk_receipt` snapshot so another browser can recompute the same snapshot hash and render the same local receipt page.

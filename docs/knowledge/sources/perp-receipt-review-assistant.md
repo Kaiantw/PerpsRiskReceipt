@@ -25,11 +25,15 @@
 - Driver-specific answers should cite the receipt risk-driver comparison when
   the question is about top risk, exposure, driver score, listed buffer, or
   funding burden.
+- Named-market answers should cite the matching per-market driver row and state
+  when side or size changes make the row historical rather than directly
+  comparable.
 
 ## linked feature ideas
 
 - [[../features/receipt-risk-assistant]]
 - [[../features/receipt-assistant-driver-citations]]
+- [[../features/receipt-assistant-market-driver-drilldowns]]
 - [[../features/receipt-change-summary]]
 - [[../features/live-receipt-recheck]]
 - [[../features/receipt-account-value-context]]

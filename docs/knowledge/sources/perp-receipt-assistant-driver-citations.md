@@ -23,5 +23,6 @@
 ## linked feature ideas
 
 - [[../features/receipt-assistant-driver-citations]]
+- [[../features/receipt-assistant-market-driver-drilldowns]]
 - [[../features/receipt-risk-assistant]]
 - [[../features/receipt-risk-driver-comparison]]
