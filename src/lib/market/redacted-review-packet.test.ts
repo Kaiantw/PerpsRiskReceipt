@@ -7,6 +7,7 @@ import type { redacted_market_trend } from "./redacted-market-trend.ts";
 import { buildRedactedFreshnessVerdict } from "./redacted-freshness-verdict.ts";
 import { buildRedactedMarketWatchlist } from "./redacted-market-watchlist.ts";
 import { buildRedactedReviewPacket } from "./redacted-review-packet.ts";
+import { buildRedactedSnapshotComparison } from "./redacted-snapshot-comparison.ts";
 
 const redactedBundle: redacted_receipt_bundle = {
   kind: "perps-risk-receipt.redacted.v1",
@@ -151,6 +152,38 @@ const marketTrend: redacted_market_trend = {
   ],
 };
 
+const improvedRedactedBundle: redacted_receipt_bundle = {
+  ...redactedBundle,
+  exported_at_iso: "2026-06-25T12:30:00.000Z",
+  receipt_id: "rr_redacted_packet_improved",
+  snapshot_hash:
+    "0x2222222222222222222222222222222222222222222222222222222222222222",
+  created_at_iso: "2026-06-25T12:30:00.000Z",
+  data_time_iso: "2026-06-25T12:25:00.000Z",
+  aggregate: {
+    ...redactedBundle.aggregate,
+    risk_score: 38,
+    risk_label: "medium",
+    margin_usage_bps: 3_100,
+    min_liquidation_distance_bps: 1_900,
+    account_value_bucket_usd: "$100k-$250k",
+    total_notional_bucket_usd: "$50k-$100k",
+    daily_funding_bucket_usd: "earn $0-$1k",
+    thirty_day_funding_bucket_usd: "cost $0-$1k",
+    position_count: 1,
+  },
+  markets: [
+    {
+      market: "ETH-PERP",
+      side: "long",
+      notional_bucket_usd: "$10k-$50k",
+      liquidation_distance_bps: 1_900,
+      funding_8h_bps_user_perspective: -0.2,
+      open_interest_bucket_usd: "$250k-$1m",
+    },
+  ],
+};
+
 test("builds a copyable redacted markdown packet from disclosed and public context", () => {
   const watchlist = buildRedactedMarketWatchlist({
     bundle: redactedBundle,
@@ -170,10 +203,15 @@ test("builds a copyable redacted markdown packet from disclosed and public conte
     marketTrend,
     watchlist,
     freshnessVerdict,
+    snapshotComparison: buildRedactedSnapshotComparison({
+      firstBundle: redactedBundle,
+      secondBundle: improvedRedactedBundle,
+      nowIso: "2026-06-25T12:40:00.000Z",
+    }),
   });
 
   assert.equal(packet.title, "Redacted review packet for rr_redacted_packet");
-  assert.match(packet.summary, /high 65/);
+  assert.match(packet.summary, /Latest redacted snapshot looks improved/i);
   assert.match(packet.markdown, /## redacted receipt/);
   assert.match(packet.markdown, /snapshot hash reference/);
   assert.match(packet.markdown, /account value bucket: \$50k-\$100k/);
@@ -185,6 +223,11 @@ test("builds a copyable redacted markdown packet from disclosed and public conte
   assert.match(packet.markdown, /## redacted freshness verdict/);
   assert.match(packet.markdown, /label: needs full recheck/);
   assert.match(packet.markdown, /receipt age: 15m/);
+  assert.match(packet.markdown, /## redacted snapshot comparison/);
+  assert.match(packet.markdown, /label: risk improved/);
+  assert.match(packet.markdown, /risk-score delta: -27/);
+  assert.match(packet.markdown, /disclosed buffer moved from 9.00% to 19.00%/);
+  assert.match(packet.markdown, /BTC-PERP: Disclosed market row removed/);
   assert.match(packet.markdown, /## redacted review watchlist/);
   assert.match(packet.markdown, /Adverse trend near disclosed buffer/);
   assert.match(packet.markdown, /hidden full snapshot is required/);
@@ -209,6 +252,8 @@ test("explains missing public context without claiming hash recomputation", () =
   assert.match(packet.markdown, /public 24h trend/);
   assert.match(packet.markdown, /redacted freshness verdict/);
   assert.match(packet.markdown, /status: not computed/);
+  assert.match(packet.markdown, /redacted snapshot comparison/);
+  assert.match(packet.markdown, /status: not loaded/);
   assert.match(packet.markdown, /Load market context or 24h trends/);
   assert.match(packet.markdown, /cannot recompute or verify it/);
   assert.match(packet.markdown, /not protocol-official risk calculations/);

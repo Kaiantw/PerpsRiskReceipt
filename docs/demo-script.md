@@ -77,9 +77,9 @@ Open `http://localhost:3000`.
    - Paste a second redacted share and point out previous/latest receipt ids, risk score delta, changed cue counts, redacted-only freshness movement, disclosed buffer movement, funding bucket movement, and market rows that were added, removed, improved, worsened, or changed.
    - Explain that this is useful for privacy-preserving review of visible risk cues over time, but it cannot prove hidden exact account values changed or recompute the full snapshot hash.
    - Show `Redacted share assistant`.
-   - Click `Freshness`, `Current`, `24h Trend`, `Watchlist`, `Top Cue`, `Funding`, and `Privacy` to show cited answers from disclosed fields and loaded public context.
+   - Click `Compare`, `Freshness`, `Current`, `24h Trend`, `Watchlist`, `Top Cue`, `Funding`, and `Privacy` to show cited answers from disclosed fields, loaded public context, and the loaded redacted comparison.
    - Ask `Should I increase leverage?` and show that it refuses trade recommendations while still explaining visible redacted-share cues.
-   - Show `Redacted review packet`, click `Copy redacted markdown`, and point out that it packages disclosed buckets, loaded public context, freshness verdict, watchlist cues, and hash-reference-only caveats without exposing the full snapshot.
+   - Show `Redacted review packet`, click `Copy redacted markdown`, and point out that it packages disclosed buckets, loaded public context, freshness verdict, redacted snapshot comparison, watchlist cues, and hash-reference-only caveats without exposing the full snapshot.
    - Return to the local receipt, switch to `Full receipt`, click `Copy full bundle`, open `/receipt/import`, paste the bundle, and show the import preview with `Hash verified`.
    - Click `Import receipt` and show that the app opens the same local receipt route in this browser.
    - Show `Receipt account-value context`.

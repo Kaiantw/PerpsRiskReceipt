@@ -116,6 +116,8 @@ export function ReceiptImportClient() {
     useState<redacted_market_context_state>({ status: "idle" });
   const [redactedMarketTrendState, setRedactedMarketTrendState] =
     useState<redacted_market_trend_state>({ status: "idle" });
+  const [redactedSnapshotCompareState, setRedactedSnapshotCompareState] =
+    useState<redacted_snapshot_compare_state>({ status: "empty" });
   const importPreviewRequestIdRef = useRef(0);
   const redactedMarketContextRequestIdRef = useRef(0);
   const redactedMarketTrendRequestIdRef = useRef(0);
@@ -129,6 +131,7 @@ export function ReceiptImportClient() {
     setBundleText(value);
     setRedactedMarketContextState({ status: "idle" });
     setRedactedMarketTrendState({ status: "idle" });
+    setRedactedSnapshotCompareState({ status: "empty" });
 
     if (!value.trim()) {
       setState({ status: "empty" });
@@ -581,18 +584,27 @@ export function ReceiptImportClient() {
               marketTrendState={redactedMarketTrendState}
             />
 
-            <RedactedSnapshotComparePanel bundle={state.bundle} />
+            <RedactedSnapshotComparePanel
+              bundle={state.bundle}
+              compareState={redactedSnapshotCompareState}
+              key={state.bundle.receipt_id}
+              onCompareStateChange={setRedactedSnapshotCompareState}
+            />
 
             <RedactedShareAssistantPanel
               bundle={state.bundle}
+              key={`assistant-${state.bundle.receipt_id}`}
               marketContextState={redactedMarketContextState}
               marketTrendState={redactedMarketTrendState}
+              snapshotCompareState={redactedSnapshotCompareState}
             />
 
             <RedactedReviewPacketPanel
               bundle={state.bundle}
+              key={`packet-${state.bundle.receipt_id}`}
               marketContextState={redactedMarketContextState}
               marketTrendState={redactedMarketTrendState}
+              snapshotCompareState={redactedSnapshotCompareState}
             />
           </section>
         ) : null}
@@ -1001,30 +1013,32 @@ function RedactedFreshnessVerdictPanel({
 
 function RedactedSnapshotComparePanel({
   bundle,
+  compareState,
+  onCompareStateChange,
 }: {
   bundle: redacted_receipt_bundle;
+  compareState: redacted_snapshot_compare_state;
+  onCompareStateChange: (state: redacted_snapshot_compare_state) => void;
 }) {
   const [compareText, setCompareText] = useState("");
-  const [compareState, setCompareState] =
-    useState<redacted_snapshot_compare_state>({ status: "empty" });
 
   function updateCompareText(value: string) {
     setCompareText(value);
 
     if (!value.trim()) {
-      setCompareState({ status: "empty" });
+      onCompareStateChange({ status: "empty" });
       return;
     }
 
     const parsed = parsePortableReceiptBundleJson(value);
 
     if (parsed.status === "invalid") {
-      setCompareState({ status: "invalid", message: parsed.message });
+      onCompareStateChange({ status: "invalid", message: parsed.message });
       return;
     }
 
     if (!isRedactedReceiptBundle(parsed.bundle)) {
-      setCompareState({
+      onCompareStateChange({
         status: "invalid",
         message:
           "Paste a redacted receipt bundle. Full bundles should be imported separately for hash recomputation.",
@@ -1032,7 +1046,7 @@ function RedactedSnapshotComparePanel({
       return;
     }
 
-    setCompareState({
+    onCompareStateChange({
       status: "ready",
       comparison: buildRedactedSnapshotComparison({
         firstBundle: bundle,
@@ -1265,10 +1279,12 @@ function RedactedShareAssistantPanel({
   bundle,
   marketContextState,
   marketTrendState,
+  snapshotCompareState,
 }: {
   bundle: redacted_receipt_bundle;
   marketContextState: redacted_market_context_state;
   marketTrendState: redacted_market_trend_state;
+  snapshotCompareState: redacted_snapshot_compare_state;
 }) {
   const [question, setQuestion] = useState("");
   const [response, setResponse] =
@@ -1296,6 +1312,10 @@ function RedactedShareAssistantPanel({
     marketTrend,
     watchlist,
     freshnessVerdict,
+    snapshotComparison:
+      snapshotCompareState.status === "ready"
+        ? snapshotCompareState.comparison
+        : undefined,
   };
   const suggestions = getRedactedShareAssistantSuggestions(assistantContext);
 
@@ -1316,7 +1336,8 @@ function RedactedShareAssistantPanel({
           <h3 className="text-base font-semibold">Redacted share assistant</h3>
           <p className="mt-1 text-sm text-stone-600">
             Ask cited questions about the disclosed fields, loaded public market
-            context, 24h trend, watchlist, hash scope, and privacy boundary.
+            context, 24h trend, watchlist, redacted comparison, hash scope, and
+            privacy boundary.
           </p>
         </div>
         <span className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-semibold uppercase text-stone-600">
@@ -1396,10 +1417,12 @@ function RedactedReviewPacketPanel({
   bundle,
   marketContextState,
   marketTrendState,
+  snapshotCompareState,
 }: {
   bundle: redacted_receipt_bundle;
   marketContextState: redacted_market_context_state;
   marketTrendState: redacted_market_trend_state;
+  snapshotCompareState: redacted_snapshot_compare_state;
 }) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
     "idle",
@@ -1427,6 +1450,10 @@ function RedactedReviewPacketPanel({
     marketTrend,
     watchlist,
     freshnessVerdict,
+    snapshotComparison:
+      snapshotCompareState.status === "ready"
+        ? snapshotCompareState.comparison
+        : undefined,
   });
 
   async function copyPacketMarkdown() {

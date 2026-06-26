@@ -22,6 +22,7 @@ the two timestamped public summaries without exposing the hidden full snapshots.
 - [[redacted-market-watchlist]]
 - [[redacted-review-packet]]
 - [[redacted-share-assistant]]
+- [[redacted-comparison-assistant-packet]]
 
 ## implemented behavior
 
@@ -40,6 +41,8 @@ the two timestamped public summaries without exposing the hidden full snapshots.
   `risk_changed`, `unchanged`, or `not_comparable`.
 - Uses field-style citations and copy that points to full bundles or live
   recheck for exact hidden-state proof.
+- Shares the comparison result with the redacted share assistant and redacted
+  review packet once the comparison is loaded.
 - Does not change the portable bundle format and does not send a raw account
   address.
 
@@ -50,6 +53,8 @@ the two timestamped public summaries without exposing the hidden full snapshots.
   in the comparison.
 - [[redacted-market-watchlist]] remains the public-context watchlist for a single
   loaded redacted receipt.
-- [[redacted-review-packet]] could later include a copyable comparison section.
-- [[redacted-share-assistant]] could later answer comparison questions once the
-  UI stores comparison context for the assistant.
+- [[redacted-comparison-assistant-packet]] carries the loaded comparison into
+  cited assistant answers and copyable markdown.
+- [[redacted-review-packet]] includes the copyable comparison section.
+- [[redacted-share-assistant]] answers comparison questions once comparison
+  context is loaded.

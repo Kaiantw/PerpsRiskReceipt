@@ -18,12 +18,14 @@ hash-reference-only caveats.
 - [[../sources/redacted-receipt-sharing]]
 - [[../sources/redacted-market-watchlist]]
 - [[../sources/redacted-freshness-verdict]]
+- [[../sources/redacted-comparison-assistant-packet]]
 - [[redacted-receipt-share]]
 - [[redacted-market-context]]
 - [[redacted-market-trend]]
 - [[redacted-market-watchlist]]
 - [[redacted-freshness-verdict]]
 - [[redacted-snapshot-comparison]]
+- [[redacted-comparison-assistant-packet]]
 - [[redacted-share-assistant]]
 - [[receipt-review-packet]]
 
@@ -40,6 +42,10 @@ hash-reference-only caveats.
   loaded.
 - Includes the redacted freshness verdict when computed, including label,
   receipt age, signal score, driver counts, summary, and capped top drivers.
+- Includes the redacted snapshot comparison when loaded, including
+  previous/latest receipt ids, timestamps, risk-score delta, cue counts,
+  redacted-only freshness movement, notable metric movement, disclosed
+  market-row changes, review points, and limits.
 - Includes redacted review watchlist label, counts, and capped top cues.
 - Explicitly says the packet cannot recompute or verify the hidden full snapshot
   hash and is not a trading recommendation.
@@ -52,8 +58,8 @@ hash-reference-only caveats.
 - [[redacted-market-watchlist]] ranks public/disclosed review cues.
 - [[redacted-freshness-verdict]] supplies the reviewable/stale/full-recheck
   verdict.
-- [[redacted-snapshot-comparison]] could later add a copyable compare section for
-  two redacted shares.
+- [[redacted-comparison-assistant-packet]] carries loaded comparison context into
+  this copyable markdown packet.
 - [[redacted-share-assistant]] answers cited questions from the same public and
   disclosed fields.
 - [[receipt-review-packet]] is the full-snapshot sibling used after local live

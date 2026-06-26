@@ -18,6 +18,12 @@ import type {
   redacted_freshness_verdict,
   redacted_freshness_verdict_driver,
 } from "./redacted-freshness-verdict.ts";
+import type {
+  redacted_snapshot_comparison,
+  redacted_snapshot_comparison_direction,
+  redacted_snapshot_comparison_metric,
+  redacted_snapshot_market_change,
+} from "./redacted-snapshot-comparison.ts";
 
 export type redacted_review_packet = {
   title: string;
@@ -31,10 +37,13 @@ export function buildRedactedReviewPacket(input: {
   marketTrend?: redacted_market_trend;
   watchlist: redacted_market_watchlist;
   freshnessVerdict?: redacted_freshness_verdict;
+  snapshotComparison?: redacted_snapshot_comparison;
 }): redacted_review_packet {
   const title = `Redacted review packet for ${input.bundle.receipt_id}`;
   const summary = `${input.bundle.aggregate.risk_label} ${input.bundle.aggregate.risk_score} redacted receipt. ${
-    input.freshnessVerdict?.headline ?? input.watchlist.headline
+    input.snapshotComparison?.headline ??
+    input.freshnessVerdict?.headline ??
+    input.watchlist.headline
   }`;
   const markdown = [
     `# ${title}`,
@@ -63,6 +72,7 @@ export function buildRedactedReviewPacket(input: {
     ...formatMarketContextSection(input.marketContext),
     ...formatMarketTrendSection(input.marketTrend),
     ...formatFreshnessVerdictSection(input.freshnessVerdict),
+    ...formatSnapshotComparisonSection(input.snapshotComparison),
     "## redacted review watchlist",
     `- label: ${input.watchlist.label.replaceAll("_", " ")}`,
     `- headline: ${input.watchlist.headline}`,
@@ -73,12 +83,81 @@ export function buildRedactedReviewPacket(input: {
     "- this packet is a public/redacted communication summary, not a full receipt bundle.",
     "- hidden fields include the raw account address, exact account value, exact position sizes, entry prices, saved mark prices, listed liquidation prices, PnL, and exact funding dollars.",
     "- the snapshot hash is preserved as a reference, but this redacted packet cannot recompute or verify it.",
+    "- redacted snapshot comparison uses visible minimized fields only and cannot prove hidden exact account movement.",
     "- public market context uses disclosed markets only and does not use a raw account address.",
     "- review cues are heuristic context, not protocol-official risk calculations or trading advice.",
     "",
   ].join("\n");
 
   return { title, summary, markdown };
+}
+
+function formatSnapshotComparisonSection(
+  snapshotComparison: redacted_snapshot_comparison | undefined,
+) {
+  if (!snapshotComparison) {
+    return [
+      "## redacted snapshot comparison",
+      "- status: not loaded",
+      "- note: paste a second redacted bundle on the import page to include visible previous-versus-latest risk cue movement.",
+      "",
+    ];
+  }
+
+  const changedMetrics = snapshotComparison.metrics.filter(
+    (metric) => metric.direction !== "unchanged",
+  );
+  const metricsToShow = (changedMetrics.length > 0
+    ? changedMetrics
+    : snapshotComparison.metrics
+  ).slice(0, 6);
+
+  return [
+    "## redacted snapshot comparison",
+    `- label: ${snapshotComparison.label.replaceAll("_", " ")}`,
+    `- headline: ${snapshotComparison.headline}`,
+    `- previous receipt: ${snapshotComparison.previous_receipt_id}`,
+    `- latest receipt: ${snapshotComparison.latest_receipt_id}`,
+    `- previous data timestamp: ${snapshotComparison.previous_data_time_iso}`,
+    `- latest data timestamp: ${snapshotComparison.latest_data_time_iso}`,
+    `- risk-score delta: ${formatSignedNumber(snapshotComparison.risk_score_delta)}`,
+    `- cue counts: ${snapshotComparison.worsened_count} worsened, ${snapshotComparison.improved_count} improved, ${snapshotComparison.changed_count} changed, ${snapshotComparison.unchanged_count} unchanged`,
+    `- redacted-only freshness: ${snapshotComparison.previous_freshness_verdict.label.replaceAll(
+      "_",
+      " ",
+    )} -> ${snapshotComparison.latest_freshness_verdict.label.replaceAll(
+      "_",
+      " ",
+    )}`,
+    ...metricsToShow.map(formatSnapshotComparisonMetric),
+    ...formatSnapshotMarketChanges(snapshotComparison.market_changes),
+    ...snapshotComparison.review_points
+      .slice(0, 3)
+      .map((point) => `- review: ${point}`),
+    "- limit: this compares visible redacted fields only; use full bundles or a live recheck for exact hidden-state proof.",
+    "",
+  ];
+}
+
+function formatSnapshotComparisonMetric(
+  metric: redacted_snapshot_comparison_metric,
+) {
+  return `- [${formatSnapshotDirection(metric.direction)}] ${metric.label}: ${metric.previous_value} -> ${metric.latest_value}; ${metric.detail}`;
+}
+
+function formatSnapshotMarketChanges(
+  marketChanges: redacted_snapshot_market_change[],
+) {
+  if (marketChanges.length === 0) {
+    return ["- disclosed market rows: no visible row changes"];
+  }
+
+  return marketChanges
+    .slice(0, 6)
+    .map(
+      (change) =>
+        `- [${formatSnapshotDirection(change.direction)}] ${change.market}: ${change.title}; ${change.detail}`,
+    );
 }
 
 function formatFreshnessVerdictSection(
@@ -233,4 +312,18 @@ function formatNullableUsd(value: number | null) {
     maximumFractionDigits: 2,
     minimumFractionDigits: 2,
   })}`;
+}
+
+function formatSnapshotDirection(
+  direction: redacted_snapshot_comparison_direction,
+) {
+  return direction.replaceAll("_", " ");
+}
+
+function formatSignedNumber(value: number) {
+  if (value === 0) {
+    return "0";
+  }
+
+  return `${value > 0 ? "+" : ""}${value}`;
 }

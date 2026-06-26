@@ -15,6 +15,13 @@ import type {
   redacted_freshness_verdict_driver,
 } from "../market/redacted-freshness-verdict.ts";
 import type {
+  redacted_snapshot_comparison,
+  redacted_snapshot_comparison_direction,
+  redacted_snapshot_comparison_label,
+  redacted_snapshot_comparison_metric,
+  redacted_snapshot_market_change,
+} from "../market/redacted-snapshot-comparison.ts";
+import type {
   redacted_receipt_bundle,
   redacted_receipt_market,
 } from "../receipts/portable-receipt-bundle.ts";
@@ -25,6 +32,7 @@ export type redacted_share_assistant_context = {
   marketTrend?: redacted_market_trend;
   watchlist: redacted_market_watchlist;
   freshnessVerdict?: redacted_freshness_verdict;
+  snapshotComparison?: redacted_snapshot_comparison;
 };
 
 export type redacted_share_assistant_response = {
@@ -120,6 +128,26 @@ function formatFreshnessVerdictLabel(
   return label.replaceAll("_", " ");
 }
 
+function formatSnapshotComparisonLabel(
+  label: redacted_snapshot_comparison_label,
+) {
+  return label.replaceAll("_", " ");
+}
+
+function formatSnapshotDirection(
+  direction: redacted_snapshot_comparison_direction,
+) {
+  return direction.replaceAll("_", " ");
+}
+
+function formatSignedNumber(value: number) {
+  if (value === 0) {
+    return "0";
+  }
+
+  return `${value > 0 ? "+" : ""}${value}`;
+}
+
 function getContextRowByMarket(
   marketContext: redacted_market_context | undefined,
   market: string,
@@ -184,6 +212,18 @@ function formatFreshnessDriver(driver: redacted_freshness_verdict_driver) {
   const reviewPoints = driver.review_points.join(" ");
 
   return `${driver.severity.toUpperCase()}: ${driver.title}. ${driver.detail} Review: ${reviewPoints}`;
+}
+
+function formatComparisonMetric(
+  metric: redacted_snapshot_comparison_metric,
+) {
+  return `${metric.label} ${formatSnapshotDirection(metric.direction)}: ${metric.detail}`;
+}
+
+function formatComparisonMarketChange(
+  change: redacted_snapshot_market_change,
+) {
+  return `${change.market} ${formatSnapshotDirection(change.direction)}: ${change.title}. ${change.detail}`;
 }
 
 function formatMarketContextRow(row: redacted_market_context_row | null) {
@@ -263,6 +303,11 @@ function buildSummaryAnswer(
             context.freshnessVerdict.label,
           )}; ${context.freshnessVerdict.headline}`
         : "Freshness verdict: not computed.",
+      context.snapshotComparison
+        ? `Snapshot comparison: ${formatSnapshotComparisonLabel(
+            context.snapshotComparison.label,
+          )}; ${context.snapshotComparison.headline}`
+        : "Snapshot comparison: not loaded.",
       "This assistant can explain disclosed fields and loaded public market context, but it cannot recompute hidden snapshot hashes or recommend trades.",
     ].join(" "),
     citations: [
@@ -282,7 +327,84 @@ function buildSummaryAnswer(
             "redacted_freshness_verdict.headline",
           ]
         : []),
+      ...(context.snapshotComparison
+        ? [
+            "redacted_snapshot_comparison.label",
+            "redacted_snapshot_comparison.headline",
+          ]
+        : []),
       "redacted_receipt.verification_scope",
+    ],
+  };
+}
+
+function buildSnapshotComparisonAnswer(input: {
+  context: redacted_share_assistant_context;
+  requestedMarket: redacted_receipt_market | null;
+}): redacted_share_assistant_response {
+  const comparison = input.context.snapshotComparison;
+
+  if (!comparison) {
+    return {
+      answer:
+        "No redacted snapshot comparison is loaded. Paste a second redacted bundle in Redacted snapshot compare to ask what changed between the previous and latest visible risk cues.",
+      citations: ["redacted_snapshot_comparison"],
+    };
+  }
+
+  const metrics = comparison.metrics.filter(
+    (metric) => metric.direction !== "unchanged",
+  );
+  const notableMetrics = (metrics.length > 0
+    ? metrics
+    : comparison.metrics
+  ).slice(0, 4);
+  const marketChanges = input.requestedMarket
+    ? comparison.market_changes.filter(
+        (change) => change.market === input.requestedMarket?.market,
+      )
+    : comparison.market_changes;
+  const displayedMarketChanges = marketChanges.slice(0, 4);
+  const metricCopy =
+    notableMetrics.length === 0
+      ? "No visible redacted metric changes were available."
+      : notableMetrics.map(formatComparisonMetric).join(" ");
+  const marketCopy =
+    displayedMarketChanges.length === 0
+      ? input.requestedMarket
+        ? `No disclosed comparison row changed for ${input.requestedMarket.market}.`
+        : "No disclosed market-row changes were visible."
+      : displayedMarketChanges.map(formatComparisonMarketChange).join(" ");
+
+  return {
+    answer: [
+      `${comparison.headline} Label: ${formatSnapshotComparisonLabel(
+        comparison.label,
+      )}; risk-score delta ${formatSignedNumber(
+        comparison.risk_score_delta,
+      )}.`,
+      `Previous receipt ${comparison.previous_receipt_id} at ${comparison.previous_data_time_iso}; latest receipt ${comparison.latest_receipt_id} at ${comparison.latest_data_time_iso}.`,
+      `Visible cue counts: ${comparison.worsened_count} worsened, ${comparison.improved_count} improved, ${comparison.changed_count} changed, ${comparison.unchanged_count} unchanged.`,
+      `Redacted-only freshness moved from ${formatFreshnessVerdictLabel(
+        comparison.previous_freshness_verdict.label,
+      )} to ${formatFreshnessVerdictLabel(
+        comparison.latest_freshness_verdict.label,
+      )}.`,
+      metricCopy,
+      marketCopy,
+      comparison.review_points.join(" "),
+      "This compares redacted visible fields only; use full bundles or a live recheck for exact hidden-state proof.",
+    ].join(" "),
+    citations: [
+      "redacted_snapshot_comparison.label",
+      "redacted_snapshot_comparison.risk_score_delta",
+      "redacted_snapshot_comparison.previous_receipt_id",
+      "redacted_snapshot_comparison.latest_receipt_id",
+      "redacted_snapshot_comparison.previous_freshness_verdict.label",
+      "redacted_snapshot_comparison.latest_freshness_verdict.label",
+      "redacted_snapshot_comparison.review_points",
+      ...notableMetrics.flatMap((metric) => metric.citations),
+      ...displayedMarketChanges.flatMap((change) => change.citations),
     ],
   };
 }
@@ -638,6 +760,29 @@ export function answerRedactedShareQuestion(input: {
 
   if (
     includesAny(normalizedQuestion, [
+      "comparison",
+      "compare",
+      "changed",
+      "changes",
+      "what changed",
+      "between",
+      "previous",
+      "latest",
+      "improved",
+      "worsened",
+      "risk delta",
+      "score delta",
+      "snapshot compare",
+    ])
+  ) {
+    return buildSnapshotComparisonAnswer({
+      context: input.context,
+      requestedMarket,
+    });
+  }
+
+  if (
+    includesAny(normalizedQuestion, [
       "hash",
       "verify",
       "verified",
@@ -755,6 +900,15 @@ export function getRedactedShareAssistantSuggestions(
       label: "Summary",
       question: "Summarize this redacted share.",
     },
+    ...(context.snapshotComparison
+      ? [
+          {
+            id: "comparison",
+            label: "Compare",
+            question: "What changed between these redacted snapshots?",
+          },
+        ]
+      : []),
     {
       id: "watchlist",
       label: "Watchlist",

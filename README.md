@@ -23,7 +23,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - Redacted freshness verdict that classifies a share as reviewable, stale but informative, or needing full recheck using receipt age, disclosed buffers, loaded public market context, 24h trends, funding movement, and watchlist severity.
 - Redacted snapshot comparison that accepts a second redacted share and shows visible risk cue movement without exposing hidden account fields.
 - Redacted review packet that copies a markdown summary of disclosed buckets, public market context, 24h trend context, freshness verdict, watchlist cues, and hash-reference-only caveats.
-- Redacted share assistant that answers cited questions from disclosed fields, loaded public current/trend context, freshness verdict, and redacted watchlist cues without using hidden account data.
+- Redacted share assistant that answers cited questions from disclosed fields, loaded public current/trend context, freshness verdict, redacted snapshot comparison, and redacted watchlist cues without using hidden account data.
 - Live receipt recheck that compares a saved receipt against a fresh read-only Hyperliquid snapshot.
 - Receipt change summary that combines live recheck, market context, funding movement, position changes, and sampled account-value context into one quick read.
 - Receipt risk-driver comparison that shows whether the saved top driver, driver score, gross exposure, listed buffer, and funding burden changed after live recheck.
@@ -81,7 +81,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/lib/market/redacted-market-watchlist.ts` derives review cues over disclosed redacted receipt fields plus loaded public market context.
 - `src/lib/market/redacted-freshness-verdict.ts` classifies redacted shares as reviewable, stale but informative, or needing full recheck using disclosed fields and loaded public context.
 - `src/lib/market/redacted-snapshot-comparison.ts` compares two redacted shares by visible buckets, disclosed buffers, redacted-only freshness, watch severity, funding, and market rows.
-- `src/lib/market/redacted-review-packet.ts` builds a copyable public markdown packet for redacted shares, including the freshness verdict when computed.
+- `src/lib/market/redacted-review-packet.ts` builds a copyable public markdown packet for redacted shares, including the freshness verdict and snapshot comparison when computed.
 - `src/lib/assistant/risk-assistant.ts` contains dependency-free assistant response logic and guardrails.
 - `src/lib/assistant/receipt-risk-assistant.ts` contains dependency-free receipt assistant response logic and guardrails.
 - `src/lib/assistant/redacted-share-assistant.ts` contains dependency-free redacted share assistant response logic, citations, and guardrails.
@@ -137,8 +137,8 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - Redacted market watchlist is heuristic review triage over loaded public context and disclosed redacted fields; it does not prove hidden state or recommend trades.
 - Redacted freshness verdict is a heuristic review classifier over receipt age, disclosed buffer, public context, 24h trend, funding movement, and watchlist severity; it cannot prove hidden state or replace a full recheck.
 - Redacted snapshot comparison is heuristic redacted-only review context; it cannot prove hidden snapshots changed, recompute hashes, or certify exact account improvement/worsening.
-- Redacted review packets are public markdown summaries over disclosed fields and loaded public context; they cannot recompute or verify the hidden full snapshot hash.
-- Redacted share assistant answers only from disclosed redacted fields, loaded public context, freshness verdict, and watchlist cues; it does not call an LLM, inspect hidden state, or recommend trades.
+- Redacted review packets are public markdown summaries over disclosed fields, loaded public context, and optional redacted comparison context; they cannot recompute or verify the hidden full snapshot hash.
+- Redacted share assistant answers only from disclosed redacted fields, loaded public context, freshness verdict, redacted snapshot comparison, and watchlist cues; it does not call an LLM, inspect hidden state, or recommend trades.
 - Redacted receipt shares are not cryptographic selective disclosure proofs; full bundles are still required when a reviewer needs to recompute the snapshot hash, import the receipt, run live recheck, generate EAS fallback payloads, or use the receipt assistant context.
 - Full portable receipt bundles are explicit full-snapshot exports. They solve cross-browser review for local receipts, but they are not encrypted, selectively disclosed, or access-controlled.
 
@@ -174,7 +174,7 @@ Use `docs/demo-script.md` for the reviewer-facing script. The short version:
 5. Create a fixture receipt.
 6. Open the receipt page and show hash verification.
 7. Show the EAS fallback payload and documented manual attestation steps.
-8. Optionally paste a Hyperliquid address, show account value history/drawdown context, create a local live receipt, export a redacted receipt share, inspect it at `/receipt/import`, load current public market context and 24h trend history for the redacted markets, show the redacted review watchlist and freshness verdict, paste a second redacted share into the redacted snapshot compare panel, ask the redacted share assistant about freshness/current market context/watchlist/funding/privacy, show the redacted review packet, switch to full bundle export/import when hash recomputation is needed, show receipt account-value context, run `Recheck live account`, show local recheck history and the `Rechecks` assistant prompt, show the receipt change summary, market regime, regime by market, risk-driver comparison, market context, load the volatility buffer, show the volatility cue in the recheck watchlist and assistant, review thresholds, show the review packet's local-history trend section, and show that hash verification still works while the app compares the saved receipt with current live market context.
+8. Optionally paste a Hyperliquid address, show account value history/drawdown context, create a local live receipt, export a redacted receipt share, inspect it at `/receipt/import`, load current public market context and 24h trend history for the redacted markets, show the redacted review watchlist and freshness verdict, paste a second redacted share into the redacted snapshot compare panel, ask the redacted share assistant about the comparison/freshness/current market context/watchlist/funding/privacy, show the redacted review packet's comparison section, switch to full bundle export/import when hash recomputation is needed, show receipt account-value context, run `Recheck live account`, show local recheck history and the `Rechecks` assistant prompt, show the receipt change summary, market regime, regime by market, risk-driver comparison, market context, load the volatility buffer, show the volatility cue in the recheck watchlist and assistant, review thresholds, show the review packet's local-history trend section, and show that hash verification still works while the app compares the saved receipt with current live market context.
 
 ## Known Limitations
 
@@ -188,8 +188,8 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 - Redacted market watchlist is heuristic public-context triage only and cannot prove hidden state, recompute hashes, or monitor exact liquidation state.
 - Redacted freshness verdict is heuristic public/disclosed context only and cannot prove hidden state, recompute hashes, or certify that a stale receipt is current.
 - Redacted snapshot comparison is redacted-only heuristic review context and cannot prove exact hidden field changes, recompute hidden hashes, or replace full bundles/live rechecks.
-- Redacted review packet is public markdown context only and cannot recompute hidden hashes or replace a full portable bundle.
-- Redacted share assistant is a deterministic local explanation layer over disclosed/public fields only; it is not a hidden-state verifier, live alert, LLM, or financial adviser.
+- Redacted review packet is public markdown context only, including any loaded redacted comparison, and cannot recompute hidden hashes or replace a full portable bundle.
+- Redacted share assistant is a deterministic local explanation layer over disclosed/public/comparison fields only; it is not a hidden-state verifier, live alert, LLM, or financial adviser.
 - Position risk drivers are heuristic and do not prove protocol-official risk attribution.
 - Receipt risk-driver comparison is heuristic saved-vs-live attribution and cannot compare changed positions as the same risk object.
 - Receipt recheck watchlist is heuristic triage only, including any loaded volatility-buffer cues, and cannot prove exact liquidation state, funding settlement, or what a trader should do next.

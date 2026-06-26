@@ -1072,3 +1072,25 @@ Review whether the comparison should require same snapshot hash lineage or accou
 - Browser verification used `http://localhost:3000/receipt/import`, pasted a generated Hyperliquid-shaped redacted bundle for `rr_browser_previous_compare`, confirmed `Redacted snapshot compare` rendered, pasted a second redacted bundle for `rr_browser_latest_improved_compare`, confirmed the comparison showed the improved headline, `risk improved` badge, `-36` risk-score delta, 7.00% to 20.00% disclosed buffer movement, ETH-PERP funding movement, BTC-PERP removed row, no visible private full-snapshot field names, and zero browser console errors.
 ### remaining risks:
 The redacted snapshot comparison is heuristic public/disclosed context only. It cannot inspect hidden account state, prove exact account improvement or worsening, compare hidden exact values, recompute hidden full-snapshot hashes, provide cryptographic selective disclosure, monitor exact liquidation state, or tell a trader what to do next. Redacted-only freshness in this comparison does not load current public market context; it uses the redacted bundle and disclosed watch cues only.
+
+### task id: post-t9 redacted comparison assistant + packet
+### codex mode:
+product iteration + implementation
+### delegated work:
+Fed loaded redacted snapshot comparison context into the redacted share assistant and copyable redacted review packet so reviewers can ask or copy "what changed between these two redacted shares?" without exposing full snapshots.
+### output accepted:
+The import page now keeps the loaded redacted snapshot comparison in parent state and resets it when the primary bundle changes. The redacted share assistant receives that comparison, shows a `Compare` prompt only when comparison context is loaded, answers comparison questions with previous/latest receipt ids, timestamps, risk-score delta, visible cue counts, redacted-only freshness movement, notable metric movement, disclosed market-row changes, review points, and citations. It also explains when no comparison is loaded. The redacted review packet now includes a `redacted snapshot comparison` section with loaded comparison details or a not-loaded fallback. README, demo script, source notes, known limitations, and the knowledge graph now document the feature and source-backed assumptions.
+### output rejected or changed:
+No new endpoint, dependency, bundle format, backend store, LLM API, wallet/RPC flow, trading/exchange endpoint, raw account lookup, exact Hyperliquid liquidation formula, protocol-official risk claim, or cryptographic selective-disclosure proof was added. A broad `change` assistant trigger was avoided because it could catch unrelated words such as `exchange`; comparison routing uses more specific comparison/change terms.
+### human review notes:
+Review whether the `Compare` prompt should remain hidden until a second redacted bundle is pasted or appear disabled with a hint. Review whether the redacted packet should always include the not-loaded comparison section or omit it for shorter public sharing. Review whether comparison labels should require a stronger same-account commitment before saying improved or worsened.
+### tests/checks run:
+- `node --test src/lib/assistant/redacted-share-assistant.test.ts src/lib/market/redacted-review-packet.test.ts src/lib/market/redacted-snapshot-comparison.test.ts` passed: 19 tests, 19 passing.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 176 tests, 176 passing.
+- `npm run build` passed and listed `/`, `/receipt/import`, `/receipt/local/[id]`, `/api/hyperliquid/markets`, `/api/hyperliquid/market-history`, `/api/hyperliquid/portfolio`, `/api/hyperliquid/snapshot`, and the fixture receipt routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted generated Hyperliquid-shaped redacted bundles for `rr_browser_previous_compare` and `rr_browser_latest_improved_compare`, confirmed the page showed an improved latest-snapshot summary, `risk improved` badge, `-36` risk-score delta, 7.00% to 20.00% disclosed buffer movement, ETH-PERP funding movement, and BTC-PERP removed row. It then clicked the assistant `Compare` prompt, confirmed the answer included `risk-score delta -36`, previous/latest receipt ids, comparison citations, and visible-fields-only caveat, clicked `Copy redacted markdown`, confirmed the clipboard contained `## redacted snapshot comparison`, `risk-score delta: -36`, BTC-PERP removal, and no private full-snapshot field names, with zero captured browser console errors.
+### remaining risks:
+Comparison-aware assistant answers and packets remain heuristic redacted-only review context. They cannot inspect hidden account state, prove exact account improvement or worsening, compare hidden exact values, recompute hidden full-snapshot hashes, provide cryptographic selective disclosure, monitor exact liquidation state, load current market context by themselves, or tell a trader what to do next.

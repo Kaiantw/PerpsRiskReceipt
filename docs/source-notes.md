@@ -114,6 +114,14 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
   - https://w3c-ccg.github.io/data-minimization/
+- docs checked on 2026-06-26 for redacted comparison assistant and packet:
+  - https://www.binance.com/en/academy/articles/what-is-a-trading-journal-and-how-to-use-one
+  - https://www.cmegroup.com/education/courses/things-to-know-before-trading-cme-futures/position-and-risk-management
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://metamask.io/news/cross-vs-isolated-margin-perps
+  - https://metamask.io/news/perpetual-futures-liquidation-mechanics
+  - https://www.w3.org/TR/vc-data-model-2.0/
+  - https://www.w3.org/TR/privacy-principles/
 - docs checked on 2026-06-25 for position risk drivers:
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
@@ -331,17 +339,22 @@ use this file for external protocol assumptions.
 - redacted review packet assumptions:
   - the packet is deterministic markdown built from the redacted bundle plus already-loaded public current market context, public 24-hour trend context, and redacted watchlist cues.
   - it does not call a new endpoint, change the redacted bundle format, store packet state, or send a raw account address.
-  - it includes disclosed bucketed receipt fields, disclosed market rows, optional public market/trend rows, watchlist counts/items, and hash-reference-only caveats.
+  - it includes disclosed bucketed receipt fields, disclosed market rows, optional public market/trend rows, optional redacted snapshot comparison, watchlist counts/items, and hash-reference-only caveats.
   - it does not include raw local receipt history, raw account identifiers, exact account value, exact position sizes, saved mark prices, listed liquidation prices, PnL, exact funding dollars, or hidden full-snapshot fields.
   - the snapshot hash is preserved as a reference only; the hidden full snapshot remains required for recomputation.
   - the packet is a public communication summary only, not cryptographic selective disclosure, a Verifiable Credential, an EAS private-data proof, exact liquidation monitoring, or trading advice.
 - redacted share assistant assumptions:
   - the assistant is deterministic local explanation logic; it does not call an LLM, backend assistant endpoint, wallet, or trading endpoint.
-  - answers cite disclosed redacted receipt fields, loaded public current market context, loaded public 24-hour trend context, and redacted watchlist items.
+  - answers cite disclosed redacted receipt fields, loaded public current market context, loaded public 24-hour trend context, redacted watchlist items, and optional redacted snapshot comparison fields.
   - unloaded public context stays explicit as not loaded; the assistant does not invent current mark, funding, open-interest, or trend reads.
+  - unloaded comparison context stays explicit as not loaded; the assistant does not invent previous-versus-latest movement unless a second redacted bundle has been pasted.
   - named-market answers use disclosed markets only and do not reveal exact size, saved mark, listed liquidation price, PnL, raw account, or exact account equity.
   - hash/privacy answers explain that the snapshot hash is a reference only and that a full portable receipt bundle is required for recomputation.
   - trade, leverage, hedge, and position-change questions are refused while visible review signals are still explained.
+- redacted comparison assistant and packet assumptions:
+  - comparison context is browser-local import-page state derived from two redacted bundles; it does not change the portable bundle format or call a new endpoint.
+  - assistant comparison answers and packet comparison sections include previous/latest receipt ids, timestamps, risk-score delta, visible cue counts, redacted-only freshness, notable visible metrics, disclosed market-row changes, and review points.
+  - comparison answers and packets remain heuristic redacted-only review context; they cannot prove hidden exact account movement, recompute hidden hashes, or replace full bundles/live rechecks.
 - position risk driver assumptions:
   - position risk drivers are derived entirely from the loaded normalized snapshot; no new endpoint is called.
   - the driver score is heuristic and intentionally decomposed into visible components: listed liquidation buffer up to 45 points, notional exposure/concentration up to 25 points, positive daily funding burden up to 20 points, and unrealized loss burden up to 10 points.

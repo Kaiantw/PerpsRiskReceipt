@@ -5,6 +5,7 @@ import type { redacted_market_context } from "../market/redacted-market-context.
 import type { redacted_market_trend } from "../market/redacted-market-trend.ts";
 import { buildRedactedFreshnessVerdict } from "../market/redacted-freshness-verdict.ts";
 import { buildRedactedMarketWatchlist } from "../market/redacted-market-watchlist.ts";
+import { buildRedactedSnapshotComparison } from "../market/redacted-snapshot-comparison.ts";
 import type { redacted_receipt_bundle } from "../receipts/portable-receipt-bundle.ts";
 import {
   answerRedactedShareQuestion,
@@ -157,9 +158,42 @@ const marketTrend: redacted_market_trend = {
   ],
 };
 
+const improvedRedactedBundle: redacted_receipt_bundle = {
+  ...redactedBundle,
+  exported_at_iso: "2026-06-26T12:30:00.000Z",
+  receipt_id: "rr_redacted_assistant_improved",
+  snapshot_hash:
+    "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  created_at_iso: "2026-06-26T12:29:00.000Z",
+  data_time_iso: "2026-06-26T12:25:00.000Z",
+  aggregate: {
+    ...redactedBundle.aggregate,
+    risk_score: 41,
+    risk_label: "medium",
+    margin_usage_bps: 3_200,
+    min_liquidation_distance_bps: 1_900,
+    account_value_bucket_usd: "$100k-$250k",
+    total_notional_bucket_usd: "$50k-$100k",
+    daily_funding_bucket_usd: "earn $0-$1k",
+    thirty_day_funding_bucket_usd: "cost $0-$1k",
+    position_count: 1,
+  },
+  markets: [
+    {
+      market: "ETH-PERP",
+      side: "long",
+      notional_bucket_usd: "$10k-$50k",
+      liquidation_distance_bps: 1_900,
+      funding_8h_bps_user_perspective: -0.2,
+      open_interest_bucket_usd: "$250k-$1m",
+    },
+  ],
+};
+
 function buildAssistantContext(input?: {
   includeMarketContext?: boolean;
   includeMarketTrend?: boolean;
+  includeSnapshotComparison?: boolean;
 }): redacted_share_assistant_context {
   const includedMarketContext =
     input?.includeMarketContext === false ? undefined : marketContext;
@@ -183,6 +217,13 @@ function buildAssistantContext(input?: {
       watchlist,
       nowIso: "2026-06-26T12:10:00.000Z",
     }),
+    snapshotComparison: input?.includeSnapshotComparison
+      ? buildRedactedSnapshotComparison({
+          firstBundle: redactedBundle,
+          secondBundle: improvedRedactedBundle,
+          nowIso: "2026-06-26T12:40:00.000Z",
+        })
+      : undefined,
   };
 }
 
@@ -307,6 +348,44 @@ test("answers freshness verdict questions with cited recheck context", () => {
   );
 });
 
+test("answers comparison questions from the loaded redacted snapshot comparison", () => {
+  const response = answerRedactedShareQuestion({
+    context: buildAssistantContext({ includeSnapshotComparison: true }),
+    question: "What changed between these redacted snapshots?",
+  });
+
+  assert.match(response.answer, /Latest redacted snapshot looks improved/i);
+  assert.match(response.answer, /risk-score delta -31/i);
+  assert.match(response.answer, /Previous receipt rr_redacted_assistant/i);
+  assert.match(response.answer, /latest receipt rr_redacted_assistant_improved/i);
+  assert.match(response.answer, /Redacted-only freshness moved from/i);
+  assert.match(response.answer, /disclosed buffer moved from 8.00% to 19.00%/i);
+  assert.match(response.answer, /BTC-PERP/);
+  assert.match(response.answer, /visible fields only/i);
+  assert.ok(
+    response.citations.includes("redacted_snapshot_comparison.risk_score_delta"),
+  );
+  assert.ok(
+    response.citations.some((citation) =>
+      citation.startsWith("previous_redacted_receipt.markets.ETH-PERP"),
+    ),
+  );
+  assert.doesNotMatch(response.answer, /account_value_usd/);
+  assert.doesNotMatch(response.answer, /mark_price_usd/);
+  assert.doesNotMatch(response.answer, /liquidation_price_usd/);
+});
+
+test("explains when comparison context has not been pasted", () => {
+  const response = answerRedactedShareQuestion({
+    context: buildAssistantContext(),
+    question: "What changed between these snapshots?",
+  });
+
+  assert.match(response.answer, /No redacted snapshot comparison is loaded/i);
+  assert.match(response.answer, /Paste a second redacted bundle/i);
+  assert.deepEqual(response.citations, ["redacted_snapshot_comparison"]);
+});
+
 test("refuses trade recommendations while explaining visible cues", () => {
   const response = answerRedactedShareQuestion({
     context: buildAssistantContext(),
@@ -337,11 +416,12 @@ test("explains hash and privacy scope for redacted shares", () => {
 
 test("suggestions include context-dependent review prompts", () => {
   const suggestions = getRedactedShareAssistantSuggestions(
-    buildAssistantContext(),
+    buildAssistantContext({ includeSnapshotComparison: true }),
   );
   const suggestionIds = suggestions.map((suggestion) => suggestion.id);
 
   assert.ok(suggestionIds.includes("watchlist"));
+  assert.ok(suggestionIds.includes("comparison"));
   assert.ok(suggestionIds.includes("freshness"));
   assert.ok(suggestionIds.includes("current-market"));
   assert.ok(suggestionIds.includes("trend"));
