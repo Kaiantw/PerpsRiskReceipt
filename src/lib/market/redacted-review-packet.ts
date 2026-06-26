@@ -14,6 +14,10 @@ import type {
   redacted_market_watch_item,
   redacted_market_watchlist,
 } from "./redacted-market-watchlist.ts";
+import type {
+  redacted_freshness_verdict,
+  redacted_freshness_verdict_driver,
+} from "./redacted-freshness-verdict.ts";
 
 export type redacted_review_packet = {
   title: string;
@@ -26,9 +30,12 @@ export function buildRedactedReviewPacket(input: {
   marketContext?: redacted_market_context;
   marketTrend?: redacted_market_trend;
   watchlist: redacted_market_watchlist;
+  freshnessVerdict?: redacted_freshness_verdict;
 }): redacted_review_packet {
   const title = `Redacted review packet for ${input.bundle.receipt_id}`;
-  const summary = `${input.bundle.aggregate.risk_label} ${input.bundle.aggregate.risk_score} redacted receipt. ${input.watchlist.headline}`;
+  const summary = `${input.bundle.aggregate.risk_label} ${input.bundle.aggregate.risk_score} redacted receipt. ${
+    input.freshnessVerdict?.headline ?? input.watchlist.headline
+  }`;
   const markdown = [
     `# ${title}`,
     "",
@@ -55,6 +62,7 @@ export function buildRedactedReviewPacket(input: {
     "",
     ...formatMarketContextSection(input.marketContext),
     ...formatMarketTrendSection(input.marketTrend),
+    ...formatFreshnessVerdictSection(input.freshnessVerdict),
     "## redacted review watchlist",
     `- label: ${input.watchlist.label.replaceAll("_", " ")}`,
     `- headline: ${input.watchlist.headline}`,
@@ -71,6 +79,39 @@ export function buildRedactedReviewPacket(input: {
   ].join("\n");
 
   return { title, summary, markdown };
+}
+
+function formatFreshnessVerdictSection(
+  freshnessVerdict: redacted_freshness_verdict | undefined,
+) {
+  if (!freshnessVerdict) {
+    return [
+      "## redacted freshness verdict",
+      "- status: not computed",
+      "- note: load public context or use the import page verdict to classify whether the redacted receipt is reviewable, stale but informative, or needs a full recheck.",
+      "",
+    ];
+  }
+
+  return [
+    "## redacted freshness verdict",
+    `- label: ${freshnessVerdict.label.replaceAll("_", " ")}`,
+    `- headline: ${freshnessVerdict.headline}`,
+    `- receipt age: ${freshnessVerdict.age_label}`,
+    `- signal score: ${freshnessVerdict.signal_score}/100`,
+    `- counts: ${freshnessVerdict.high_count} high, ${freshnessVerdict.watch_count} watch, ${freshnessVerdict.info_count} info`,
+    `- summary: ${freshnessVerdict.summary}`,
+    ...freshnessVerdict.drivers.slice(0, 5).flatMap(formatFreshnessDriver),
+    "",
+  ];
+}
+
+function formatFreshnessDriver(driver: redacted_freshness_verdict_driver) {
+  return [
+    `- [${driver.severity}] ${driver.title}`,
+    `  detail: ${driver.detail}`,
+    ...driver.review_points.slice(0, 2).map((point) => `  review: ${point}`),
+  ];
 }
 
 function formatDisclosedMarkets(markets: redacted_receipt_market[]) {

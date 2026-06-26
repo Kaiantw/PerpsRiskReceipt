@@ -3,6 +3,7 @@ import test from "node:test";
 
 import type { redacted_market_context } from "../market/redacted-market-context.ts";
 import type { redacted_market_trend } from "../market/redacted-market-trend.ts";
+import { buildRedactedFreshnessVerdict } from "../market/redacted-freshness-verdict.ts";
 import { buildRedactedMarketWatchlist } from "../market/redacted-market-watchlist.ts";
 import type { redacted_receipt_bundle } from "../receipts/portable-receipt-bundle.ts";
 import {
@@ -164,15 +165,23 @@ function buildAssistantContext(input?: {
     input?.includeMarketContext === false ? undefined : marketContext;
   const includedMarketTrend =
     input?.includeMarketTrend === false ? undefined : marketTrend;
+  const watchlist = buildRedactedMarketWatchlist({
+    bundle: redactedBundle,
+    marketContext: includedMarketContext,
+    marketTrend: includedMarketTrend,
+  });
 
   return {
     bundle: redactedBundle,
     marketContext: includedMarketContext,
     marketTrend: includedMarketTrend,
-    watchlist: buildRedactedMarketWatchlist({
+    watchlist,
+    freshnessVerdict: buildRedactedFreshnessVerdict({
       bundle: redactedBundle,
       marketContext: includedMarketContext,
       marketTrend: includedMarketTrend,
+      watchlist,
+      nowIso: "2026-06-26T12:10:00.000Z",
     }),
   };
 }
@@ -186,10 +195,12 @@ test("summarizes a redacted share from disclosed fields with citations", () => {
   assert.match(response.answer, /high risk with score 72/i);
   assert.match(response.answer, /account value bucket \$50k-\$100k/i);
   assert.match(response.answer, /cannot recompute hidden snapshot hashes/i);
+  assert.match(response.answer, /Freshness verdict:/);
   assert.ok(
     response.citations.includes("redacted_receipt.aggregate.risk_score"),
   );
   assert.ok(response.citations.includes("redacted_market_watchlist.headline"));
+  assert.ok(response.citations.includes("redacted_freshness_verdict.label"));
   assert.doesNotMatch(response.answer, /account_value_usd/);
   assert.doesNotMatch(response.answer, /mark_price_usd/);
   assert.doesNotMatch(response.answer, /liquidation_price_usd/);
@@ -280,6 +291,22 @@ test("answers market-specific questions from disclosed and public rows", () => {
   );
 });
 
+test("answers freshness verdict questions with cited recheck context", () => {
+  const response = answerRedactedShareQuestion({
+    context: buildAssistantContext(),
+    question: "Is this redacted receipt still reviewable?",
+  });
+
+  assert.match(response.answer, /Verdict:/);
+  assert.match(response.answer, /signal score/i);
+  assert.match(response.answer, /receipt age 15m/i);
+  assert.match(response.answer, /not a live account monitor/i);
+  assert.ok(response.citations.includes("redacted_freshness_verdict.label"));
+  assert.ok(
+    response.citations.includes("redacted_market_watchlist.high_count"),
+  );
+});
+
 test("refuses trade recommendations while explaining visible cues", () => {
   const response = answerRedactedShareQuestion({
     context: buildAssistantContext(),
@@ -315,6 +342,7 @@ test("suggestions include context-dependent review prompts", () => {
   const suggestionIds = suggestions.map((suggestion) => suggestion.id);
 
   assert.ok(suggestionIds.includes("watchlist"));
+  assert.ok(suggestionIds.includes("freshness"));
   assert.ok(suggestionIds.includes("current-market"));
   assert.ok(suggestionIds.includes("trend"));
   assert.ok(suggestionIds.includes("liquidation"));

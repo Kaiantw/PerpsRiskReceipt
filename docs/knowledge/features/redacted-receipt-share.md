@@ -20,6 +20,7 @@ review while keeping the full bundle available for trusted verification.
 - [[redacted-market-context]]
 - [[redacted-market-trend]]
 - [[redacted-market-watchlist]]
+- [[redacted-freshness-verdict]]
 - [[redacted-review-packet]]
 - [[redacted-share-assistant]]
 - docs/product-spec.md#4-receipt-page
@@ -44,8 +45,11 @@ review while keeping the full bundle available for trusted verification.
   context for disclosed markets without sending a raw account address.
 - Hyperliquid redacted previews synthesize loaded current/trend context into a
   review watchlist without sending a raw account address.
+- Hyperliquid redacted previews classify the share as reviewable, stale but
+  informative, or needing a full recheck without exposing hidden account fields.
 - Redacted previews can copy a markdown review packet that includes disclosed
-  buckets, public context, watchlist cues, and hash-reference-only caveats.
+  buckets, public context, freshness verdict, watchlist cues, and
+  hash-reference-only caveats.
 - Full bundles remain available when a reviewer needs to recompute the snapshot
   hash, import the receipt, run live recheck, generate the EAS fallback payload,
   or use receipt assistant context.
@@ -59,6 +63,8 @@ review while keeping the full bundle available for trusted verification.
   redacted shares.
 - [[redacted-market-watchlist]] turns loaded redacted market context into
   reviewer-facing cues.
+- [[redacted-freshness-verdict]] classifies whether the redacted share is still
+  reviewable against loaded public context.
 - [[redacted-share-assistant]] lets a reviewer ask cited questions without
   receiving the full snapshot.
 - [[redacted-review-packet]] packages the redacted preview into a copyable

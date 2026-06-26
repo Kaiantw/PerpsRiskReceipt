@@ -4,6 +4,7 @@ import test from "node:test";
 import type { redacted_receipt_bundle } from "../receipts/portable-receipt-bundle.ts";
 import type { redacted_market_context } from "./redacted-market-context.ts";
 import type { redacted_market_trend } from "./redacted-market-trend.ts";
+import { buildRedactedFreshnessVerdict } from "./redacted-freshness-verdict.ts";
 import { buildRedactedMarketWatchlist } from "./redacted-market-watchlist.ts";
 import { buildRedactedReviewPacket } from "./redacted-review-packet.ts";
 
@@ -156,11 +157,19 @@ test("builds a copyable redacted markdown packet from disclosed and public conte
     marketContext,
     marketTrend,
   });
+  const freshnessVerdict = buildRedactedFreshnessVerdict({
+    bundle: redactedBundle,
+    marketContext,
+    marketTrend,
+    watchlist,
+    nowIso: "2026-06-25T12:10:00.000Z",
+  });
   const packet = buildRedactedReviewPacket({
     bundle: redactedBundle,
     marketContext,
     marketTrend,
     watchlist,
+    freshnessVerdict,
   });
 
   assert.equal(packet.title, "Redacted review packet for rr_redacted_packet");
@@ -173,6 +182,9 @@ test("builds a copyable redacted markdown packet from disclosed and public conte
   assert.match(packet.markdown, /funding delta \+1.50 bps/);
   assert.match(packet.markdown, /## public 24h trend/);
   assert.match(packet.markdown, /24h price -3.33%/);
+  assert.match(packet.markdown, /## redacted freshness verdict/);
+  assert.match(packet.markdown, /label: needs full recheck/);
+  assert.match(packet.markdown, /receipt age: 15m/);
   assert.match(packet.markdown, /## redacted review watchlist/);
   assert.match(packet.markdown, /Adverse trend near disclosed buffer/);
   assert.match(packet.markdown, /hidden full snapshot is required/);
@@ -195,6 +207,8 @@ test("explains missing public context without claiming hash recomputation", () =
   assert.match(packet.markdown, /public current market context/);
   assert.match(packet.markdown, /status: not loaded/);
   assert.match(packet.markdown, /public 24h trend/);
+  assert.match(packet.markdown, /redacted freshness verdict/);
+  assert.match(packet.markdown, /status: not computed/);
   assert.match(packet.markdown, /Load market context or 24h trends/);
   assert.match(packet.markdown, /cannot recompute or verify it/);
   assert.match(packet.markdown, /not protocol-official risk calculations/);

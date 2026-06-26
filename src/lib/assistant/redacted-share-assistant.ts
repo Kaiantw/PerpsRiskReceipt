@@ -11,6 +11,10 @@ import type {
   redacted_market_watchlist,
 } from "../market/redacted-market-watchlist.ts";
 import type {
+  redacted_freshness_verdict,
+  redacted_freshness_verdict_driver,
+} from "../market/redacted-freshness-verdict.ts";
+import type {
   redacted_receipt_bundle,
   redacted_receipt_market,
 } from "../receipts/portable-receipt-bundle.ts";
@@ -20,6 +24,7 @@ export type redacted_share_assistant_context = {
   marketContext?: redacted_market_context;
   marketTrend?: redacted_market_trend;
   watchlist: redacted_market_watchlist;
+  freshnessVerdict?: redacted_freshness_verdict;
 };
 
 export type redacted_share_assistant_response = {
@@ -109,6 +114,12 @@ function formatNullableSignedPercent(value: number | null) {
   return `${value > 0 ? "+" : "-"}${Math.abs(value).toFixed(2)}%`;
 }
 
+function formatFreshnessVerdictLabel(
+  label: redacted_freshness_verdict["label"],
+) {
+  return label.replaceAll("_", " ");
+}
+
 function getContextRowByMarket(
   marketContext: redacted_market_context | undefined,
   market: string,
@@ -167,6 +178,12 @@ function formatWatchItem(item: redacted_market_watch_item) {
   const reviewPoints = item.review_points.join(" ");
 
   return `${item.severity.toUpperCase()} ${item.market}: ${item.title}. ${item.detail} Review: ${reviewPoints}`;
+}
+
+function formatFreshnessDriver(driver: redacted_freshness_verdict_driver) {
+  const reviewPoints = driver.review_points.join(" ");
+
+  return `${driver.severity.toUpperCase()}: ${driver.title}. ${driver.detail} Review: ${reviewPoints}`;
 }
 
 function formatMarketContextRow(row: redacted_market_context_row | null) {
@@ -241,6 +258,11 @@ function buildSummaryAnswer(
       `This redacted ${bundle.protocol} receipt is ${bundle.aggregate.risk_label} risk with score ${bundle.aggregate.risk_score}.`,
       `It discloses ${bundle.aggregate.position_count} position rows, account value bucket ${bundle.aggregate.account_value_bucket_usd}, total notional bucket ${bundle.aggregate.total_notional_bucket_usd}, margin usage ${formatBpsAsPercent(bundle.aggregate.margin_usage_bps)}, and minimum disclosed liquidation distance ${formatBpsAsPercent(bundle.aggregate.min_liquidation_distance_bps)}.`,
       `Current public context: ${context.marketContext?.headline ?? "not loaded"}. 24h trend context: ${context.marketTrend?.headline ?? "not loaded"}. Watchlist: ${watchlist.headline}`,
+      context.freshnessVerdict
+        ? `Freshness verdict: ${formatFreshnessVerdictLabel(
+            context.freshnessVerdict.label,
+          )}; ${context.freshnessVerdict.headline}`
+        : "Freshness verdict: not computed.",
       "This assistant can explain disclosed fields and loaded public market context, but it cannot recompute hidden snapshot hashes or recommend trades.",
     ].join(" "),
     citations: [
@@ -254,6 +276,12 @@ function buildSummaryAnswer(
       ...(context.marketContext ? ["redacted_market_context.headline"] : []),
       ...(context.marketTrend ? ["redacted_market_trend.headline"] : []),
       "redacted_market_watchlist.headline",
+      ...(context.freshnessVerdict
+        ? [
+            "redacted_freshness_verdict.label",
+            "redacted_freshness_verdict.headline",
+          ]
+        : []),
       "redacted_receipt.verification_scope",
     ],
   };
@@ -486,6 +514,28 @@ function buildHashPrivacyAnswer(
 function buildFreshnessAnswer(
   context: redacted_share_assistant_context,
 ): redacted_share_assistant_response {
+  if (context.freshnessVerdict) {
+    const verdict = context.freshnessVerdict;
+    const topDrivers = verdict.drivers
+      .slice(0, 3)
+      .map(formatFreshnessDriver)
+      .join(" ");
+
+    return {
+      answer: [
+        `${verdict.headline} Verdict: ${formatFreshnessVerdictLabel(
+          verdict.label,
+        )}; signal score ${verdict.signal_score}/100; receipt age ${verdict.age_label}.`,
+        verdict.summary,
+        `Drivers: ${verdict.high_count} high, ${verdict.watch_count} watch, ${verdict.info_count} info.`,
+        topDrivers || "No freshness drivers were available.",
+        verdict.review_points.join(" "),
+        "This is a redacted freshness verdict, not a live account monitor or trading recommendation.",
+      ].join(" "),
+      citations: verdict.citations,
+    };
+  }
+
   const currentContextFetched = context.marketContext
     ? ` Current market context was fetched at ${context.marketContext.fetched_at_iso}.`
     : " Current market context is not loaded.";
@@ -678,6 +728,13 @@ export function answerRedactedShareQuestion(input: {
       "time",
       "current",
       "old",
+      "age",
+      "reviewable",
+      "still useful",
+      "still valid",
+      "recheck",
+      "full recheck",
+      "freshness",
     ])
   ) {
     return buildFreshnessAnswer(input.context);
@@ -702,6 +759,11 @@ export function getRedactedShareAssistantSuggestions(
       id: "watchlist",
       label: "Watchlist",
       question: "What should I inspect first in the redacted watchlist?",
+    },
+    {
+      id: "freshness",
+      label: "Freshness",
+      question: "Is this redacted receipt still reviewable?",
     },
     {
       id: "current-market",

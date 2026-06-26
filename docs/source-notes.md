@@ -94,6 +94,15 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
   - https://w3c-ccg.github.io/data-minimization/
   - https://docs.attest.org/docs/tutorials/private-data-attestations
+- docs checked on 2026-06-26 for redacted freshness verdict:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://www.coinbase.com/learn/perpetual-futures/understanding-funding-rates-in-perpetual-futures
+  - https://www.chainalysis.com/blog/perpetual-futures/
+  - https://w3c-ccg.github.io/data-minimization/
 - docs checked on 2026-06-25 for position risk drivers:
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding

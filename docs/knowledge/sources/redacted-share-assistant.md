@@ -33,4 +33,5 @@
 - [[../features/redacted-market-context]]
 - [[../features/redacted-market-trend]]
 - [[../features/redacted-market-watchlist]]
+- [[../features/redacted-freshness-verdict]]
 - [[../features/redacted-review-packet]]

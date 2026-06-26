@@ -19,6 +19,7 @@ short list of cues a reviewer should inspect first.
 - [[redacted-market-context]]
 - [[redacted-market-trend]]
 - [[redacted-receipt-share]]
+- [[redacted-freshness-verdict]]
 - [[redacted-review-packet]]
 - [[redacted-share-assistant]]
 - docs/source-notes.md#hyperliquid
@@ -46,6 +47,8 @@ short list of cues a reviewer should inspect first.
 - [[redacted-market-trend]] supplies the 24-hour public price and funding rows.
 - [[redacted-receipt-share]] defines the privacy boundary the watchlist must
   respect.
+- [[redacted-freshness-verdict]] uses watchlist severity as one input to the
+  reviewable/stale/full-recheck classification.
 - [[redacted-share-assistant]] turns ranked watchlist cues into cited answers.
 - [[redacted-review-packet]] carries the watchlist into a copyable public
   markdown summary.

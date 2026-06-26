@@ -17,10 +17,12 @@ hash-reference-only caveats.
 - [[../sources/redacted-review-packet]]
 - [[../sources/redacted-receipt-sharing]]
 - [[../sources/redacted-market-watchlist]]
+- [[../sources/redacted-freshness-verdict]]
 - [[redacted-receipt-share]]
 - [[redacted-market-context]]
 - [[redacted-market-trend]]
 - [[redacted-market-watchlist]]
+- [[redacted-freshness-verdict]]
 - [[redacted-share-assistant]]
 - [[receipt-review-packet]]
 
@@ -35,6 +37,8 @@ hash-reference-only caveats.
 - Includes public current market context and public 24-hour trend sections when
   those panels have been loaded; otherwise the packet says the context is not
   loaded.
+- Includes the redacted freshness verdict when computed, including label,
+  receipt age, signal score, driver counts, summary, and capped top drivers.
 - Includes redacted review watchlist label, counts, and capped top cues.
 - Explicitly says the packet cannot recompute or verify the hidden full snapshot
   hash and is not a trading recommendation.
@@ -45,6 +49,8 @@ hash-reference-only caveats.
 - [[redacted-market-context]] and [[redacted-market-trend]] supply optional public
   context.
 - [[redacted-market-watchlist]] ranks public/disclosed review cues.
+- [[redacted-freshness-verdict]] supplies the reviewable/stale/full-recheck
+  verdict.
 - [[redacted-share-assistant]] answers cited questions from the same public and
   disclosed fields.
 - [[receipt-review-packet]] is the full-snapshot sibling used after local live

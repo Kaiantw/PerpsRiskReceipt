@@ -37,6 +37,7 @@ informed it and forward to related feature ideas.
 - [[sources/redacted-market-watchlist]] - liquidation, funding, volatility, and review-cue source notes for redacted share watchlists.
 - [[sources/redacted-review-packet]] - data-minimized markdown review packets for redacted shares.
 - [[sources/redacted-share-assistant]] - cited, public-only assistant answers for redacted shares.
+- [[sources/redacted-freshness-verdict]] - receipt-age, public-market, buffer, trend, funding, and data-minimization notes for redacted freshness classification.
 
 ## implemented feature notes
 
@@ -70,6 +71,7 @@ informed it and forward to related feature ideas.
 - [[features/redacted-market-context]] - current public Hyperliquid mark, funding, and open-interest context for redacted shares.
 - [[features/redacted-market-trend]] - 24h public candle and funding-history context for redacted shares.
 - [[features/redacted-market-watchlist]] - synthesized review cues over redacted fields plus loaded public market context.
+- [[features/redacted-freshness-verdict]] - classifies redacted shares as reviewable, stale but informative, or needing full recheck.
 - [[features/redacted-review-packet]] - copyable markdown summary for redacted shares using disclosed fields and loaded public context.
 - [[features/redacted-share-assistant]] - cited local assistant answers for redacted shares using disclosed fields and loaded public context.
 
@@ -81,6 +83,8 @@ informed it and forward to related feature ideas.
   cryptographic selective disclosure using EAS private data or Merkle proofs.
 - [[features/redacted-market-watchlist]] could later add configurable market-only
   thresholds without requiring a raw account address.
+- [[features/redacted-freshness-verdict]] could later support reviewer-tuned
+  public-only thresholds without changing redacted bundle integrity.
 - [[features/receipt-assistant-driver-citations]] could later expand into
   side-by-side cited answers for each per-market driver row.
 - [[features/receipt-assistant-market-context-fusion]] could later grow into a

@@ -25,6 +25,11 @@ import {
   type redacted_market_watchlist,
   type redacted_market_watch_severity,
 } from "@/lib/market/redacted-market-watchlist.ts";
+import {
+  buildRedactedFreshnessVerdict,
+  type redacted_freshness_verdict_driver,
+  type redacted_freshness_verdict_label,
+} from "@/lib/market/redacted-freshness-verdict.ts";
 import { buildRedactedReviewPacket } from "@/lib/market/redacted-review-packet.ts";
 import {
   answerRedactedShareQuestion,
@@ -554,6 +559,12 @@ export function ReceiptImportClient() {
               marketTrendState={redactedMarketTrendState}
             />
 
+            <RedactedFreshnessVerdictPanel
+              bundle={state.bundle}
+              marketContextState={redactedMarketContextState}
+              marketTrendState={redactedMarketTrendState}
+            />
+
             <RedactedShareAssistantPanel
               bundle={state.bundle}
               marketContextState={redactedMarketContextState}
@@ -872,6 +883,104 @@ function RedactedMarketWatchlistPanel({
   );
 }
 
+function RedactedFreshnessVerdictPanel({
+  bundle,
+  marketContextState,
+  marketTrendState,
+}: {
+  bundle: redacted_receipt_bundle;
+  marketContextState: redacted_market_context_state;
+  marketTrendState: redacted_market_trend_state;
+}) {
+  const marketContext =
+    marketContextState.status === "loaded"
+      ? marketContextState.context
+      : undefined;
+  const marketTrend =
+    marketTrendState.status === "loaded" ? marketTrendState.trend : undefined;
+  const watchlist = buildRedactedMarketWatchlist({
+    bundle,
+    marketContext,
+    marketTrend,
+  });
+  const verdict = buildRedactedFreshnessVerdict({
+    bundle,
+    marketContext,
+    marketTrend,
+    watchlist,
+  });
+  const displayedDrivers =
+    verdict.drivers.filter((driver) => driver.severity !== "info").length > 0
+      ? verdict.drivers.filter((driver) => driver.severity !== "info")
+      : verdict.drivers.slice(0, 3);
+
+  return (
+    <div className="mt-4 rounded-lg border border-stone-300 bg-white p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Freshness verdict</h3>
+          <p className="mt-1 text-sm text-stone-600">
+            Classifies the redacted receipt against receipt age, disclosed
+            buffers, loaded public market context, 24h trends, and watchlist
+            severity.
+          </p>
+        </div>
+        <span
+          className={`rounded-lg border px-3 py-2 text-sm font-semibold ${getFreshnessVerdictClassName(
+            verdict.label,
+          )}`}
+        >
+          {formatFreshnessVerdictLabel(verdict.label)}
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <ImportMetric label="Receipt age" value={verdict.age_label} />
+        <ImportMetric
+          label="Signal score"
+          value={`${verdict.signal_score}/100`}
+        />
+        <ImportMetric
+          label="High cues"
+          value={String(verdict.high_count)}
+        />
+        <ImportMetric
+          label="Watch cues"
+          value={String(verdict.watch_count)}
+        />
+      </div>
+
+      <div
+        className={`mt-4 rounded-lg border p-3 ${getFreshnessSummaryClassName(
+          verdict.label,
+        )}`}
+      >
+        <p className="text-sm font-semibold">{verdict.headline}</p>
+        <p className="mt-1 text-sm">{verdict.summary}</p>
+      </div>
+
+      {displayedDrivers.length > 0 ? (
+        <div className="mt-4 grid gap-3">
+          {displayedDrivers.map((driver) => (
+            <FreshnessDriverCard driver={driver} key={driver.id} />
+          ))}
+        </div>
+      ) : null}
+
+      <div className="mt-4 grid gap-2 text-sm text-stone-700">
+        {verdict.review_points.map((reviewPoint) => (
+          <p
+            className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2"
+            key={reviewPoint}
+          >
+            {reviewPoint}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function RedactedShareAssistantPanel({
   bundle,
   marketContextState,
@@ -895,11 +1004,18 @@ function RedactedShareAssistantPanel({
     marketContext,
     marketTrend,
   });
+  const freshnessVerdict = buildRedactedFreshnessVerdict({
+    bundle,
+    marketContext,
+    marketTrend,
+    watchlist,
+  });
   const assistantContext = {
     bundle,
     marketContext,
     marketTrend,
     watchlist,
+    freshnessVerdict,
   };
   const suggestions = getRedactedShareAssistantSuggestions(assistantContext);
 
@@ -1019,11 +1135,18 @@ function RedactedReviewPacketPanel({
     marketContext,
     marketTrend,
   });
+  const freshnessVerdict = buildRedactedFreshnessVerdict({
+    bundle,
+    marketContext,
+    marketTrend,
+    watchlist,
+  });
   const packet = buildRedactedReviewPacket({
     bundle,
     marketContext,
     marketTrend,
     watchlist,
+    freshnessVerdict,
   });
 
   async function copyPacketMarkdown() {
@@ -1130,6 +1253,51 @@ function WatchlistItemCard({ item }: { item: redacted_market_watch_item }) {
   );
 }
 
+function FreshnessDriverCard({
+  driver,
+}: {
+  driver: redacted_freshness_verdict_driver;
+}) {
+  return (
+    <article className="rounded-lg border border-stone-200 bg-stone-50 p-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-md border px-2 py-1 text-xs font-semibold uppercase ${getFreshnessDriverClassName(
+                driver.severity,
+              )}`}
+            >
+              {driver.severity}
+            </span>
+            <span className="rounded-md bg-white px-2 py-1 text-xs font-medium text-stone-600">
+              {formatFreshnessCategory(driver.category)}
+            </span>
+          </div>
+          <h4 className="mt-3 text-sm font-semibold text-stone-950">
+            {driver.title}
+          </h4>
+        </div>
+      </div>
+
+      <p className="mt-2 text-sm text-stone-700">{driver.detail}</p>
+
+      {driver.review_points.length > 0 ? (
+        <ul className="mt-3 grid gap-2 text-sm text-stone-700">
+          {driver.review_points.map((reviewPoint) => (
+            <li
+              className="rounded-md border border-stone-200 bg-white px-3 py-2"
+              key={reviewPoint}
+            >
+              {reviewPoint}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </article>
+  );
+}
+
 function getWatchlistSummaryClassName(watchlist: redacted_market_watchlist) {
   switch (watchlist.label) {
     case "high_attention":
@@ -1140,6 +1308,32 @@ function getWatchlistSummaryClassName(watchlist: redacted_market_watchlist) {
       return "border-emerald-200 bg-emerald-50 text-emerald-950";
     case "no_loaded_context":
       return "border-stone-200 bg-stone-50 text-stone-700";
+  }
+}
+
+function getFreshnessVerdictClassName(
+  label: redacted_freshness_verdict_label,
+) {
+  switch (label) {
+    case "needs_full_recheck":
+      return "border-red-200 bg-red-100 text-red-950";
+    case "stale_but_informative":
+      return "border-amber-200 bg-amber-100 text-amber-950";
+    case "reviewable":
+      return "border-emerald-200 bg-emerald-100 text-emerald-950";
+  }
+}
+
+function getFreshnessSummaryClassName(
+  label: redacted_freshness_verdict_label,
+) {
+  switch (label) {
+    case "needs_full_recheck":
+      return "border-red-200 bg-red-50 text-red-950";
+    case "stale_but_informative":
+      return "border-amber-200 bg-amber-50 text-amber-950";
+    case "reviewable":
+      return "border-emerald-200 bg-emerald-50 text-emerald-950";
   }
 }
 
@@ -1156,8 +1350,33 @@ function getWatchlistSeverityClassName(
   }
 }
 
+function getFreshnessDriverClassName(
+  severity: redacted_freshness_verdict_driver["severity"],
+) {
+  switch (severity) {
+    case "high":
+      return "border-red-200 bg-red-100 text-red-950";
+    case "watch":
+      return "border-amber-200 bg-amber-100 text-amber-950";
+    case "info":
+      return "border-sky-200 bg-sky-100 text-sky-950";
+  }
+}
+
 function formatWatchlistCategory(
   category: redacted_market_watch_item["category"],
+) {
+  return category.replaceAll("_", " ");
+}
+
+function formatFreshnessVerdictLabel(
+  label: redacted_freshness_verdict_label,
+) {
+  return label.replaceAll("_", " ");
+}
+
+function formatFreshnessCategory(
+  category: redacted_freshness_verdict_driver["category"],
 ) {
   return category.replaceAll("_", " ");
 }

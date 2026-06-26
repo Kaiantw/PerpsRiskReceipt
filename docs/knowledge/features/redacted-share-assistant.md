@@ -19,17 +19,20 @@ public 24-hour trend context, and the redacted watchlist.
 - [[../sources/redacted-market-context]]
 - [[../sources/redacted-market-trend]]
 - [[../sources/redacted-market-watchlist]]
+- [[../sources/redacted-freshness-verdict]]
 - [[redacted-receipt-share]]
 - [[redacted-market-context]]
 - [[redacted-market-trend]]
 - [[redacted-market-watchlist]]
+- [[redacted-freshness-verdict]]
 - [[redacted-review-packet]]
 
 ## implemented behavior
 
 - Adds a `Redacted share assistant` panel to redacted previews.
 - Provides prompt buttons for summary, watchlist, current public market context,
-  24-hour trend, disclosed buffer, top cue, funding, and privacy/hash scope.
+  freshness, 24-hour trend, disclosed buffer, top cue, funding, and
+  privacy/hash scope.
 - Answers only from disclosed redacted receipt fields and already-loaded public
   context.
 - Gives field-style citations for each answer so a reviewer can see which local
@@ -38,6 +41,8 @@ public 24-hour trend context, and the redacted watchlist.
   is not loaded.
 - Gives named-market drilldowns when the question mentions a disclosed market or
   base coin.
+- Answers whether the redacted receipt is still reviewable by citing the
+  redacted freshness verdict.
 - Refuses trade, leverage, hedge, and position-change requests while still
   explaining visible risk signals.
 - Explains that the snapshot hash is a reference only for redacted bundles; full
@@ -49,6 +54,8 @@ public 24-hour trend context, and the redacted watchlist.
   open-interest rows.
 - [[redacted-market-trend]] supplies public 24-hour candle/range/funding rows.
 - [[redacted-market-watchlist]] supplies inspect-first cues for the assistant.
+- [[redacted-freshness-verdict]] supplies the reviewable/stale/full-recheck
+  classification.
 - [[redacted-review-packet]] packages similar public/disclosed context as markdown.
 - [[receipt-risk-assistant]] is the full-snapshot sibling after local receipt
   import and live recheck.

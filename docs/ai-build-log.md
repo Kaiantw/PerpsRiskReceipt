@@ -1027,3 +1027,26 @@ Review whether the assistant prompt labels are the clearest order for a hiring-m
 - Browser verification used `http://localhost:3000/receipt/import`, pasted a Hyperliquid-shaped redacted bundle for `rr_browser_redacted_assistant`, confirmed `Redacted share assistant` rendered, clicked `Current` before loading context and confirmed the not-loaded answer plus `redacted_market_context` citation, clicked `Load current markets` and `Load 24h trends`, confirmed live public market and trend rows loaded, clicked `Current` again and confirmed loaded mark, funding-delta, open-interest citations, clicked `24h Trend` and confirmed trend citations and hidden-state caveat, clicked `Top Cue` and confirmed a named-market answer with private-field caveat and watchlist citation, asked `Should I increase leverage?`, confirmed trade-intent refusal, and saw zero browser console errors.
 ### remaining risks:
 The redacted share assistant is deterministic local explanation over disclosed/public fields only. It cannot inspect hidden account state, recompute the hidden full-snapshot hash, prove exact liquidation state, replace a full portable receipt bundle, provide cryptographic selective disclosure, act as a live alert, or tell a trader what to do next.
+
+### task id: post-t9 redacted freshness verdict
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a redacted current-market freshness verdict for imported redacted receipt shares so reviewers can classify a timestamped public share as `reviewable`, `stale but informative`, or `needs full recheck` against loaded public market context.
+### output accepted:
+Added `src/lib/market/redacted-freshness-verdict.ts` with a pure deterministic verdict builder over receipt age, disclosed liquidation buffer, optional public current market context, optional 24-hour trend context, funding movement, and redacted watchlist severity. Added tests for recent/calm reviewable shares, missing-context stale shares, old receipts, thin disclosed buffers, 24-hour range reaching the disclosed buffer, adverse trend near tight buffers, material funding movement, and redacted copy boundaries. Wired `/receipt/import` to render a `Freshness verdict` panel with age, signal score, high/watch counts, top drivers, and review points. Fed the same verdict into the redacted share assistant and redacted review packet. Updated source notes, knowledge graph, README, demo script, known limitations, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, bundle format, backend store, LLM API, wallet/RPC flow, trading/exchange endpoint, raw account lookup, cryptographic selective-disclosure proof, EAS transaction, exact Hyperliquid liquidation formula, live alert, or protocol-official risk claim was added. The verdict intentionally remains a heuristic classifier over disclosed/public fields and does not certify that a stale share is current.
+### human review notes:
+Review whether the default age thresholds of four hours for watch and 24 hours for high are intuitive for the demo. Review whether a public 24-hour range reaching the disclosed liquidation buffer should always force `needs full recheck` or remain watch-level when other cues are calm. Review whether the `signal score` should stay visible or be replaced by only high/watch counts to avoid false precision.
+### tests/checks run:
+- `node --test src/lib/market/redacted-freshness-verdict.test.ts src/lib/assistant/redacted-share-assistant.test.ts src/lib/market/redacted-review-packet.test.ts` passed: 20 tests, 20 passing.
+- `npm test` passed: 169 tests, 169 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/import`, `/receipt/local/[id]`, `/api/hyperliquid/markets`, `/api/hyperliquid/market-history`, and the existing receipt/API routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted a generated Hyperliquid-shaped redacted bundle for `rr_browser_redacted_freshness`, confirmed `Freshness verdict` rendered before context load, clicked `Load current markets` and `Load 24h trends`, confirmed current public context and 24-hour trend rows loaded, confirmed the verdict classified the share as `needs full recheck` because public ETH-PERP adverse 24-hour movement and high/low range crossed the disclosed 8.00% buffer, clicked the assistant `Freshness` prompt, confirmed signal score, no-live-monitor caveat, and `redacted_freshness_verdict.label` citation, and saw zero browser console errors.
+- `npm audit --audit-level=moderate` still reports the known `postcss` advisory through Next; the suggested `npm audit fix --force` would install a breaking/incorrect Next version, so it remains documented instead of force-applied.
+### remaining risks:
+The redacted freshness verdict is heuristic public/disclosed context only. It cannot inspect hidden account state, recompute the hidden full-snapshot hash, certify that a stale redacted share is current, replace a full portable bundle or live account recheck, provide cryptographic selective disclosure, monitor exact liquidation state, or tell a trader what to do next. Live public context still depends on Hyperliquid API availability and response-shape stability.
