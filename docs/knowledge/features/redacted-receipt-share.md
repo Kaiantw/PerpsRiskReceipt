@@ -21,6 +21,7 @@ review while keeping the full bundle available for trusted verification.
 - [[redacted-market-trend]]
 - [[redacted-market-watchlist]]
 - [[redacted-review-packet]]
+- [[redacted-share-assistant]]
 - docs/product-spec.md#4-receipt-page
 - docs/source-notes.md#hyperliquid
 
@@ -58,6 +59,8 @@ review while keeping the full bundle available for trusted verification.
   redacted shares.
 - [[redacted-market-watchlist]] turns loaded redacted market context into
   reviewer-facing cues.
+- [[redacted-share-assistant]] lets a reviewer ask cited questions without
+  receiving the full snapshot.
 - [[redacted-review-packet]] packages the redacted preview into a copyable
   markdown artifact.
 - A future selective-disclosure proof could replace the current redacted JSON

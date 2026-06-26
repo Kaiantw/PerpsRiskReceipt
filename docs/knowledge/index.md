@@ -36,6 +36,7 @@ informed it and forward to related feature ideas.
 - [[sources/redacted-market-trend]] - candle and funding-history source notes for redacted share 24h public market trends.
 - [[sources/redacted-market-watchlist]] - liquidation, funding, volatility, and review-cue source notes for redacted share watchlists.
 - [[sources/redacted-review-packet]] - data-minimized markdown review packets for redacted shares.
+- [[sources/redacted-share-assistant]] - cited, public-only assistant answers for redacted shares.
 
 ## implemented feature notes
 
@@ -70,6 +71,7 @@ informed it and forward to related feature ideas.
 - [[features/redacted-market-trend]] - 24h public candle and funding-history context for redacted shares.
 - [[features/redacted-market-watchlist]] - synthesized review cues over redacted fields plus loaded public market context.
 - [[features/redacted-review-packet]] - copyable markdown summary for redacted shares using disclosed fields and loaded public context.
+- [[features/redacted-share-assistant]] - cited local assistant answers for redacted shares using disclosed fields and loaded public context.
 
 ## connected backlog ideas
 
@@ -87,6 +89,8 @@ informed it and forward to related feature ideas.
   redacted-share assistant that uses public-only watchlist citations.
 - [[features/redacted-review-packet]] could later support a compressed public
   packet mode for social posts or issue comments.
+- [[features/redacted-share-assistant]] could later support configurable
+  public-only thresholds and a compressed answer mode for issue comments.
 - [[features/configurable-recheck-thresholds]] could later persist named review
   presets if the app adds user settings without changing receipt integrity.
 - [[features/receipt-volatility-watchlist]] could later add local sensitivity

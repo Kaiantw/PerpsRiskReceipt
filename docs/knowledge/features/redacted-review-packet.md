@@ -21,6 +21,7 @@ hash-reference-only caveats.
 - [[redacted-market-context]]
 - [[redacted-market-trend]]
 - [[redacted-market-watchlist]]
+- [[redacted-share-assistant]]
 - [[receipt-review-packet]]
 
 ## implemented behavior
@@ -44,5 +45,7 @@ hash-reference-only caveats.
 - [[redacted-market-context]] and [[redacted-market-trend]] supply optional public
   context.
 - [[redacted-market-watchlist]] ranks public/disclosed review cues.
+- [[redacted-share-assistant]] answers cited questions from the same public and
+  disclosed fields.
 - [[receipt-review-packet]] is the full-snapshot sibling used after local live
   receipt recheck.

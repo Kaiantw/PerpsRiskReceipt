@@ -21,6 +21,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - 24h market trend context for redacted shares using public Hyperliquid candles and funding history.
 - Review watchlist for redacted shares that synthesizes disclosed buffers, current funding, adverse 24h trend, public range, and missing market data into high/watch/info cues.
 - Redacted review packet that copies a markdown summary of disclosed buckets, public market context, 24h trend context, watchlist cues, and hash-reference-only caveats.
+- Redacted share assistant that answers cited questions from disclosed fields, loaded public current/trend context, and redacted watchlist cues without using hidden account data.
 - Live receipt recheck that compares a saved receipt against a fresh read-only Hyperliquid snapshot.
 - Receipt change summary that combines live recheck, market context, funding movement, position changes, and sampled account-value context into one quick read.
 - Receipt risk-driver comparison that shows whether the saved top driver, driver score, gross exposure, listed buffer, and funding burden changed after live recheck.
@@ -79,6 +80,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/lib/market/redacted-review-packet.ts` builds a copyable public markdown packet for redacted shares.
 - `src/lib/assistant/risk-assistant.ts` contains dependency-free assistant response logic and guardrails.
 - `src/lib/assistant/receipt-risk-assistant.ts` contains dependency-free receipt assistant response logic and guardrails.
+- `src/lib/assistant/redacted-share-assistant.ts` contains dependency-free redacted share assistant response logic, citations, and guardrails.
 - `src/lib/receipts/receipt.ts` contains canonical JSON serialization, hashing, deterministic IDs, and verification.
 - `src/lib/receipts/portable-receipt-bundle.ts` contains the versioned full and redacted bundle contracts, parsers, and preview metadata.
 - `src/lib/receipts/snapshot-comparison.ts` compares saved receipt snapshots against fresh live snapshots.
@@ -130,6 +132,7 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - Redacted market trend uses public Hyperliquid candles and funding history for up to five disclosed markets and does not send a raw account address.
 - Redacted market watchlist is heuristic review triage over loaded public context and disclosed redacted fields; it does not prove hidden state or recommend trades.
 - Redacted review packets are public markdown summaries over disclosed fields and loaded public context; they cannot recompute or verify the hidden full snapshot hash.
+- Redacted share assistant answers only from disclosed redacted fields, loaded public context, and watchlist cues; it does not call an LLM, inspect hidden state, or recommend trades.
 - Redacted receipt shares are not cryptographic selective disclosure proofs; full bundles are still required when a reviewer needs to recompute the snapshot hash, import the receipt, run live recheck, generate EAS fallback payloads, or use the receipt assistant context.
 - Full portable receipt bundles are explicit full-snapshot exports. They solve cross-browser review for local receipts, but they are not encrypted, selectively disclosed, or access-controlled.
 
@@ -165,7 +168,7 @@ Use `docs/demo-script.md` for the reviewer-facing script. The short version:
 5. Create a fixture receipt.
 6. Open the receipt page and show hash verification.
 7. Show the EAS fallback payload and documented manual attestation steps.
-8. Optionally paste a Hyperliquid address, show account value history/drawdown context, create a local live receipt, export a redacted receipt share, inspect it at `/receipt/import`, load current public market context and 24h trend history for the redacted markets, show the redacted review watchlist and redacted review packet, switch to full bundle export/import when hash recomputation is needed, show receipt account-value context, run `Recheck live account`, show local recheck history and the `Rechecks` assistant prompt, show the receipt change summary, market regime, regime by market, risk-driver comparison, market context, load the volatility buffer, show the volatility cue in the recheck watchlist and assistant, review thresholds, show the review packet's local-history trend section, and show that hash verification still works while the app compares the saved receipt with current live market context.
+8. Optionally paste a Hyperliquid address, show account value history/drawdown context, create a local live receipt, export a redacted receipt share, inspect it at `/receipt/import`, load current public market context and 24h trend history for the redacted markets, show the redacted review watchlist, ask the redacted share assistant about current market context/watchlist/funding/privacy, show the redacted review packet, switch to full bundle export/import when hash recomputation is needed, show receipt account-value context, run `Recheck live account`, show local recheck history and the `Rechecks` assistant prompt, show the receipt change summary, market regime, regime by market, risk-driver comparison, market context, load the volatility buffer, show the volatility cue in the recheck watchlist and assistant, review thresholds, show the review packet's local-history trend section, and show that hash verification still works while the app compares the saved receipt with current live market context.
 
 ## Known Limitations
 
@@ -178,6 +181,7 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 - Redacted market trend is public 24h market history only and cannot prove the hidden receipt state.
 - Redacted market watchlist is heuristic public-context triage only and cannot prove hidden state, recompute hashes, or monitor exact liquidation state.
 - Redacted review packet is public markdown context only and cannot recompute hidden hashes or replace a full portable bundle.
+- Redacted share assistant is a deterministic local explanation layer over disclosed/public fields only; it is not a hidden-state verifier, live alert, LLM, or financial adviser.
 - Position risk drivers are heuristic and do not prove protocol-official risk attribution.
 - Receipt risk-driver comparison is heuristic saved-vs-live attribution and cannot compare changed positions as the same risk object.
 - Receipt recheck watchlist is heuristic triage only, including any loaded volatility-buffer cues, and cannot prove exact liquidation state, funding settlement, or what a trader should do next.
@@ -217,4 +221,4 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 
 ## Resume Bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, local recheck history with history-aware assistant and packet reads, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable full and redacted review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, local recheck history with history-aware assistant and packet reads, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable full and redacted review packets, redacted-share assistant answers, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

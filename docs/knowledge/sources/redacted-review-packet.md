@@ -28,4 +28,5 @@
 - [[../features/redacted-review-packet]]
 - [[../features/redacted-receipt-share]]
 - [[../features/redacted-market-watchlist]]
+- [[../features/redacted-share-assistant]]
 - [[../features/receipt-review-packet]]

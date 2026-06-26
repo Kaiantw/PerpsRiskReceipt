@@ -87,6 +87,13 @@ use this file for external protocol assumptions.
   - https://www.w3.org/TR/vc-data-model-2.0/
   - https://w3c-ccg.github.io/Merkle-Disclosure-2021/
   - https://chain.link/article/blockchain-privacy-data-confidentiality
+- docs checked on 2026-06-26 for redacted share assistant:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
+  - https://w3c-ccg.github.io/data-minimization/
+  - https://docs.attest.org/docs/tutorials/private-data-attestations
 - docs checked on 2026-06-25 for position risk drivers:
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
@@ -308,6 +315,13 @@ use this file for external protocol assumptions.
   - it does not include raw local receipt history, raw account identifiers, exact account value, exact position sizes, saved mark prices, listed liquidation prices, PnL, exact funding dollars, or hidden full-snapshot fields.
   - the snapshot hash is preserved as a reference only; the hidden full snapshot remains required for recomputation.
   - the packet is a public communication summary only, not cryptographic selective disclosure, a Verifiable Credential, an EAS private-data proof, exact liquidation monitoring, or trading advice.
+- redacted share assistant assumptions:
+  - the assistant is deterministic local explanation logic; it does not call an LLM, backend assistant endpoint, wallet, or trading endpoint.
+  - answers cite disclosed redacted receipt fields, loaded public current market context, loaded public 24-hour trend context, and redacted watchlist items.
+  - unloaded public context stays explicit as not loaded; the assistant does not invent current mark, funding, open-interest, or trend reads.
+  - named-market answers use disclosed markets only and do not reveal exact size, saved mark, listed liquidation price, PnL, raw account, or exact account equity.
+  - hash/privacy answers explain that the snapshot hash is a reference only and that a full portable receipt bundle is required for recomputation.
+  - trade, leverage, hedge, and position-change questions are refused while visible review signals are still explained.
 - position risk driver assumptions:
   - position risk drivers are derived entirely from the loaded normalized snapshot; no new endpoint is called.
   - the driver score is heuristic and intentionally decomposed into visible components: listed liquidation buffer up to 45 points, notional exposure/concentration up to 25 points, positive daily funding burden up to 20 points, and unrealized loss burden up to 10 points.

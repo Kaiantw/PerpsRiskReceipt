@@ -1005,3 +1005,25 @@ Review whether the markdown is too verbose for public sharing and whether a late
 - Browser verification used `http://localhost:3000/receipt/import`, pasted a generated Hyperliquid-shaped redacted bundle for `rr_78b061a0af37c810`, confirmed `Redacted review packet` rendered before context load with `status: not loaded`, confirmed private field names such as `account_value_usd`, `mark_price_usd`, and `liquidation_price_usd` were absent, clicked `Load current markets` and `Load 24h trends`, confirmed the packet included loaded public current market context, loaded public 24-hour trend context, the redacted review watchlist, and hash-reference-only caveats, clicked `Copy redacted markdown`, confirmed the browser clipboard contained the same sections, and saw zero browser console errors.
 ### remaining risks:
 The redacted review packet is public markdown context only. It cannot recompute or verify the hidden full snapshot hash, prove hidden receipt state, replace a full portable receipt bundle, provide cryptographic selective disclosure, monitor exact liquidation state, or tell a trader what to do next.
+
+### task id: post-t9 redacted share assistant
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a deterministic local assistant for imported redacted receipt shares so reviewers can ask cited questions about disclosed fields, loaded public current market context, loaded public 24-hour trend context, redacted watchlist cues, hash scope, and privacy boundaries.
+### output accepted:
+Added `src/lib/assistant/redacted-share-assistant.ts` with guarded answer routing, field-style citations, named-market drilldowns, unloaded-context handling, hash/privacy answers, and trade/leverage/hedge refusal. Added `src/lib/assistant/redacted-share-assistant.test.ts` with coverage for summary, watchlist, current market citations, unloaded context, 24-hour trend, named-market answers, refusal, hash/privacy scope, and suggestions. Wired `/receipt/import` to show `Redacted share assistant` after the redacted watchlist and before the redacted review packet. Updated package test registration, source notes, knowledge graph, README, demo script, known limitations, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, bundle format, backend store, LLM API, wallet/RPC flow, trading/exchange endpoint, raw account lookup, full-snapshot import, cryptographic selective-disclosure proof, EAS transaction, exact Hyperliquid liquidation formula, live alert, or protocol-official risk claim was added. The first routing pass treated the generic word `redacted` as privacy/hash intent, which incorrectly routed ordinary redacted-share questions; that was narrowed to hide/verify/private/hash-style wording. Browser verification also caught a missing funding-delta citation in the current-market answer, so the citation list and unit test were updated.
+### human review notes:
+Review whether the assistant prompt labels are the clearest order for a hiring-manager demo. Review whether public current mark prices should remain visible in redacted assistant answers after context loads. Review whether the assistant answer text is concise enough or should add a shorter "copy answer" mode later.
+### tests/checks run:
+- `node --test src/lib/assistant/redacted-share-assistant.test.ts` passed: 9 tests, 9 passing.
+- `npm test` passed: 160 tests, 160 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/import`, `/receipt/local/[id]`, `/api/hyperliquid/markets`, `/api/hyperliquid/market-history`, and the existing receipt/API routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted a Hyperliquid-shaped redacted bundle for `rr_browser_redacted_assistant`, confirmed `Redacted share assistant` rendered, clicked `Current` before loading context and confirmed the not-loaded answer plus `redacted_market_context` citation, clicked `Load current markets` and `Load 24h trends`, confirmed live public market and trend rows loaded, clicked `Current` again and confirmed loaded mark, funding-delta, open-interest citations, clicked `24h Trend` and confirmed trend citations and hidden-state caveat, clicked `Top Cue` and confirmed a named-market answer with private-field caveat and watchlist citation, asked `Should I increase leverage?`, confirmed trade-intent refusal, and saw zero browser console errors.
+### remaining risks:
+The redacted share assistant is deterministic local explanation over disclosed/public fields only. It cannot inspect hidden account state, recompute the hidden full-snapshot hash, prove exact liquidation state, replace a full portable receipt bundle, provide cryptographic selective disclosure, act as a live alert, or tell a trader what to do next.

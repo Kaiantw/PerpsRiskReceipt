@@ -22,6 +22,8 @@
 - redacted market trend uses public 24-hour candle and funding history only; it cannot prove the hidden receipt state and is capped to five disclosed markets to keep read-only history requests bounded.
 - redacted market watchlist is heuristic public-context triage over disclosed redacted fields; it cannot prove hidden receipt state, recompute the snapshot hash, or monitor exact liquidation state.
 - redacted review packet is a public markdown summary over disclosed fields and loaded public context; it cannot recompute the hidden snapshot hash, prove hidden receipt state, or replace a full portable receipt bundle.
+- redacted share assistant is deterministic local explanation logic over disclosed redacted fields and loaded public context; it is not a connected LLM, hidden-state verifier, full-snapshot importer, live alert, or financial adviser.
+- redacted share assistant citations point to local public/disclosed fields only and do not prove the hidden snapshot state or recompute the original snapshot hash.
 - live receipt recheck compares against a fresh read-only snapshot but is not an exact liquidation monitor or historical account audit.
 - receipt risk-driver comparison reuses heuristic position-driver scores for saved and live snapshots; it is not protocol-official attribution and position-state changes limit direct comparison.
 - receipt recheck watchlist is heuristic triage over saved/current local fields and loaded public volatility context; it cannot prove exact liquidation state, exact funding settlement, or what a trader should do next.
