@@ -24,6 +24,7 @@ informed it and forward to related feature ideas.
 - [[sources/perp-volatility-watchlist]] - source notes for ranking loaded volatility-buffer rows in the recheck watchlist.
 - [[sources/perp-market-regime]] - source notes for combining watchlist, volatility, funding, drawdown, and participation context into one regime read.
 - [[sources/perp-market-regime-drilldown]] - source notes for explaining account-level regime labels with per-market buffer, funding, volatility, mark, open-interest, and watchlist rows.
+- [[sources/perp-receipt-recheck-history]] - source notes for compact local history rows after repeated live receipt rechecks.
 - [[sources/perp-account-value-history]] - Hyperliquid portfolio history and drawdown context.
 - [[sources/perp-risk-review-checklist]] - liquidation, funding, leverage, and market-condition review framing.
 - [[sources/perp-receipt-review-assistant]] - receipt-question source notes for hash scope, live recheck review, funding, liquidation, and guardrails.
@@ -57,6 +58,7 @@ informed it and forward to related feature ideas.
 - [[features/receipt-volatility-watchlist]] - feeds loaded volatility-buffer cues into the recheck watchlist, assistant, and packet.
 - [[features/receipt-market-regime]] - combines recheck, volatility, funding, account drawdown, and market movement into one current-environment read.
 - [[features/receipt-market-regime-drilldown]] - explains the account-level regime with per-market buffer, funding, volatility, mark, open-interest, and watchlist rows.
+- [[features/receipt-recheck-history]] - local newest-first timeline of compact live recheck summaries for each receipt.
 - [[features/portable-receipt-bundle]] - explicit full-snapshot export/import flow for reviewing local live receipts across browsers.
 - [[features/redacted-receipt-share]] - minimized receipt share that hides raw account and exact position values while preserving a hash reference and risk summary.
 - [[features/redacted-market-context]] - current public Hyperliquid mark, funding, and open-interest context for redacted shares.
@@ -87,3 +89,6 @@ informed it and forward to related feature ideas.
   if the app needs reviewer-specific sensitivity without changing receipts.
 - [[features/receipt-market-regime-drilldown]] could later add sorting/filter
   controls if accounts have many open markets.
+- [[features/receipt-recheck-history]] could later feed a history-aware
+  assistant answer or optional export if reviewers want to discuss several
+  checks at once.

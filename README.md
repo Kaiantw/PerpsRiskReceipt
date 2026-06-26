@@ -28,6 +28,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - Volatility buffer for local receipt rechecks that compares current listed liquidation distance with public 24h range and ATR-style movement, then feeds high/watch cues into the watchlist.
 - Market regime summary for local receipt rechecks that combines watchlist severity, funding burden, sampled drawdown, market movement, and loaded volatility context into one current-environment read.
 - Per-market regime drilldown that explains the account-level regime with each market's current listed buffer, funding burden, mark movement, volatility status, open-interest movement, and watchlist severity.
+- Local recheck history that saves compact newest-first summaries for repeated live receipt checks in the current browser.
 - Receipt risk assistant that answers cited questions about a saved live receipt after recheck, including market regime rows, watchlist priority, loaded volatility-buffer reads, saved-vs-current risk-driver questions, and named-market drilldowns with mark, funding, liquidation-distance, and open-interest context.
 - Review packet that copies a markdown summary of the receipt hash, live recheck, market regime, per-market regime rows, watchlist, active thresholds, loaded volatility buffer, assistant read, driver comparison, and market context.
 - Receipt account-value context that shows whether a saved live receipt was near a sampled account peak, in drawdown, or materially different from latest sampled account value.
@@ -58,6 +59,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/lib/receipts/receipt-recheck-watchlist.ts` ranks full-receipt saved/current review cues after local live receipt recheck.
 - `src/lib/receipts/receipt-market-regime.ts` combines watchlist, buffer, volatility, funding, account drawdown, and market movement into a compact regime read.
 - `src/lib/receipts/receipt-market-regime-drilldown.ts` explains the account-level regime with per-market buffer, funding, volatility, mark, open-interest, and watchlist rows.
+- `src/lib/receipts/receipt-recheck-history.ts` stores compact browser-local history rows for repeated local receipt live rechecks.
 - `src/lib/receipts/receipt-review-packet.ts` builds a copyable markdown review packet from local receipt recheck context.
 - `src/lib/receipts/receipt-volatility-buffer.ts` compares current listed buffers with public 24h candle range and ATR-style movement.
 - `src/lib/perps/types.ts` defines the normalized snapshot, position, scenario, and receipt models.
@@ -112,6 +114,7 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - Receipt recheck watchlist is heuristic review triage over saved/current local fields and loaded public volatility context; it is not protocol-official risk attribution or a recommendation.
 - Receipt market regime is heuristic synthesis over already-loaded recheck fields; it is not a forecast, liquidation alert, protocol-official regime label, or recommendation.
 - Receipt market regime drilldown is row-level heuristic explanation only; it is not protocol-official attribution, liquidation proof, or live order-book/liquidity analysis.
+- Receipt recheck history is a compact browser-local review timeline only; it is not a synced account journal, alert feed, precise accounting record, or full-snapshot archive.
 - Configurable recheck thresholds tune the local watchlist and review packet only; they are not saved strategy settings and do not change receipt integrity.
 - Receipt volatility buffer compares public 24h candle movement with current listed liquidation distance; it is not an exact liquidation monitor, price forecast, or trade recommendation.
 - Receipt assistant watchlist, volatility, regime, and regime-row answers cite ranked local fields only; they are inspect-first explanations, not trading instructions.
@@ -156,7 +159,7 @@ Use `docs/demo-script.md` for the reviewer-facing script. The short version:
 5. Create a fixture receipt.
 6. Open the receipt page and show hash verification.
 7. Show the EAS fallback payload and documented manual attestation steps.
-8. Optionally paste a Hyperliquid address, show account value history/drawdown context, create a local live receipt, export a redacted receipt share, inspect it at `/receipt/import`, load current public market context and 24h trend history for the redacted markets, show the redacted review watchlist, switch to full bundle export/import when hash recomputation is needed, show receipt account-value context, run `Recheck live account`, show the receipt change summary, market regime, regime by market, risk-driver comparison, market context, load the volatility buffer, show the volatility cue in the recheck watchlist and assistant, review thresholds, and show that hash verification still works while the app compares the saved receipt with current live market context.
+8. Optionally paste a Hyperliquid address, show account value history/drawdown context, create a local live receipt, export a redacted receipt share, inspect it at `/receipt/import`, load current public market context and 24h trend history for the redacted markets, show the redacted review watchlist, switch to full bundle export/import when hash recomputation is needed, show receipt account-value context, run `Recheck live account`, show local recheck history, show the receipt change summary, market regime, regime by market, risk-driver comparison, market context, load the volatility buffer, show the volatility cue in the recheck watchlist and assistant, review thresholds, and show that hash verification still works while the app compares the saved receipt with current live market context.
 
 ## Known Limitations
 
@@ -173,6 +176,7 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 - Receipt recheck watchlist is heuristic triage only, including any loaded volatility-buffer cues, and cannot prove exact liquidation state, funding settlement, or what a trader should do next.
 - Receipt market regime is heuristic synthesis only and cannot forecast price, monitor exact liquidation, or decide what a trader should do next.
 - Receipt market regime drilldown is row-level heuristic explanation only and cannot prove exchange-official risk, exact liquidation state, or live liquidity.
+- Receipt recheck history is browser-local, compact, capped, and not synced, exported, encrypted, precise accounting, or a full private-snapshot archive.
 - Configurable recheck thresholds are local UI sensitivity settings and are not saved, synced, or protocol-official.
 - Receipt volatility buffer is public 24h candle context only and cannot model exact liquidation, order-book depth, or future price movement.
 - Receipt review packet is a copyable markdown summary, not a full private snapshot, encrypted share, access-controlled artifact, or hash-recomputable bundle.
@@ -204,4 +208,4 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 
 ## Resume Bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, local recheck history, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

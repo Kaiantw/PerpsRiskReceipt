@@ -75,6 +75,9 @@ Open `http://localhost:3000`.
    - Show `Receipt account-value context`.
    - Point out receipt value, nearest sampled account value, sample gap, latest sampled value, receipt drawdown, current drawdown, and max drawdown.
    - Click `Recheck live account`.
+   - Show `Local recheck history`.
+   - Point out the saved-check count, latest recheck timestamp, current risk score, account value, minimum listed buffer, market-regime label, focus market, top cue, watch cue counts, and whether volatility context was loaded for that history row.
+   - Explain that running recheck again adds another compact local row without changing the saved receipt hash.
    - Show `Receipt change summary`.
    - Point out that it combines account match, position state, liquidation buffer movement, funding changes, market movement, and sampled account-value context.
    - Show `Market regime`.
@@ -111,4 +114,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, local recheck history, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

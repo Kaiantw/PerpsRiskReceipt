@@ -165,6 +165,12 @@ use this file for external protocol assumptions.
   - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
   - https://www.coinapi.io/blog/historical-data-for-perpetual-futures
   - https://metamask.io/news/perpetual-futures-liquidation-mechanics
+- docs checked on 2026-06-26 for receipt recheck history:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/portfolio-graphs
+  - https://docs.chainstack.com/reference/hyperliquid-info-portfolio
+  - https://metamask.io/news/perpetual-futures-funding-frequency-strategies
+  - https://www.coinapi.io/blog/historical-data-for-perpetual-futures
+  - https://www.chainalysis.com/blog/perpetual-futures/
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -340,6 +346,13 @@ use this file for external protocol assumptions.
   - position-state changes make a row historical instead of directly comparable as the same risk object.
   - current positive funding burden is estimated as current daily funding cost divided by current account value in bps/day.
   - open-interest deltas remain participation context only.
+- receipt recheck history assumptions:
+  - local recheck history is stored in browser localStorage by receipt id and is not synced to a backend.
+  - each successful live recheck stores a compact derived summary, not another full private snapshot.
+  - rows are newest-first, deduped by generated history entry id, and capped at 12 per receipt.
+  - the history preserves the recheck timestamp, current data timestamp, freshness, risk score, market-regime label, focus market, watchlist counts, and top per-market drilldown cue.
+  - loaded public volatility context is recorded as a boolean so reviewers can tell whether volatility-buffer cues were part of that recheck row.
+  - the history is a local review aid only; it is not a trade journal, accounting ledger, alert feed, exact liquidation monitor, or trading recommendation.
 
 ## eas
 

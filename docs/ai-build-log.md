@@ -918,3 +918,25 @@ Review whether the row severity ordering is right: account mismatch, position-st
 - Browser verification used `http://localhost:3000/receipt/import`, imported a generated full portable Hyperliquid-shaped bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Regime by market`, the ETH-PERP high row, the no-forecast/no-trade caveat, clicked `Regime rows`, confirmed `receipt_market_regime_drilldown.rows.ETH-PERP.*` citations, and confirmed the review packet included `## regime by market`.
 ### remaining risks:
 The drilldown is heuristic local explanation over visible receipt recheck rows. It does not model Hyperliquid's exact liquidation engine, margin tiers, oracle/funding settlement, live order-book liquidity, hidden redacted-share fields, or what a trader should do next. The live browser pass could not exercise loaded volatility rows because the live recheck account had no comparable open ETH position; loaded volatility drilldown behavior is covered by focused tests.
+
+### task id: post-t9 local receipt recheck history
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a compact browser-local history timeline for repeated local receipt live rechecks so reviewers can compare how a saved receipt looked across multiple current-market checks.
+### output accepted:
+Added `src/lib/receipts/receipt-recheck-history.ts` with a compact local history entry model, storage key helper, defensive parser, JSON stringifier, deduping newest-first upsert, 12-entry cap, and a builder that captures current risk score, data freshness, comparison headline, market-regime label, focus market, watchlist counts, top per-market drilldown cue, current listed buffer, funding burden, and volatility-loaded state. Added focused tests for entry creation, dedupe/sort/cap behavior, and malformed-storage filtering. Mounted `Local recheck history` in the local receipt live recheck panel, saving a row after successful rechecks and showing saved count, latest recheck, current risk/account/buffer metrics, top cue, watch counts, and local-only/no-advice caveats. Updated package test registration, source notes, knowledge docs, limitations, README, demo script, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, backend sync, database, encrypted storage, export format, LLM call, wallet/RPC flow, trading/exchange endpoint, alert feed, exact Hyperliquid liquidation formula, or protocol-official risk claim was added. The history intentionally stores compact derived summaries instead of full private snapshots and stays local to the browser.
+### human review notes:
+Review whether 12 rows per receipt is the right cap for the demo. Review whether `Local recheck history` should later feed the receipt assistant or review packet; this slice only renders the local timeline and does not export or summarize it for sharing.
+### tests/checks run:
+- `node --test src/lib/receipts/receipt-recheck-history.test.ts` passed: 3 tests, 3 passing.
+- `npm test` passed: 144 tests, 144 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]`, `/api/hyperliquid/market-history`, and the existing receipt/API routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a generated full portable Hyperliquid-shaped bundle for `/receipt/local/rr_340044a994e7af1c`, confirmed `Hash verified`, confirmed `Local recheck history` initially empty, clicked `Recheck live account`, confirmed `Saved checks` became `1`, `Risk score 100 · critical`, `ETH-PERP: Position state changed`, and the local-only caveat, clicked `Recheck live account` again, confirmed `Saved checks` became `2` with two newest-first ETH-PERP rows, then reran the final browser check after the save-guard tweak and confirmed `Saved checks` became `3` with three newest-first ETH-PERP rows and zero captured browser console errors.
+### remaining risks:
+Local recheck history is compact browser-local review context only. It is not synced, exported, encrypted, precise accounting, a full private-snapshot archive, a trade journal, an alert feed, exact liquidation monitoring, exact funding settlement accounting, protocol-official risk attribution, or advice about what a trader should do next.

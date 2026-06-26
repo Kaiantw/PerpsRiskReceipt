@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   answerReceiptRiskQuestion,
@@ -8,6 +8,7 @@ import {
 } from "@/lib/assistant/receipt-risk-assistant.ts";
 import {
   formatPercentFromBps,
+  formatIsoDate,
   formatSignedBps,
   formatSignedUsd,
   formatUsd,
@@ -52,6 +53,14 @@ import {
   type receipt_review_packet,
 } from "@/lib/receipts/receipt-review-packet.ts";
 import {
+  createReceiptRecheckHistoryEntry,
+  getLocalRecheckHistoryStorageKey,
+  parseStoredReceiptRecheckHistory,
+  stringifyReceiptRecheckHistory,
+  upsertReceiptRecheckHistoryEntry,
+  type receipt_recheck_history_entry,
+} from "@/lib/receipts/receipt-recheck-history.ts";
+import {
   buildReceiptMarketRegime,
   type receipt_market_regime,
   type receipt_market_regime_label,
@@ -78,6 +87,7 @@ type recheck_state =
       status: "loaded";
       comparison: snapshot_comparison;
       currentSnapshot: normalized_account_snapshot;
+      rechecked_at_iso: string;
     };
 
 type hyperliquid_snapshot_response =
@@ -295,6 +305,56 @@ export function LiveRecheckPanel({
 }) {
   const [state, setState] = useState<recheck_state>({ status: "idle" });
   const canRecheck = receipt.snapshot.protocol === "hyperliquid";
+  const historyStorageKey = getLocalRecheckHistoryStorageKey(receipt.id);
+  const [historyEntries, setHistoryEntries] = useState<
+    receipt_recheck_history_entry[]
+  >([]);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const historyState = readReceiptRecheckHistory(historyStorageKey);
+
+      setHistoryEntries(historyState.entries);
+      setHistoryError(historyState.error);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [historyStorageKey]);
+
+  const appendHistoryEntry = useCallback(
+    (entry: receipt_recheck_history_entry) => {
+      setHistoryEntries((entries) => {
+        const nextEntries = upsertReceiptRecheckHistoryEntry({
+          entries,
+          entry,
+        });
+
+        try {
+          window.localStorage.setItem(
+            historyStorageKey,
+            stringifyReceiptRecheckHistory(nextEntries),
+          );
+          setHistoryError(null);
+        } catch {
+          setHistoryError("Local recheck history could not be saved.");
+        }
+
+        return nextEntries;
+      });
+    },
+    [historyStorageKey],
+  );
+
+  const clearHistory = useCallback(() => {
+    try {
+      window.localStorage.removeItem(historyStorageKey);
+      setHistoryEntries([]);
+      setHistoryError(null);
+    } catch {
+      setHistoryError("Local recheck history could not be cleared.");
+    }
+  }, [historyStorageKey]);
 
   async function recheckLiveAccount() {
     setState({ status: "loading" });
@@ -320,6 +380,7 @@ export function LiveRecheckPanel({
           receiptSnapshot: receipt.snapshot,
           currentSnapshot: body.snapshot,
         }),
+        rechecked_at_iso: new Date().toISOString(),
       });
     } catch (error) {
       setState({
@@ -372,28 +433,66 @@ export function LiveRecheckPanel({
           comparison={state.comparison}
           currentSnapshot={state.currentSnapshot}
           hashVerified={hashVerified}
-          key={`${state.currentSnapshot.data_time_iso}:${state.comparison.status}`}
+          key={`${state.rechecked_at_iso}:${state.currentSnapshot.data_time_iso}:${state.comparison.status}`}
+          onHistoryEntry={appendHistoryEntry}
           receipt={receipt}
           receiptAccountValueContext={receiptAccountValueContext ?? null}
+          recheckedAtIso={state.rechecked_at_iso}
+        />
+      ) : null}
+
+      {canRecheck ? (
+        <ReceiptRecheckHistoryResult
+          entries={historyEntries}
+          error={historyError}
+          onClear={clearHistory}
         />
       ) : null}
     </section>
   );
 }
 
+function readReceiptRecheckHistory(storageKey: string): {
+  entries: receipt_recheck_history_entry[];
+  error: string | null;
+} {
+  if (typeof window === "undefined") {
+    return { entries: [], error: null };
+  }
+
+  try {
+    return {
+      entries: parseStoredReceiptRecheckHistory(
+        window.localStorage.getItem(storageKey),
+      ),
+      error: null,
+    };
+  } catch {
+    return {
+      entries: [],
+      error: "Local recheck history could not be loaded.",
+    };
+  }
+}
+
 function LiveRecheckResult({
   comparison,
   currentSnapshot,
   hashVerified,
+  onHistoryEntry,
   receipt,
   receiptAccountValueContext,
+  recheckedAtIso,
 }: {
   comparison: snapshot_comparison;
   currentSnapshot: normalized_account_snapshot;
   hashVerified?: boolean;
+  onHistoryEntry: (entry: receipt_recheck_history_entry) => void;
   receipt: risk_receipt;
   receiptAccountValueContext: receipt_account_value_context | null;
+  recheckedAtIso: string;
 }) {
+  const savedHistoryEntrySignatureRef = useRef<string | null>(null);
   const [thresholds, setThresholds] =
     useState<receipt_recheck_watchlist_thresholds>(
       defaultReceiptRecheckWatchlistThresholds,
@@ -472,6 +571,17 @@ function LiveRecheckResult({
     watchlistAssistantResponse,
     hashVerified,
   });
+  const historyEntry = createReceiptRecheckHistoryEntry({
+    comparison,
+    currentSnapshot,
+    marketRegime,
+    marketRegimeDrilldown,
+    receiptId: receipt.id,
+    recheckedAtIso,
+    volatilityLoaded: marketHistoryState.status === "loaded",
+    watchlist: recheckWatchlist,
+  });
+  const historyEntrySignature = JSON.stringify(historyEntry);
   const assistantKey = [
     receipt.id,
     comparison.status,
@@ -491,6 +601,15 @@ function LiveRecheckResult({
     formatThresholdSignature(recheckWatchlist.thresholds),
     receiptAccountValueContext?.label ?? "no-account-context",
   ].join(":");
+
+  useEffect(() => {
+    if (savedHistoryEntrySignatureRef.current === historyEntrySignature) {
+      return;
+    }
+
+    savedHistoryEntrySignatureRef.current = historyEntrySignature;
+    onHistoryEntry(historyEntry);
+  }, [historyEntry, historyEntrySignature, onHistoryEntry]);
 
   async function loadMarketHistory() {
     if (marketHistoryMarkets.length === 0) {
@@ -1130,6 +1249,148 @@ function ReceiptRecheckWatchlistResult({
       <p className="border-t border-stone-200 px-4 py-3 text-xs text-stone-500">
         The watchlist ranks saved/current receipt review cues. It is not a
         trading recommendation or Hyperliquid&apos;s official risk engine.
+      </p>
+    </section>
+  );
+}
+
+function ReceiptRecheckHistoryResult({
+  entries,
+  error,
+  onClear,
+}: {
+  entries: receipt_recheck_history_entry[];
+  error: string | null;
+  onClear: () => void;
+}) {
+  const latestEntry = entries[0] ?? null;
+
+  return (
+    <section className="mt-4 rounded-lg border border-stone-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-stone-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Local recheck history</h3>
+          <p className="mt-1 text-sm text-stone-600">
+            Newest-first compact timeline saved in this browser only.
+          </p>
+        </div>
+        <button
+          className="inline-flex min-h-10 items-center justify-center rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-950 disabled:cursor-not-allowed disabled:text-stone-400"
+          disabled={entries.length === 0}
+          onClick={onClear}
+          type="button"
+        >
+          Clear history
+        </button>
+      </div>
+
+      {error ? (
+        <p className="border-b border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-950">
+          {error}
+        </p>
+      ) : null}
+
+      {latestEntry ? (
+        <dl className="grid gap-3 p-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
+          <MiniMetric label="Saved checks" value={String(entries.length)} />
+          <MiniMetric
+            label="Latest recheck"
+            value={formatIsoDate(latestEntry.rechecked_at_iso)}
+          />
+          <MiniMetric
+            label="Risk score"
+            value={`${formatScore(latestEntry.current_risk_score)} · ${latestEntry.current_risk_label}`}
+          />
+          <MiniMetric
+            label="Account value"
+            value={formatUsd(latestEntry.current_account_value_usd)}
+          />
+          <MiniMetric
+            label="Min buffer"
+            value={formatPercentFromBps(
+              latestEntry.current_min_liquidation_distance_bps,
+            )}
+          />
+        </dl>
+      ) : null}
+
+      {entries.length === 0 ? (
+        <p className="px-4 py-3 text-sm text-stone-600">
+          Run a live recheck to save a compact local history row for this
+          receipt.
+        </p>
+      ) : (
+        <div className="divide-y divide-stone-200 border-t border-stone-200">
+          {entries.map((entry) => (
+            <article className="px-4 py-3" key={entry.id}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="font-mono text-xs text-stone-500">
+                    {formatIsoDate(entry.rechecked_at_iso)} · data{" "}
+                    {formatIsoDate(entry.current_data_time_iso)}
+                  </p>
+                  <h4 className="mt-1 text-sm font-semibold text-stone-950">
+                    {entry.comparison_headline}
+                  </h4>
+                  <p className="mt-1 text-sm text-stone-600">
+                    {entry.top_drilldown_market
+                      ? `${entry.top_drilldown_market}: ${entry.top_drilldown_primary_cue}`
+                      : "No per-market drilldown row captured."}
+                  </p>
+                </div>
+                <span
+                  className={`w-fit rounded-lg border px-3 py-2 text-sm font-semibold ${marketRegimeTone[entry.market_regime_severity]}`}
+                >
+                  {marketRegimeLabels[entry.market_regime_label]}
+                </span>
+              </div>
+
+              <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                <MiniMetric
+                  label="Risk"
+                  value={`${formatScore(entry.current_risk_score)} · ${entry.current_risk_label}`}
+                />
+                <MiniMetric
+                  label="Focus"
+                  value={entry.market_regime_focus_market ?? "n/a"}
+                />
+                <MiniMetric
+                  label="Watch cues"
+                  value={formatHistoryWatchCounts(entry)}
+                />
+                <MiniMetric
+                  label="Volatility"
+                  value={entry.volatility_loaded ? "loaded" : "not loaded"}
+                />
+              </dl>
+
+              {entry.top_drilldown_summary ? (
+                <p className="mt-3 text-xs leading-5 text-stone-600">
+                  {entry.top_drilldown_summary}
+                </p>
+              ) : null}
+
+              <p className="mt-2 text-xs leading-5 text-stone-500">
+                Current buffer{" "}
+                {formatPercentFromBps(
+                  entry.top_drilldown_current_liquidation_distance_bps,
+                )}{" "}
+                · funding burden{" "}
+                {formatNullablePlainBps(
+                  entry.top_drilldown_current_funding_burden_bps,
+                )}{" "}
+                · max mark move{" "}
+                {formatAbsPercent(entry.max_abs_mark_price_change_percent)}
+              </p>
+            </article>
+          ))}
+        </div>
+      )}
+
+      <p className="border-t border-stone-200 px-4 py-3 text-xs text-stone-500">
+        History entries are local-only summaries for comparing rechecks over
+        time. They are not a live alert feed, accounting ledger, or trading
+        recommendation.
       </p>
     </section>
   );
@@ -1797,6 +2058,10 @@ function formatDrilldownWatchCounts(
   row: receipt_market_regime_drilldown["rows"][number],
 ) {
   return `${row.watchlist_high_count} high / ${row.watchlist_watch_count} watch / ${row.watchlist_info_count} info`;
+}
+
+function formatHistoryWatchCounts(entry: receipt_recheck_history_entry) {
+  return `${entry.watchlist_high_count} high / ${entry.watchlist_watch_count} watch / ${entry.watchlist_info_count} info`;
 }
 
 function formatSignedNullableNumber(value: number | null) {
