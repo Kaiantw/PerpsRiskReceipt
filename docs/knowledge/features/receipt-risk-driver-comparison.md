@@ -38,6 +38,7 @@ materially, and which markets deserve inspection first.
 
 ## related ideas
 
-- [[receipt-risk-assistant]] could cite this panel directly in a later slice.
+- [[receipt-assistant-driver-citations]] lets [[receipt-risk-assistant]] cite
+  this panel directly.
 - [[receipt-change-summary]] remains the highest-level verdict.
 - [[mark-price-context]] remains the detailed mark/funding/open-interest table.

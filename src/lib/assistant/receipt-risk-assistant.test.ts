@@ -8,6 +8,7 @@ import { loadFixtureAccount } from "../perps/fixtures.ts";
 import type { normalized_account_snapshot } from "../perps/types.ts";
 import { createRiskReceipt } from "../receipts/receipt.ts";
 import { buildReceiptChangeSummary } from "../receipts/receipt-change-summary.ts";
+import { compareReceiptRiskDrivers } from "../receipts/receipt-risk-driver-comparison.ts";
 import { compareSnapshots } from "../receipts/snapshot-comparison.ts";
 import {
   answerReceiptRiskQuestion,
@@ -54,6 +55,10 @@ async function buildAssistantContext(input?: {
     marketContext,
     accountValueContext,
     hashVerified: input?.hashVerified ?? true,
+    riskDriverComparison: compareReceiptRiskDrivers({
+      savedSnapshot: receiptSnapshot,
+      currentSnapshot,
+    }),
     changeSummary: buildReceiptChangeSummary({
       comparison,
       marketContext,
@@ -95,8 +100,12 @@ test("answers review questions without treating them as trade advice", async () 
   });
 
   assert.match(response.answer, /Review this receipt as/);
+  assert.match(response.answer, /Risk-driver read:/);
   assert.doesNotMatch(response.answer, /cannot recommend trades/i);
   assert.ok(response.citations.includes("receipt_change_summary.review_points"));
+  assert.ok(
+    response.citations.includes("receipt_risk_driver_comparison.headline"),
+  );
 });
 
 test("does not confuse market review words with trade intent", async () => {
@@ -180,6 +189,27 @@ test("surfaces funding deltas from receipt and live recheck", async () => {
   );
 });
 
+test("answers risk-driver questions from the receipt driver comparison", async () => {
+  const context = await buildAssistantContext();
+  const response = answerReceiptRiskQuestion({
+    context,
+    question: "Which risk drivers changed since the receipt?",
+  });
+
+  assert.match(response.answer, /Saved top driver/);
+  assert.match(response.answer, /Current top driver/);
+  assert.match(response.answer, /Top score delta/);
+  assert.match(response.answer, /heuristic driver attribution/i);
+  assert.ok(
+    response.citations.includes(
+      "receipt_risk_driver_comparison.top_driver_score_delta",
+    ),
+  );
+  assert.ok(
+    response.citations.includes("receipt_risk_driver_comparison.review_points"),
+  );
+});
+
 test("suggestions include account history only when context exists", async () => {
   const withoutHistory = getReceiptRiskAssistantSuggestions(
     await buildAssistantContext(),
@@ -188,6 +218,10 @@ test("suggestions include account history only when context exists", async () =>
     await buildAssistantContext({ includeAccountHistory: true }),
   );
 
+  assert.equal(
+    withoutHistory.some((suggestion) => suggestion.id === "drivers"),
+    true,
+  );
   assert.equal(
     withoutHistory.some((suggestion) => suggestion.id === "history"),
     false,

@@ -21,27 +21,29 @@ than giving uncited trading advice.
 - [[receipt-account-value-context]]
 - [[mark-price-context]]
 - [[funding-carry-watch]]
+- [[receipt-assistant-driver-citations]]
 
 ## implemented behavior
 
 - Shows after `Recheck live account` on local Hyperliquid receipt pages.
 - Opens with a receipt-specific summary that cites the receipt change summary,
   saved risk score, live recheck status, and snapshot hash.
-- Quick prompts cover review points, market context, liquidation distance,
-  funding carry, receipt hash scope, and account-value history when loaded.
+- Quick prompts cover review points, market context, risk drivers,
+  liquidation distance, funding carry, receipt hash scope, and account-value
+  history when loaded.
 - Free-form questions route through deterministic local logic.
 - Trade-intent questions are refused while still explaining receipt signals.
 - Responses cite local evidence keys such as `receipt_change_summary`,
-  `market_context`, `snapshot_comparison`, `receipt_account_value_context`, and
-  `receipt.snapshot_hash`.
+  `receipt_risk_driver_comparison`, `market_context`, `snapshot_comparison`,
+  `receipt_account_value_context`, and `receipt.snapshot_hash`.
 
 ## connected feature ideas
 
 - [[ai-risk-assistant]] can eventually share guardrail language and citation UI
   with this receipt-specific assistant.
 - [[receipt-change-summary]] is now the assistant's primary "what changed" source.
-- [[receipt-risk-driver-comparison]] could become a direct citation source for
-  driver-specific receipt questions.
+- [[receipt-assistant-driver-citations]] makes [[receipt-risk-driver-comparison]]
+  a direct citation source for driver-specific receipt questions.
 - [[account-value-timeline]] could later add richer account-history citations if
   the app imports more complete portfolio history.
 - [[portable-receipt-bundle]] lets the same assistant workflow apply after a

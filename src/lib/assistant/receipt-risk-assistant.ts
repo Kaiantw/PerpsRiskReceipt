@@ -7,6 +7,7 @@ import type { receipt_account_value_context } from "../history/receipt-account-v
 import type { market_context } from "../market/market-context.ts";
 import type { risk_receipt } from "../perps/types.ts";
 import type { receipt_change_summary } from "../receipts/receipt-change-summary.ts";
+import type { receipt_risk_driver_comparison } from "../receipts/receipt-risk-driver-comparison.ts";
 import type {
   metric_comparison,
   snapshot_comparison,
@@ -17,6 +18,7 @@ export type receipt_risk_assistant_context = {
   comparison: snapshot_comparison;
   marketContext: market_context;
   changeSummary: receipt_change_summary;
+  riskDriverComparison?: receipt_risk_driver_comparison | null;
   accountValueContext?: receipt_account_value_context | null;
   hashVerified?: boolean;
 };
@@ -57,6 +59,26 @@ function formatNullableSignedUsd(value: number | null) {
   }
 
   return formatSignedUsd(value);
+}
+
+function formatSignedNumber(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  if (value === 0) {
+    return "0";
+  }
+
+  return `${value > 0 ? "+" : "-"}${Math.abs(value).toFixed(2)}`;
+}
+
+function formatSignedPercentFromBps(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return `${formatSignedNumber(value / 100)} percentage points`;
 }
 
 function formatPercent(value: number | null) {
@@ -112,19 +134,66 @@ function buildReviewAnswer(
   const reviewPoints = context.changeSummary.review_points
     .map((point) => `- ${point}`)
     .join(" ");
+  const driverRead = context.riskDriverComparison
+    ? `Risk-driver read: ${context.riskDriverComparison.headline}`
+    : "Risk-driver comparison is not loaded in this assistant context.";
 
   return {
     answer: [
       `Review this receipt as ${context.changeSummary.label.replaceAll("_", " ")}.`,
       context.changeSummary.primary_detail,
+      driverRead,
       reviewPoints,
       `Position state changes: ${context.comparison.changed_position_count}. Largest comparable mark move: ${context.comparison.max_abs_mark_price_change_percent.toFixed(2)}%.`,
     ].join(" "),
     citations: [
       "receipt_change_summary.label",
       "receipt_change_summary.review_points",
+      ...(context.riskDriverComparison
+        ? ["receipt_risk_driver_comparison.headline"]
+        : []),
       "snapshot_comparison.changed_position_count",
       "snapshot_comparison.max_abs_mark_price_change_percent",
+    ],
+  };
+}
+
+function buildDriverAnswer(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_response {
+  const driverComparison = context.riskDriverComparison ?? null;
+
+  if (!driverComparison) {
+    return {
+      answer:
+        "Risk-driver comparison is not loaded for this receipt. Run a live recheck to compare saved and current top drivers, exposure, listed buffer, and funding burden.",
+      citations: ["receipt_risk_driver_comparison"],
+    };
+  }
+
+  const reviewPoints = driverComparison.review_points
+    .map((point) => `- ${point}`)
+    .join(" ");
+
+  return {
+    answer: [
+      driverComparison.headline,
+      driverComparison.summary,
+      `Saved top driver: ${driverComparison.saved_top_driver_market ?? "n/a"}. Current top driver: ${driverComparison.current_top_driver_market ?? "n/a"}.`,
+      `Top score delta: ${formatSignedNumber(driverComparison.top_driver_score_delta)}. Gross exposure delta: ${formatSignedPercentFromBps(driverComparison.gross_exposure_delta_bps)}. Closest listed-buffer delta: ${formatSignedPercentFromBps(driverComparison.closest_liquidation_distance_delta_bps)}. Daily funding delta: ${formatNullableSignedUsd(driverComparison.daily_funding_delta_usd)}.`,
+      reviewPoints,
+      "This is heuristic driver attribution from the saved and current snapshots, not a protocol-official liquidation monitor or trade recommendation.",
+    ].join(" "),
+    citations: [
+      "receipt_risk_driver_comparison.headline",
+      "receipt_risk_driver_comparison.summary",
+      "receipt_risk_driver_comparison.saved_top_driver_market",
+      "receipt_risk_driver_comparison.current_top_driver_market",
+      "receipt_risk_driver_comparison.top_driver_score_delta",
+      "receipt_risk_driver_comparison.gross_exposure_delta_bps",
+      "receipt_risk_driver_comparison.closest_liquidation_distance_delta_bps",
+      "receipt_risk_driver_comparison.daily_funding_delta_usd",
+      "receipt_risk_driver_comparison.review_points",
     ],
   };
 }
@@ -295,6 +364,22 @@ export function answerReceiptRiskQuestion(input: {
 
   if (
     includesAny(normalizedQuestion, [
+      "driver",
+      "drivers",
+      "top risk",
+      "risk factor",
+      "factor",
+      "exposure",
+      "gross exposure",
+      "attribution",
+      "what is driving",
+    ])
+  ) {
+    return buildDriverAnswer(input.context);
+  }
+
+  if (
+    includesAny(normalizedQuestion, [
       "liquidation",
       "liq",
       "buffer",
@@ -362,6 +447,11 @@ export function getReceiptRiskAssistantSuggestions(
       id: "market",
       label: "Market",
       question: "What changed in the current market context?",
+    },
+    {
+      id: "drivers",
+      label: "Drivers",
+      question: "Which risk drivers changed since the receipt?",
     },
     {
       id: "liquidation",

@@ -95,6 +95,12 @@ use this file for external protocol assumptions.
   - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
   - https://www.investopedia.com/what-are-perpetual-futures-7494870
   - https://metamask.io/news/leverage-margin-perpetual-futures-trading
+- docs checked on 2026-06-25 for receipt assistant driver citations:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://metamask.io/news/leverage-margin-perpetual-futures-trading
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -161,10 +167,11 @@ use this file for external protocol assumptions.
   - account-value history is included only when the local receipt page has loaded sampled portfolio context.
 - receipt risk assistant assumptions:
   - the assistant is deterministic local explanation logic; it does not call an LLM or any new endpoint.
-  - answers cite visible receipt-page context: receipt hash, receipt change summary, live recheck comparison, market context, funding deltas, and sampled account-value context.
+  - answers cite visible receipt-page context: receipt hash, receipt change summary, live recheck comparison, receipt risk-driver comparison, market context, funding deltas, and sampled account-value context.
   - hash answers explain snapshot integrity only; they do not claim that external Hyperliquid data was correct at capture time.
   - trade-intent questions are refused while still explaining the receipt signals.
   - account-value history answers are only available after the receipt account-value context panel has loaded sampled portfolio context.
+  - driver-specific answers are available after live recheck and cite saved/current top driver, driver-score delta, gross exposure delta, closest listed-buffer delta, daily funding delta, and driver review points.
 - portable receipt bundle assumptions:
   - the bundle is a user-controlled JSON export/import path; it does not call new Hyperliquid endpoints.
   - the bundle contains the full `risk_receipt` snapshot so another browser can recompute the same snapshot hash and render the same local receipt page.

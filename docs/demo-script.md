@@ -81,7 +81,7 @@ Open `http://localhost:3000`.
    - Point out saved top driver versus current top driver, score delta, gross exposure delta, closest listed-buffer delta, daily funding delta, and the per-market driver table.
    - Explain that this answers what is valuable in the current market: whether the current account is still driven by the same risk, whether the buffer tightened or widened, and whether funding burden changed.
    - Show `Receipt risk assistant`.
-   - Click `Review`, `Funding`, and `Hash` to show cited answers from the receipt summary, live recheck, funding delta, and snapshot hash.
+   - Click `Review`, `Drivers`, `Funding`, and `Hash` to show cited answers from the receipt summary, risk-driver comparison, live recheck, funding delta, and snapshot hash.
    - Ask `Should I increase leverage?` and show that it refuses trade recommendations while still explaining receipt signals.
    - Show saved-vs-current risk score, margin usage, liquidation distance, funding, mark movement, and position-state comparison.
    - Show `Market context since receipt`.
@@ -94,4 +94,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with assistant citations, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

@@ -276,6 +276,8 @@ function LiveRecheckResult({
     comparison.changed_position_count,
     comparison.max_abs_mark_price_change_percent,
     changeSummary.label,
+    riskDriverComparison.label,
+    riskDriverComparison.current_top_driver_market ?? "no-current-driver",
     receiptAccountValueContext?.label ?? "no-account-context",
   ].join(":");
 
@@ -314,6 +316,7 @@ function LiveRecheckResult({
           comparison,
           marketContext,
           changeSummary,
+          riskDriverComparison,
           accountValueContext: receiptAccountValueContext,
           hashVerified,
         }}

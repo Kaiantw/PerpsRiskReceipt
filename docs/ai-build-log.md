@@ -675,3 +675,25 @@ Review the comparison thresholds: material driver-score movement at 10 points, l
 - Browser verification used `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_b1431ac476135441`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Receipt change summary`, `Risk drivers since receipt`, `Saved top`, `Current top`, `Score delta`, `No material risk-driver changes crossed the current app thresholds.`, `Market context since receipt`, and zero browser console errors.
 ### remaining risks:
 Receipt risk-driver comparison is heuristic saved-vs-live attribution over normalized snapshot fields. It is not Hyperliquid's official liquidation engine, does not model margin tiers, liquidity, exact cross-margin behavior, or funding settlement, and cannot compare changed positions as the same risk object. It is descriptive review context only, not financial advice.
+
+### task id: post-t9 receipt assistant driver citations
+### codex mode:
+product iteration + implementation
+### delegated work:
+Connected the receipt risk assistant to the saved-vs-live risk-driver comparison so current-market driver questions can be answered from cited local context.
+### output accepted:
+Added `riskDriverComparison` to receipt assistant context, a `Drivers` quick prompt, driver/exposure/top-risk routing, driver-specific answers citing saved/current top driver, top score delta, gross exposure delta, closest listed-buffer delta, daily funding delta, and review points. Review answers now include the driver-comparison headline. Updated tests, source notes, knowledge graph, README, demo script, limitations, and this handoff.
+### output rejected or changed:
+No LLM API, server call, new endpoint, dependency, trading/exchange endpoint, wallet/RPC flow, backend storage, or new data model was added. Driver answers remain deterministic local explanations and keep trade-intent refusal before driver routing.
+### human review notes:
+Review the keyword routing for broad terms like `factor` and `exposure`, and confirm the `Drivers` answer copy stays explanatory rather than advisory.
+### tests/checks run:
+- `node --test src/lib/assistant/receipt-risk-assistant.test.ts` passed: 10 tests, 10 passing.
+- `npm test` passed: 113 tests, 113 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]`.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_b849aedef1a09287`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Receipt change summary`, `Risk drivers since receipt`, `Receipt risk assistant`, and `Drivers`, clicked `Drivers`, confirmed `Saved top driver`, `Current top driver`, `Top score delta`, `receipt_risk_driver_comparison.top_driver_score_delta`, and the heuristic caveat, asked `Should I increase leverage?`, confirmed the trade-advice refusal, and saw zero severe captured tab logs.
+### remaining risks:
+The assistant is deterministic local routing and not an LLM. Driver answers inherit the heuristic receipt risk-driver comparison limits: not protocol-official attribution, exact liquidation monitoring, exact funding settlement, or trade advice.

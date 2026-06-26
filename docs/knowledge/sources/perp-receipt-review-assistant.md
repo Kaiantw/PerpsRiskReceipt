@@ -22,10 +22,14 @@
   mark price, maintenance margin, margin mode, and account equity.
 - The assistant should explain what to review without telling a user to open,
   close, increase, reduce, or otherwise change a position.
+- Driver-specific answers should cite the receipt risk-driver comparison when
+  the question is about top risk, exposure, driver score, listed buffer, or
+  funding burden.
 
 ## linked feature ideas
 
 - [[../features/receipt-risk-assistant]]
+- [[../features/receipt-assistant-driver-citations]]
 - [[../features/receipt-change-summary]]
 - [[../features/live-receipt-recheck]]
 - [[../features/receipt-account-value-context]]

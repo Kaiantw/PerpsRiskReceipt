@@ -26,6 +26,7 @@
 - receipt account-value context uses the nearest sampled Hyperliquid portfolio point, so the visible sample gap matters for interpretation.
 - receipt change summary is heuristic and prioritizes review cues; it is not a trading recommendation or exact risk monitor.
 - receipt risk assistant is deterministic local explanation logic over visible receipt/recheck fields, not a connected LLM or financial adviser.
+- receipt risk assistant driver answers inherit the heuristic receipt risk-driver comparison limits and do not inspect hidden fields beyond the local receipt context.
 - market context requires comparable saved/current positions and treats open interest as descriptive context, not a standalone direction signal.
 - risk assistant is deterministic local explanation logic, not a connected LLM, and it must not be treated as financial advice.
 - funding carry watch assumes current funding and notional stay unchanged and estimates from normalized mark-price notional rather than Hyperliquid oracle-price settlement.

@@ -29,54 +29,53 @@
 - Post-t9 redacted market watchlist is complete.
 - Post-t9 position risk drivers is complete.
 - Post-t9 receipt risk-driver comparison is complete.
+- Post-t9 receipt assistant driver citations is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote state: `main` tracks `origin/main`.
-- Baseline before this slice: `de5c193 feat: add position risk drivers`.
-- Current work adds `Risk drivers since receipt` to local Hyperliquid receipt live rechecks.
-- The panel compares saved receipt position-driver attribution with a fresh read-only Hyperliquid snapshot.
-- It shows saved/current top driver, score delta, gross exposure delta, largest-position-share delta, closest listed-buffer delta, net directional delta, daily funding delta, review points, and per-market driver rows.
+- Baseline before this slice: `65d598e feat: compare receipt risk drivers`.
+- Current work lets `Receipt risk assistant` cite `Risk drivers since receipt` directly after a local live recheck.
+- The assistant now has a `Drivers` quick prompt and routes driver/exposure/top-risk questions to a deterministic answer built from saved/current top driver, score delta, gross exposure delta, closest listed-buffer delta, daily funding delta, and review points.
+- Review answers now include the risk-driver comparison headline when that context is loaded.
+- Trade-intent refusal still runs before driver routing, so advice-seeking questions remain blocked.
 - No new endpoint, dependency, data model, wallet/RPC flow, backend store, LLM call, or trading behavior was added.
 - A Next dev server was already running on `http://localhost:3000` for browser smoke verification.
 
 ## files changed
 
-- `src/lib/receipts/receipt-risk-driver-comparison.ts`: new pure saved-vs-live risk-driver comparison module.
-- `src/lib/receipts/receipt-risk-driver-comparison.test.ts`: tests for no-live, tighter/wider listed buffer, position change, account mismatch, and top-driver handoff cases.
-- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: stores the fresh live snapshot and renders `Risk drivers since receipt`.
-- `package.json`: includes the new receipt risk-driver comparison test in `npm test`.
-- `docs/knowledge/sources/perp-receipt-risk-driver-comparison.md`: source-backed assumptions and thresholds for the comparison.
-- `docs/knowledge/features/receipt-risk-driver-comparison.md`: implemented feature note.
-- `docs/knowledge/index.md`: links the new source and feature notes.
-- `docs/knowledge/features/position-risk-drivers.md`: links the receipt comparison reuse.
-- `docs/knowledge/features/live-receipt-recheck.md`: documents the new receipt recheck panel.
-- `docs/knowledge/features/receipt-change-summary.md`: links the detailed driver comparison below the summary.
-- `docs/knowledge/features/receipt-risk-assistant.md`: notes a future direct citation path.
-- `docs/knowledge/sources/perp-position-risk-drivers.md`: links the receipt comparison.
-- `docs/source-notes.md`: documents receipt driver-comparison sources, assumptions, and thresholds.
-- `docs/known-limitations.md`: documents heuristic comparison limits.
-- `README.md`: documents the feature in demo, architecture, assumptions, limitations, and resume bullet.
-- `docs/demo-script.md`: adds the receipt-driver comparison walkthrough and updated resume bullet.
+- `src/lib/assistant/receipt-risk-assistant.ts`: adds optional receipt driver-comparison context, driver answer routing, driver citations, and the `Drivers` suggestion.
+- `src/lib/assistant/receipt-risk-assistant.test.ts`: covers review-answer driver citations, driver question answers, and the new quick prompt.
+- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: passes the saved-vs-live driver comparison into the receipt assistant and refreshes the assistant key when driver state changes.
+- `docs/knowledge/sources/perp-receipt-assistant-driver-citations.md`: source-backed assumptions for driver-aware assistant answers.
+- `docs/knowledge/features/receipt-assistant-driver-citations.md`: implemented feature note.
+- `docs/knowledge/index.md`: links the new feature/source notes.
+- `docs/knowledge/features/receipt-risk-assistant.md`: documents direct driver-comparison citations.
+- `docs/knowledge/features/receipt-risk-driver-comparison.md`: links assistant reuse.
+- `docs/knowledge/sources/perp-receipt-review-assistant.md`: adds the driver-citation source note.
+- `docs/source-notes.md`: documents driver-specific assistant assumptions.
+- `docs/known-limitations.md`: documents inherited heuristic driver-answer limits.
+- `README.md`: documents the assistant's driver-aware live receipt review.
+- `docs/demo-script.md`: adds the driver-aware assistant walkthrough.
 - `docs/ai-build-log.md`: records this feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `node --test src/lib/receipts/receipt-risk-driver-comparison.test.ts` passed: 7 tests, 7 passing.
-- `npm test` passed: 112 tests, 112 passing.
+- `node --test src/lib/assistant/receipt-risk-assistant.test.ts` passed: 10 tests, 10 passing.
+- `npm test` passed: 113 tests, 113 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm run build` passed and listed `/receipt/local/[id]` plus existing receipt/API routes.
+- `npm run build` passed and listed `/receipt/local/[id]`.
 - `git diff --check` passed.
-- Browser verification used `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_b1431ac476135441`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Receipt change summary`, `Risk drivers since receipt`, `Saved top`, `Current top`, `Score delta`, `No material risk-driver changes crossed the current app thresholds.`, `Market context since receipt`, and zero browser console errors.
+- Browser verification used `http://localhost:3000`, pasted `0x102a618b36c32b338c03526255dcf2a39eb1897f`, created `/receipt/local/rr_b849aedef1a09287`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Receipt change summary`, `Risk drivers since receipt`, `Receipt risk assistant`, and `Drivers`, clicked `Drivers`, confirmed `Saved top driver`, `Current top driver`, `Top score delta`, `receipt_risk_driver_comparison.top_driver_score_delta`, and the heuristic caveat, asked `Should I increase leverage?`, confirmed the trade-advice refusal, and saw zero severe captured tab logs.
 
 ## blockers
 
 - No hard blocker for this feature slice.
-- Receipt risk-driver comparison is heuristic and not protocol-official attribution.
+- Receipt assistant driver answers inherit the heuristic receipt risk-driver comparison limits and are not protocol-official attribution.
 - The comparison uses listed liquidation price and normalized mark-price notional; it does not model Hyperliquid's exact liquidation formula, margin tiers, liquidity, cross-margin engine, or oracle-price funding settlement.
 - Position-state changes limit direct comparison because a resized, side-changed, new, or closed position is not the same risk object.
 - Live Hyperliquid data still depends on API availability and response shape.
@@ -86,4 +85,4 @@
 
 ## exact next recommended action
 
-Let `Receipt risk assistant` cite `Risk drivers since receipt` directly, so questions like "what changed in the current market?" can answer from the driver comparison as well as the existing receipt summary and market context.
+Add per-market assistant drilldowns from the driver comparison table, so the user can ask why a specific market is the current driver and see component score changes.
