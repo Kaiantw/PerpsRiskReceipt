@@ -1,5 +1,4 @@
 import {
-  formatPercentFromBps,
   formatSignedBps,
   formatSignedUsd,
   formatUsd,
@@ -46,7 +45,15 @@ export function FundingCarryWatchPanel({
         </span>
       </div>
 
-      <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-6">
+        <FundingMetric
+          label="Next hourly est."
+          value={formatSignedUsd(watch.next_hour_net_funding_usd)}
+        />
+        <FundingMetric
+          label="8h rate basis"
+          value={formatSignedUsd(watch.eight_hour_rate_net_funding_usd)}
+        />
         <FundingMetric
           label="Net daily funding"
           value={formatSignedUsd(watch.daily_net_funding_usd)}
@@ -56,17 +63,15 @@ export function FundingCarryWatchPanel({
           value={formatSignedUsd(watch.thirty_day_net_funding_usd)}
         />
         <FundingMetric
-          label="Daily burden"
-          value={formatPercentFromBps(
-            watch.daily_funding_bps_of_account_value,
-          )}
+          label="Hourly burden"
+          value={formatNullableBps(watch.next_hour_funding_bps_of_account_value)}
         />
         <FundingMetric
           label="Largest cost"
           value={
             watch.top_cost_position
               ? `${watch.top_cost_position.market} ${formatSignedUsd(
-                  watch.top_cost_position.daily_funding_usd,
+                  watch.top_cost_position.next_hour_funding_usd,
                 )}`
               : "n/a"
           }
@@ -76,7 +81,7 @@ export function FundingCarryWatchPanel({
           value={
             watch.top_earning_position
               ? `${watch.top_earning_position.market} ${formatSignedUsd(
-                  watch.top_earning_position.daily_funding_usd,
+                  watch.top_earning_position.next_hour_funding_usd,
                 )}`
               : "n/a"
           }
@@ -89,13 +94,15 @@ export function FundingCarryWatchPanel({
         </p>
       ) : (
         <div className="overflow-x-auto border-t border-stone-200">
-          <table className="w-full min-w-[760px] text-left text-sm">
+          <table className="w-full min-w-[920px] text-left text-sm">
             <thead className="bg-stone-100 text-xs uppercase text-stone-600">
               <tr>
                 <th className="px-4 py-3">Market</th>
                 <th className="px-4 py-3">Side</th>
                 <th className="px-4 py-3">Notional</th>
                 <th className="px-4 py-3">Funding 8h</th>
+                <th className="px-4 py-3">Next hour</th>
+                <th className="px-4 py-3">8h basis</th>
                 <th className="px-4 py-3">Daily</th>
                 <th className="px-4 py-3">30d</th>
               </tr>
@@ -112,6 +119,12 @@ export function FundingCarryWatchPanel({
                     )}
                   </td>
                   <td className="px-4 py-3">
+                    {formatSignedUsd(position.next_hour_funding_usd)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatSignedUsd(position.eight_hour_rate_funding_usd)}
+                  </td>
+                  <td className="px-4 py-3">
                     {formatSignedUsd(position.daily_funding_usd)}
                   </td>
                   <td className="px-4 py-3">
@@ -124,10 +137,22 @@ export function FundingCarryWatchPanel({
         </div>
       )}
 
+      <ul className="space-y-2 border-t border-stone-200 px-4 py-3 text-xs leading-5 text-stone-600">
+        {watch.review_points.map((point) => (
+          <li className="flex gap-2" key={point}>
+            <span
+              aria-hidden="true"
+              className="mt-2 h-1.5 w-1.5 rounded-full bg-stone-400"
+            />
+            <span>{point}</span>
+          </li>
+        ))}
+      </ul>
+
       <p className="border-t border-stone-200 px-4 py-3 text-xs text-stone-500">
         Estimate assumes current funding and notional stay unchanged. Hyperliquid
-        funding settles hourly; this app displays the normalized 8-hour user
-        perspective as a holding-cost estimate.
+        funding uses an 8-hour formula and settles hourly; this app displays a
+        normalized user-perspective holding-cost estimate.
       </p>
     </section>
   );
@@ -142,4 +167,12 @@ function FundingMetric({ label, value }: { label: string; value: string }) {
       </dd>
     </div>
   );
+}
+
+function formatNullableBps(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return `${value.toFixed(2)} bps`;
 }

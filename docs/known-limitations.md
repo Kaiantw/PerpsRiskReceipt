@@ -50,5 +50,5 @@
 - receipt assistant recheck-history answers summarize compact browser-local history rows only; they are not synced, exported, full-snapshot archives, exact account history, live alerts, or advice.
 - market context requires comparable saved/current positions and treats open interest as descriptive context, not a standalone direction signal.
 - risk assistant is deterministic local explanation logic, not a connected LLM, and it must not be treated as financial advice.
-- funding carry watch assumes current funding and notional stay unchanged and estimates from normalized mark-price notional rather than Hyperliquid oracle-price settlement.
+- funding carry watch and current funding window assume current funding and notional stay unchanged and estimate from normalized mark-price notional rather than Hyperliquid oracle-price settlement.
 - eas fallback payload is generated, but no schema registration or attestation transaction is sent by the app.

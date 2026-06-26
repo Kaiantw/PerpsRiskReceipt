@@ -1203,3 +1203,27 @@ Review whether drift-score delta should compare newest versus oldest saved row, 
 - Browser verification used `http://localhost:3000/receipt/local/rr_2f6b3a2ad298c698`, cleared that receipt's local history for the test, clicked `Recheck live account` twice, confirmed `Local recheck history` showed saved checks, drift score, drift delta, and snapshot age, confirmed the review packet included `latest snapshot drift` and `snapshot-drift delta`, clicked the assistant `Rechecks` prompt, confirmed the answer included latest snapshot drift and snapshot-drift delta, and captured 0 browser console errors.
 ### remaining risks:
 Recheck drift history is compact browser-local freshness context only. It is not synced, exported as raw history, encrypted, a complete account-history import, a live alert feed, exact liquidation monitoring, proof that a stale receipt is current, or a recommendation to change a position.
+
+### task id: post-t9 funding-window read
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a funding-window read so the dashboard and local receipt recheck can show the estimated next funding payment separately from daily and 30-day carry.
+### output accepted:
+Extended `funding-watch` with next hourly funding, 8h rate-basis funding, hourly account-value burden, largest next cost, largest next earn, and review points. Updated the dashboard funding panel, local receipt `Current funding window` panel, dashboard assistant funding answer, receipt assistant funding answer, and full receipt review packet markdown. Added source-backed knowledge notes and updated README, demo script, source notes, known limitations, and session handoff.
+### output rejected or changed:
+No new endpoint, dependency, persisted receipt/hash field, backend store, wallet/RPC flow, trading endpoint, predicted funding call, user funding-history call, exact Hyperliquid settlement calculation, live alert, or advice surface was added. During browser QA, the dashboard hourly burden initially displayed as a rounded percentage; I changed it to bps so small hourly funding values remain visible.
+### human review notes:
+Review whether the labels `Next hourly est.` and `8h rate basis` are intuitive for a non-perps reviewer. Review whether a later slice should load bounded `predictedFundings` or `fundingHistory` for disclosed markets to show whether the current funding rate is persistent, while keeping no-advice copy.
+### tests/checks run:
+- `node --test src/lib/funding/funding-watch.test.ts src/lib/assistant/risk-assistant.test.ts src/lib/assistant/receipt-risk-assistant.test.ts src/lib/receipts/receipt-review-packet.test.ts` passed: 31 tests, 31 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 190 tests, 190 passing.
+- `npm run build` passed and listed `/`, `/receipt/import`, `/receipt/local/[id]`, `/api/hyperliquid/markets`, `/api/hyperliquid/market-history`, `/api/hyperliquid/portfolio`, `/api/hyperliquid/snapshot`, and the fixture receipt routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000` and confirmed the dashboard `Funding carry watch` showed next hourly funding, 8h rate basis, hourly burden in bps, per-position next-hour rows, review points, and the oracle-price settlement caveat.
+- Browser verification used `http://localhost:3000/receipt/local/rr_2f6b3a2ad298c698`, clicked `Recheck live account`, confirmed `Current funding window` rendered, confirmed the review packet textarea included `## current funding window` and `next hourly net`, clicked the receipt assistant `Funding` prompt, confirmed the answer cited `funding_carry_watch.next_hour_net_funding_usd`, and captured 0 browser console errors.
+- Mobile-width browser verification at 390px confirmed the dashboard funding table remains horizontally scrollable and still shows the new funding-window fields.
+### remaining risks:
+Funding-window values assume current funding and notional stay unchanged, use normalized mark-price notional, and are not Hyperliquid's exact oracle-price settlement accounting. The slice does not yet show predicted funding or recent funding persistence from `predictedFundings`, `fundingHistory`, or `userFunding`. The live receipt used for browser QA rechecked to no open positions, so the receipt no-position state was browser-tested while position-bearing receipt states are covered by unit tests and dashboard browser checks.

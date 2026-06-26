@@ -17,6 +17,10 @@ import {
   formatSignedUsd,
   formatUsd,
 } from "@/lib/formatters.ts";
+import {
+  calculateFundingCarryWatch,
+  type funding_carry_watch,
+} from "@/lib/funding/funding-watch.ts";
 import type { receipt_account_value_context } from "@/lib/history/receipt-account-value-context.ts";
 import type { hyperliquid_market_history } from "@/lib/hyperliquid/adapter.ts";
 import {
@@ -192,6 +196,24 @@ const receiptSummaryTone: Record<receipt_change_summary["severity"], string> = {
   changed: "border-amber-200 bg-amber-100 text-amber-950",
   watch: "border-yellow-200 bg-yellow-100 text-yellow-950",
   neutral: "border-emerald-200 bg-emerald-100 text-emerald-950",
+};
+
+const fundingWindowLabels: Record<funding_carry_watch["label"], string> = {
+  no_positions: "no carry exposure",
+  earning: "net earning",
+  neutral: "near flat",
+  low_cost: "low cost",
+  elevated_cost: "elevated cost",
+  heavy_cost: "heavy cost",
+};
+
+const fundingWindowTone: Record<funding_carry_watch["label"], string> = {
+  no_positions: "border-stone-300 bg-white text-stone-700",
+  earning: "border-emerald-200 bg-emerald-100 text-emerald-950",
+  neutral: "border-stone-300 bg-white text-stone-700",
+  low_cost: "border-yellow-200 bg-yellow-100 text-yellow-950",
+  elevated_cost: "border-amber-200 bg-amber-100 text-amber-950",
+  heavy_cost: "border-red-200 bg-red-100 text-red-950",
 };
 
 const snapshotDriftLabels: Record<receipt_snapshot_drift_label, string> = {
@@ -579,6 +601,7 @@ function LiveRecheckResult({
     volatilityBuffer,
     watchlist: recheckWatchlist,
   });
+  const fundingCarryWatch = calculateFundingCarryWatch(currentSnapshot);
   const assistantContext: receipt_risk_assistant_context = {
     receipt,
     comparison,
@@ -589,6 +612,7 @@ function LiveRecheckResult({
     marketRegime,
     marketRegimeDrilldown,
     volatilityBuffer,
+    fundingCarryWatch,
     accountValueContext: receiptAccountValueContext,
     recheckHistorySummary,
     hashVerified,
@@ -608,6 +632,7 @@ function LiveRecheckResult({
     marketRegimeDrilldown,
     recheckHistorySummary,
     volatilityBuffer,
+    fundingCarryWatch,
     watchlist: recheckWatchlist,
     watchlistAssistantResponse,
     hashVerified,
@@ -640,6 +665,8 @@ function LiveRecheckResult({
     String(marketRegime.high_count),
     marketRegimeDrilldown.focus_market ?? "no-regime-drilldown-focus",
     String(marketRegimeDrilldown.high_count),
+    fundingCarryWatch.label,
+    String(fundingCarryWatch.next_hour_net_funding_usd),
     volatilityBuffer?.label ?? "no-volatility-buffer",
     String(volatilityBuffer?.high_count ?? 0),
     recheckHistorySummary.label,
@@ -733,6 +760,7 @@ function LiveRecheckResult({
       <ReceiptMarketRegimeDrilldownResult drilldown={marketRegimeDrilldown} />
       <ReceiptRiskDriverComparisonResult comparison={riskDriverComparison} />
       <MarketContextResult context={marketContext} />
+      <ReceiptFundingWindowResult watch={fundingCarryWatch} />
       <ReceiptVolatilityBufferResult
         marketHistoryMarkets={marketHistoryMarkets}
         onLoadMarketHistory={loadMarketHistory}
@@ -2117,6 +2145,136 @@ function MarketContextResult({ context }: { context: market_context }) {
         Market context compares the saved receipt with the latest read-only
         Hyperliquid snapshot. It is descriptive and does not recommend changing
         a position.
+      </p>
+    </section>
+  );
+}
+
+function ReceiptFundingWindowResult({ watch }: { watch: funding_carry_watch }) {
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-stone-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Current funding window</h3>
+          <p className="mt-1 text-sm font-medium text-stone-800">
+            {watch.summary}
+          </p>
+          <p className="mt-1 text-sm text-stone-600">
+            Uses the latest recheck snapshot to estimate the next hourly funding
+            payment if the same position state stays open.
+          </p>
+        </div>
+        <span
+          className={`rounded-lg border px-3 py-2 text-sm font-semibold ${fundingWindowTone[watch.label]}`}
+        >
+          {fundingWindowLabels[watch.label]}
+        </span>
+      </div>
+
+      <dl className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-6">
+        <MiniMetric
+          label="Next hourly net"
+          value={formatSignedUsd(watch.next_hour_net_funding_usd)}
+        />
+        <MiniMetric
+          label="8h rate basis"
+          value={formatSignedUsd(watch.eight_hour_rate_net_funding_usd)}
+        />
+        <MiniMetric
+          label="Net daily"
+          value={formatSignedUsd(watch.daily_net_funding_usd)}
+        />
+        <MiniMetric
+          label="Hourly burden"
+          value={formatNullablePlainBps(
+            watch.next_hour_funding_bps_of_account_value,
+          )}
+        />
+        <MiniMetric
+          label="Largest cost"
+          value={
+            watch.top_cost_position
+              ? `${watch.top_cost_position.market} ${formatSignedUsd(
+                  watch.top_cost_position.next_hour_funding_usd,
+                )}`
+              : "n/a"
+          }
+        />
+        <MiniMetric
+          label="Largest earn"
+          value={
+            watch.top_earning_position
+              ? `${watch.top_earning_position.market} ${formatSignedUsd(
+                  watch.top_earning_position.next_hour_funding_usd,
+                )}`
+              : "n/a"
+          }
+        />
+      </dl>
+
+      {watch.positions.length === 0 ? (
+        <p className="border-t border-stone-200 px-4 py-3 text-sm text-stone-600">
+          No open positions to estimate the next funding payment.
+        </p>
+      ) : (
+        <div className="overflow-x-auto border-t border-stone-200">
+          <table className="w-full min-w-[920px] text-left text-sm">
+            <thead className="bg-stone-100 text-xs uppercase text-stone-600">
+              <tr>
+                <th className="px-4 py-3">Market</th>
+                <th className="px-4 py-3">Side</th>
+                <th className="px-4 py-3">Funding 8h</th>
+                <th className="px-4 py-3">Next hour</th>
+                <th className="px-4 py-3">8h basis</th>
+                <th className="px-4 py-3">Daily</th>
+                <th className="px-4 py-3">30d</th>
+              </tr>
+            </thead>
+            <tbody>
+              {watch.positions.map((position) => (
+                <tr className="border-t border-stone-200" key={position.market}>
+                  <td className="px-4 py-3 font-mono">{position.market}</td>
+                  <td className="px-4 py-3 capitalize">{position.side}</td>
+                  <td className="px-4 py-3">
+                    {formatSignedBps(
+                      position.funding_8h_bps_user_perspective,
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatSignedUsd(position.next_hour_funding_usd)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatSignedUsd(position.eight_hour_rate_funding_usd)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatSignedUsd(position.daily_funding_usd)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatSignedUsd(position.thirty_day_funding_usd)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <ul className="space-y-2 border-t border-stone-200 px-4 py-3 text-xs leading-5 text-stone-600">
+        {watch.review_points.map((point) => (
+          <li className="flex gap-2" key={point}>
+            <span
+              aria-hidden="true"
+              className="mt-2 h-1.5 w-1.5 rounded-full bg-stone-400"
+            />
+            <span>{point}</span>
+          </li>
+        ))}
+      </ul>
+
+      <p className="border-t border-stone-200 px-4 py-3 text-xs text-stone-500">
+        Current funding window is descriptive review context. It is not exact
+        settlement accounting, a liquidation alert, or a recommendation to
+        change the position.
       </p>
     </section>
   );

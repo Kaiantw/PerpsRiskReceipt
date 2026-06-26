@@ -35,7 +35,7 @@ Open `http://localhost:3000`.
    - Show that long, short, and missing-liquidation positions can exist in one normalized snapshot.
    - Point out that missing liquidation price does not break aggregate risk calculation.
    - Show `Funding carry watch`.
-   - Point out net daily funding, 30-day estimate, daily burden, largest cost, and largest earn.
+   - Point out next hourly funding, 8-hour rate-basis funding, net daily funding, 30-day estimate, hourly burden, largest cost, and largest earn.
    - Explain that the estimate assumes current funding and notional stay unchanged.
 
 6. Use the risk assistant.
@@ -109,6 +109,8 @@ Open `http://localhost:3000`.
    - Explain that this answers what is valuable in the current market: whether the current account is still driven by the same risk, whether the buffer tightened or widened, and whether funding burden changed.
    - Show `Market context since receipt`.
    - Point out saved mark price vs current mark price, whether the move is toward or away from liquidation, 8-hour funding change, and open-interest change.
+   - Show `Current funding window`.
+   - Point out next hourly net funding, 8-hour rate-basis net funding, hourly burden, largest next cost, largest next earn, and the oracle-price settlement caveat.
    - Click `Load 24h volatility`.
    - Show `Volatility buffer`.
    - Point out current listed buffer, public 24h range, hourly ATR-style movement, ATR buffer multiple, and the no-forecast/no-advice caveat.
@@ -121,7 +123,7 @@ Open `http://localhost:3000`.
    - Show `Receipt risk assistant`.
    - Click `Review`, `Regime`, `Regime rows`, `Watchlist`, `Volatility`, `Rechecks`, `Drivers`, `Funding`, and `Hash` to show cited answers from the receipt summary, market-regime read, per-market regime rows, ranked recheck watchlist, loaded volatility buffer, local recheck history, risk-driver comparison, live recheck, funding delta, and snapshot hash.
    - Ask `What should I inspect first?` and show that the answer cites `receipt_recheck_watchlist` item fields while preserving the no-trade-recommendation caveat.
-   - Show `Review packet`, click `Copy markdown`, click `Download .md`, and point out that it packages the hash, live recheck, snapshot drift, compact local recheck-history and drift trend, market regime, per-market regime rows, watchlist, active thresholds, loaded volatility buffer, assistant read, driver comparison, and market context for quick review.
+   - Show `Review packet`, click `Copy markdown`, click `Download .md`, and point out that it packages the hash, live recheck, snapshot drift, compact local recheck-history and drift trend, market regime, per-market regime rows, current funding window, watchlist, active thresholds, loaded volatility buffer, assistant read, driver comparison, and market context for quick review.
    - Point out that the packet includes only the local-history summary, not raw local history rows or full private snapshots.
    - Explain that the review packet is for communication; a full portable receipt bundle is still required when another browser needs to recompute the snapshot hash.
    - Click `Top market` or ask `Why is ETH-PERP the current risk driver?` to show a named-market driver drilldown with saved/current component scores plus mark, listed-buffer, funding, and open-interest context.

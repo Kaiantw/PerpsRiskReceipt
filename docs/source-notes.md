@@ -287,6 +287,17 @@ use this file for external protocol assumptions.
   - the watch assumes current funding and notional stay unchanged for daily and 30-day estimates.
   - Hyperliquid actual funding uses position size and oracle price; this app estimates from normalized mark-price notional.
   - positive user-perspective funding is shown as cost; negative is shown as earned funding.
+- funding-window read assumptions:
+  - docs checked on 2026-06-26:
+    - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+    - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
+    - https://www.coinbase.com/learn/perpetual-futures/understanding-funding-rates-in-perpetual-futures
+  - Hyperliquid's funding formula is expressed as an 8-hour rate, while the payment is made hourly at one eighth of the computed rate.
+  - this app estimates the next hourly payment by dividing the normalized 8-hour user-perspective funding estimate by 8.
+  - the dashboard and receipt recheck keep daily and 30-day carry estimates, but add the next hourly estimate so reviewers can separate near-term funding impact from longer holding-cost projections.
+  - the current funding window uses already-loaded snapshot data only; it does not call `predictedFundings`, `fundingHistory`, or `userFunding`.
+  - actual Hyperliquid settlement uses position size, oracle price, and funding rate; this app estimates from normalized mark-price notional.
+  - the copy must stay descriptive: funding cost, funding earn, current window, and review context only. It must not recommend opening, closing, resizing, hedging, or timing a trade.
 - market context assumptions:
   - market context compares saved receipt positions to a fresh read-only snapshot after a local live receipt recheck.
   - mark price is the comparison price because Hyperliquid uses mark price for margining, liquidations, TP/SL triggers, and unrealized PnL.

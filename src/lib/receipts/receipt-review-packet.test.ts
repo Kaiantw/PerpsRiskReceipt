@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { answerReceiptRiskQuestion } from "../assistant/receipt-risk-assistant.ts";
+import { calculateFundingCarryWatch } from "../funding/funding-watch.ts";
 import type { hyperliquid_market_history } from "../hyperliquid/adapter.ts";
 import { buildMarketContext } from "../market/market-context.ts";
 import { loadFixtureAccount } from "../perps/fixtures.ts";
@@ -114,6 +115,7 @@ async function buildPacket(input?: {
     volatilityBuffer,
     watchlist,
   });
+  const fundingCarryWatch = calculateFundingCarryWatch(currentSnapshot);
   const watchlistAssistantResponse = answerReceiptRiskQuestion({
     context: {
       receipt,
@@ -125,6 +127,7 @@ async function buildPacket(input?: {
       marketRegime,
       marketRegimeDrilldown,
       volatilityBuffer,
+      fundingCarryWatch,
       hashVerified: true,
     },
     question: "What should I inspect first in the recheck watchlist?",
@@ -140,6 +143,7 @@ async function buildPacket(input?: {
     changeSummary,
     snapshotDrift,
     riskDriverComparison,
+    fundingCarryWatch,
     volatilityBuffer,
     watchlist,
     watchlistAssistantResponse,
@@ -238,6 +242,9 @@ test("builds a copyable markdown packet with receipt, watchlist, assistant, and 
   assert.match(packet.markdown, /ETH-PERP: Public 24h range exceeds current listed buffer/);
   assert.match(packet.markdown, /funding burden:/);
   assert.match(packet.markdown, /## risk drivers since receipt/);
+  assert.match(packet.markdown, /## current funding window/);
+  assert.match(packet.markdown, /next hourly net:/);
+  assert.match(packet.markdown, /largest next cost:/);
   assert.match(packet.markdown, /## volatility buffer/);
   assert.match(packet.markdown, /24h range:/);
   assert.match(packet.markdown, /## recheck watchlist/);

@@ -10,11 +10,17 @@ test("safe long is labeled as low funding cost", () => {
   const watch = calculateFundingCarryWatch(snapshot);
 
   assert.equal(watch.label, "low_cost");
+  assert.equal(watch.next_hour_net_funding_usd, 0.5);
+  assert.equal(watch.eight_hour_rate_net_funding_usd, 4);
   assert.equal(watch.daily_net_funding_usd, 12);
   assert.equal(watch.thirty_day_net_funding_usd, 360);
+  assert.equal(watch.next_hour_funding_bps_of_account_value, 0.1);
   assert.equal(watch.daily_funding_bps_of_account_value, 2.4);
   assert.equal(watch.top_cost_position?.market, "ETH-PERP");
+  assert.equal(watch.top_cost_position?.next_hour_funding_usd, 0.5);
+  assert.equal(watch.top_cost_position?.eight_hour_rate_funding_usd, 4);
   assert.equal(watch.top_earning_position, null);
+  assert.match(watch.review_points.join(" "), /divides the normalized 8-hour/);
 });
 
 test("mixed book identifies net earning plus cost and earning drivers", () => {
@@ -22,11 +28,16 @@ test("mixed book identifies net earning plus cost and earning drivers", () => {
   const watch = calculateFundingCarryWatch(snapshot);
 
   assert.equal(watch.label, "earning");
+  assert.equal(watch.next_hour_net_funding_usd, -0.18);
+  assert.equal(watch.eight_hour_rate_net_funding_usd, -1.45);
   assert.equal(watch.daily_net_funding_usd, -4.35);
+  assert.equal(watch.next_hour_funding_bps_of_account_value, -0.02);
   assert.equal(watch.daily_funding_bps_of_account_value, -0.58);
   assert.equal(watch.top_cost_position?.market, "BTC-PERP");
+  assert.equal(watch.top_cost_position?.next_hour_funding_usd, 0.39);
   assert.equal(watch.top_cost_position?.daily_funding_usd, 9.3);
   assert.equal(watch.top_earning_position?.market, "SOL-PERP");
+  assert.equal(watch.top_earning_position?.next_hour_funding_usd, -0.75);
   assert.equal(watch.top_earning_position?.daily_funding_usd, -18);
 });
 
@@ -45,7 +56,10 @@ test("no open positions returns no carry exposure", () => {
   const watch = calculateFundingCarryWatch(snapshot);
 
   assert.equal(watch.label, "no_positions");
+  assert.equal(watch.next_hour_net_funding_usd, 0);
+  assert.equal(watch.eight_hour_rate_net_funding_usd, 0);
   assert.equal(watch.daily_net_funding_usd, 0);
+  assert.equal(watch.next_hour_funding_bps_of_account_value, 0);
   assert.equal(watch.daily_funding_bps_of_account_value, 0);
   assert.equal(watch.top_cost_position, null);
   assert.equal(watch.top_earning_position, null);
@@ -76,7 +90,10 @@ test("large daily funding burden is labeled heavy cost", () => {
   const watch = calculateFundingCarryWatch(snapshot);
 
   assert.equal(watch.label, "heavy_cost");
+  assert.equal(watch.next_hour_net_funding_usd, 12.5);
+  assert.equal(watch.eight_hour_rate_net_funding_usd, 100);
   assert.equal(watch.daily_net_funding_usd, 300);
+  assert.equal(watch.next_hour_funding_bps_of_account_value, 125);
   assert.equal(watch.daily_funding_bps_of_account_value, 3_000);
   assert.match(watch.summary, /heavy holding cost/);
 });

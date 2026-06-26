@@ -23,5 +23,6 @@
 ## linked feature ideas
 
 - [[../features/funding-carry-watch]]
+- [[../features/funding-window-read]]
 - [[../features/live-receipt-recheck]]
 - [[../features/ai-risk-assistant]]

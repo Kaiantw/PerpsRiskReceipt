@@ -7,6 +7,7 @@ import {
   truncateMiddle,
 } from "../formatters.ts";
 import type { receipt_risk_assistant_response } from "../assistant/receipt-risk-assistant.ts";
+import type { funding_carry_watch } from "../funding/funding-watch.ts";
 import type {
   market_context,
   market_context_position,
@@ -49,6 +50,7 @@ export function buildReceiptReviewPacket(input: {
   marketContext: market_context;
   marketRegime?: receipt_market_regime | null;
   marketRegimeDrilldown?: receipt_market_regime_drilldown | null;
+  fundingCarryWatch?: funding_carry_watch | null;
   receipt: risk_receipt;
   recheckHistorySummary?: receipt_recheck_history_summary | null;
   riskDriverComparison: receipt_risk_driver_comparison;
@@ -93,6 +95,7 @@ export function buildReceiptReviewPacket(input: {
     `- closest listed-buffer delta: ${formatSignedPercentFromBps(input.riskDriverComparison.closest_liquidation_distance_delta_bps)}`,
     `- daily funding delta: ${formatSignedNullableUsd(input.riskDriverComparison.daily_funding_delta_usd)}`,
     "",
+    ...formatFundingCarryWatchSection(input.fundingCarryWatch ?? null),
     ...formatVolatilityBufferSection(input.volatilityBuffer ?? null),
     "## recheck watchlist",
     `- label: ${input.watchlist.label.replaceAll("_", " ")}`,
@@ -263,6 +266,57 @@ function formatRecheckHistorySection(
     "- note: compact browser-local trend only; full history rows and full private snapshots are not included in this packet.",
     "",
   ];
+}
+
+function formatFundingCarryWatchSection(
+  fundingCarryWatch: funding_carry_watch | null,
+) {
+  if (!fundingCarryWatch) {
+    return [];
+  }
+
+  const lines = [
+    "## current funding window",
+    `- label: ${fundingCarryWatch.label.replaceAll("_", " ")}`,
+    `- summary: ${fundingCarryWatch.summary}`,
+    `- next hourly net: ${formatSignedUsd(fundingCarryWatch.next_hour_net_funding_usd)}`,
+    `- 8h rate basis net: ${formatSignedUsd(fundingCarryWatch.eight_hour_rate_net_funding_usd)}`,
+    `- daily net: ${formatSignedUsd(fundingCarryWatch.daily_net_funding_usd)}`,
+    `- hourly burden: ${formatNullableBps(fundingCarryWatch.next_hour_funding_bps_of_account_value)}`,
+    `- largest next cost: ${formatFundingPosition(fundingCarryWatch.top_cost_position)}`,
+    `- largest next earn: ${formatFundingPosition(fundingCarryWatch.top_earning_position)}`,
+    ...fundingCarryWatch.review_points
+      .slice(0, 5)
+      .map((point) => `- review: ${point}`),
+  ];
+
+  if (fundingCarryWatch.positions.length > 0) {
+    lines.push(
+      "- positions:",
+      ...fundingCarryWatch.positions.slice(0, 5).map((position) =>
+        [
+          `  - ${position.market} ${position.side}`,
+          `funding 8h ${formatSignedBps(position.funding_8h_bps_user_perspective)}`,
+          `next hour ${formatSignedUsd(position.next_hour_funding_usd)}`,
+          `daily ${formatSignedUsd(position.daily_funding_usd)}`,
+        ].join("; "),
+      ),
+    );
+  }
+
+  lines.push("");
+
+  return lines;
+}
+
+function formatFundingPosition(
+  position: funding_carry_watch["top_cost_position"],
+) {
+  if (!position) {
+    return "n/a";
+  }
+
+  return `${position.market} ${formatSignedUsd(position.next_hour_funding_usd)}`;
 }
 
 function formatVolatilityBufferSection(

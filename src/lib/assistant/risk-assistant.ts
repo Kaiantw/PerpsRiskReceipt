@@ -138,7 +138,7 @@ function buildFundingAnswer(
       const direction =
         position.direction === "neutral" ? "neutral" : position.direction;
 
-      return `${position.market}: ${formatSignedUsd(position.daily_funding_usd)} daily ${direction}`;
+      return `${position.market}: ${formatSignedUsd(position.next_hour_funding_usd)} next hour, ${formatSignedUsd(position.daily_funding_usd)} daily ${direction}`;
     })
     .join("; ");
   const burdenCopy =
@@ -147,10 +147,11 @@ function buildFundingAnswer(
       : `${formatPercentFromBps(fundingWatch.daily_funding_bps_of_account_value)} of account value per day`;
 
   return {
-    answer: `Funding shows ${getFundingDirection(snapshot)} and ${formatSignedUsd(snapshot.aggregate.thirty_day_funding_usd)} over 30 days if rates and notional stay unchanged. That is ${burdenCopy}. By position: ${positionFunding}.`,
+    answer: `Funding shows ${getFundingDirection(snapshot)}, ${formatSignedUsd(fundingWatch.next_hour_net_funding_usd)} estimated next hour, and ${formatSignedUsd(snapshot.aggregate.thirty_day_funding_usd)} over 30 days if rates and notional stay unchanged. That is ${burdenCopy}. By position: ${positionFunding}.`,
     citations: [
       "snapshot.positions[].funding_8h_bps_user_perspective",
       "snapshot.positions[].notional_usd",
+      "funding_carry_watch.next_hour_net_funding_usd",
       "snapshot.aggregate.daily_funding_usd",
       "snapshot.aggregate.thirty_day_funding_usd",
       "funding_carry_watch.daily_funding_bps_of_account_value",

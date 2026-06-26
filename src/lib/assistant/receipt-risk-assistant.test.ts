@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { calculateFundingCarryWatch } from "../funding/funding-watch.ts";
 import type { hyperliquid_market_history } from "../hyperliquid/adapter.ts";
 import { buildAccountValueTimeline } from "../history/account-value-timeline.ts";
 import { buildReceiptAccountValueContext } from "../history/receipt-account-value-context.ts";
@@ -91,6 +92,7 @@ async function buildAssistantContext(input?: {
     volatilityBuffer,
     watchlist: recheckWatchlist,
   });
+  const fundingCarryWatch = calculateFundingCarryWatch(currentSnapshot);
 
   return {
     receipt: await createRiskReceipt(receiptSnapshot),
@@ -103,6 +105,7 @@ async function buildAssistantContext(input?: {
     marketRegime,
     marketRegimeDrilldown,
     volatilityBuffer,
+    fundingCarryWatch,
     changeSummary: buildReceiptChangeSummary({
       comparison,
       marketContext,
@@ -385,10 +388,14 @@ test("surfaces funding deltas from receipt and live recheck", async () => {
 
   assert.match(response.answer, /Receipt daily funding/);
   assert.match(response.answer, /Market-context total daily funding delta/);
+  assert.match(response.answer, /Current next-hour net estimate/);
   assert.ok(
     response.citations.includes(
       "market_context.total_daily_funding_delta_usd",
     ),
+  );
+  assert.ok(
+    response.citations.includes("funding_carry_watch.next_hour_net_funding_usd"),
   );
 });
 
