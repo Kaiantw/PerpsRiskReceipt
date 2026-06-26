@@ -87,6 +87,13 @@ use this file for external protocol assumptions.
   - https://www.w3.org/TR/vc-data-model-2.0/
   - https://w3c-ccg.github.io/Merkle-Disclosure-2021/
   - https://chain.link/article/blockchain-privacy-data-confidentiality
+- docs checked on 2026-06-26 for compact redacted risk notes:
+  - https://w3c-ccg.github.io/data-minimization/
+  - https://www.w3.org/TR/privacy-principles/
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://metamask.io/news/perpetual-futures-liquidation-mechanics
+  - https://www.binance.com/en/academy/articles/what-is-a-trading-journal-and-how-to-use-one
+  - https://www.cmegroup.com/education/courses/things-to-know-before-trading-cme-futures/position-and-risk-management
 - docs checked on 2026-06-26 for redacted share assistant:
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
@@ -348,6 +355,8 @@ use this file for external protocol assumptions.
   - it does not call a new endpoint, change the redacted bundle format, store packet state, or send a raw account address.
   - it includes disclosed bucketed receipt fields, disclosed market rows, optional public market/trend rows, optional redacted snapshot comparison, watchlist counts/items, and hash-reference-only caveats.
   - it includes the active redacted review thresholds so copied markdown says which local sensitivity profile produced the public-only read.
+  - compact mode summarizes the same local context into a shorter public note with headline risk, timestamp, hash reference, bucketed exposure, context-loaded state, freshness verdict, cue counts, active thresholds, optional comparison headline, and capped top review cues.
+  - compact mode intentionally omits detailed disclosed market rows and public mark-price rows; the full redacted packet remains available when those details are needed.
   - it does not include raw local receipt history, raw account identifiers, exact account value, exact position sizes, saved mark prices, listed liquidation prices, PnL, exact funding dollars, or hidden full-snapshot fields.
   - the snapshot hash is preserved as a reference only; the hidden full snapshot remains required for recomputation.
   - the packet is a public communication summary only, not cryptographic selective disclosure, a Verifiable Credential, an EAS private-data proof, exact liquidation monitoring, or trading advice.

@@ -31,6 +31,8 @@ export type redacted_review_packet = {
   markdown: string;
 };
 
+export type redacted_review_packet_mode = "compact" | "full";
+
 export function buildRedactedReviewPacket(input: {
   bundle: redacted_receipt_bundle;
   marketContext?: redacted_market_context;
@@ -93,6 +95,118 @@ export function buildRedactedReviewPacket(input: {
   ].join("\n");
 
   return { title, summary, markdown };
+}
+
+export function buildCompactRedactedReviewPacket(input: {
+  bundle: redacted_receipt_bundle;
+  marketContext?: redacted_market_context;
+  marketTrend?: redacted_market_trend;
+  watchlist: redacted_market_watchlist;
+  freshnessVerdict?: redacted_freshness_verdict;
+  snapshotComparison?: redacted_snapshot_comparison;
+}): redacted_review_packet {
+  const title = `Compact redacted risk note for ${input.bundle.receipt_id}`;
+  const verdictLabel =
+    input.freshnessVerdict?.label.replaceAll("_", " ") ?? "not computed";
+  const summary = `${input.bundle.aggregate.risk_label} ${input.bundle.aggregate.risk_score} redacted receipt; ${verdictLabel}. ${getCompactHeadline(input)}`;
+  const markdown = [
+    `# ${title}`,
+    "",
+    `- receipt: ${input.bundle.receipt_id}`,
+    `- protocol/source: ${input.bundle.protocol}/${input.bundle.source}`,
+    `- data timestamp: ${input.bundle.data_time_iso}`,
+    `- snapshot hash reference: ${shortHash(input.bundle.snapshot_hash)}`,
+    `- risk: ${input.bundle.aggregate.risk_score} (${input.bundle.aggregate.risk_label})`,
+    `- account/notional buckets: ${input.bundle.aggregate.account_value_bucket_usd} / ${input.bundle.aggregate.total_notional_bucket_usd}`,
+    `- margin usage: ${formatBpsAsPercent(input.bundle.aggregate.margin_usage_bps)}`,
+    `- min disclosed liquidation distance: ${formatBpsAsPercent(input.bundle.aggregate.min_liquidation_distance_bps)}`,
+    `- funding buckets: ${input.bundle.aggregate.daily_funding_bucket_usd} daily; ${input.bundle.aggregate.thirty_day_funding_bucket_usd} 30d`,
+    `- disclosed positions: ${input.bundle.aggregate.position_count}`,
+    `- current market context: ${input.marketContext ? input.marketContext.label.replaceAll("_", " ") : "not loaded"}`,
+    `- 24h trend context: ${input.marketTrend ? input.marketTrend.label.replaceAll("_", " ") : "not loaded"}`,
+    `- freshness verdict: ${verdictLabel}`,
+    `- cue counts: ${getCompactCueCounts(input)}`,
+    `- thresholds: age ${formatAgeMinutes(input.watchlist.thresholds.watch_age_minutes)}/${formatAgeMinutes(input.watchlist.thresholds.high_age_minutes)}, buffer ${formatBpsAsPercent(input.watchlist.thresholds.thin_liquidation_distance_bps)}/${formatBpsAsPercent(input.watchlist.thresholds.tight_liquidation_distance_bps)}, adverse move ${formatPlainNumber(input.watchlist.thresholds.material_adverse_move_percent)}%, funding ${formatPlainNumber(input.watchlist.thresholds.material_funding_move_bps)} bps`,
+    ...formatCompactComparison(input.snapshotComparison),
+    "",
+    "## top review cues",
+    ...formatCompactReviewCues(input),
+    "",
+    "## limits",
+    "- compact public summary only; use the full redacted packet for detailed rows.",
+    "- hidden full snapshot is required to recompute the original snapshot hash.",
+    "- does not reveal raw account, exact sizes, saved marks, listed liquidation prices, PnL, or exact account value.",
+    "- heuristic review context only; not protocol-official risk, a live liquidation monitor, or trading advice.",
+    "",
+  ].join("\n");
+
+  return { title, summary, markdown };
+}
+
+function getCompactHeadline(input: {
+  freshnessVerdict?: redacted_freshness_verdict;
+  snapshotComparison?: redacted_snapshot_comparison;
+  watchlist: redacted_market_watchlist;
+}) {
+  return (
+    input.snapshotComparison?.headline ??
+    input.freshnessVerdict?.headline ??
+    input.watchlist.headline
+  );
+}
+
+function getCompactCueCounts(input: {
+  freshnessVerdict?: redacted_freshness_verdict;
+  watchlist: redacted_market_watchlist;
+}) {
+  if (input.freshnessVerdict) {
+    return `${input.freshnessVerdict.high_count} high, ${input.freshnessVerdict.watch_count} watch, ${input.freshnessVerdict.info_count} info`;
+  }
+
+  return `${input.watchlist.high_count} high, ${input.watchlist.watch_count} watch, ${input.watchlist.info_count} info`;
+}
+
+function formatCompactComparison(
+  snapshotComparison: redacted_snapshot_comparison | undefined,
+) {
+  if (!snapshotComparison) {
+    return ["- redacted comparison: not loaded"];
+  }
+
+  return [
+    `- redacted comparison: ${snapshotComparison.label.replaceAll("_", " ")}; risk-score delta ${formatSignedNumber(snapshotComparison.risk_score_delta)}`,
+    `- comparison receipts: ${snapshotComparison.previous_receipt_id} -> ${snapshotComparison.latest_receipt_id}`,
+  ];
+}
+
+function formatCompactReviewCues(input: {
+  freshnessVerdict?: redacted_freshness_verdict;
+  snapshotComparison?: redacted_snapshot_comparison;
+  watchlist: redacted_market_watchlist;
+}) {
+  const comparisonCues =
+    input.snapshotComparison?.review_points
+      .slice(0, 2)
+      .map((point) => `- [comparison] ${point}`) ?? [];
+  const freshnessCues =
+    input.freshnessVerdict?.drivers
+      .filter((driver) => driver.severity !== "info")
+      .slice(0, 3)
+      .map((driver) => `- [${driver.severity}] ${driver.title}: ${driver.detail}`) ??
+    [];
+  const watchlistCues = input.watchlist.items
+    .slice(0, 3)
+    .map((item) => `- [${item.severity}] ${item.market}: ${item.title}`);
+  const cues = [...comparisonCues, ...freshnessCues, ...watchlistCues].slice(
+    0,
+    5,
+  );
+
+  if (cues.length === 0) {
+    return ["- no loaded public review cues; load current markets or 24h trends for more context."];
+  }
+
+  return cues;
 }
 
 function formatRedactedReviewThresholds(watchlist: redacted_market_watchlist) {
@@ -294,6 +408,14 @@ function formatWatchlistItems(items: redacted_market_watch_item[]) {
 
 function formatBpsAsPercent(value: number | null) {
   return value === null ? "n/a" : `${(value / 100).toFixed(2)}%`;
+}
+
+function shortHash(value: string) {
+  if (value.length <= 18) {
+    return value;
+  }
+
+  return `${value.slice(0, 10)}...${value.slice(-8)}`;
 }
 
 function formatAgeMinutes(value: number) {

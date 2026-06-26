@@ -6,7 +6,10 @@ import type { redacted_market_context } from "./redacted-market-context.ts";
 import type { redacted_market_trend } from "./redacted-market-trend.ts";
 import { buildRedactedFreshnessVerdict } from "./redacted-freshness-verdict.ts";
 import { buildRedactedMarketWatchlist } from "./redacted-market-watchlist.ts";
-import { buildRedactedReviewPacket } from "./redacted-review-packet.ts";
+import {
+  buildCompactRedactedReviewPacket,
+  buildRedactedReviewPacket,
+} from "./redacted-review-packet.ts";
 import { buildRedactedSnapshotComparison } from "./redacted-snapshot-comparison.ts";
 
 const redactedBundle: redacted_receipt_bundle = {
@@ -241,6 +244,60 @@ test("builds a copyable redacted markdown packet from disclosed and public conte
   assert.doesNotMatch(packet.markdown, /unrealized_pnl_usd/);
 });
 
+test("builds a compact redacted markdown packet for quick public sharing", () => {
+  const watchlist = buildRedactedMarketWatchlist({
+    bundle: redactedBundle,
+    marketContext,
+    marketTrend,
+  });
+  const freshnessVerdict = buildRedactedFreshnessVerdict({
+    bundle: redactedBundle,
+    marketContext,
+    marketTrend,
+    watchlist,
+    nowIso: "2026-06-25T12:10:00.000Z",
+  });
+  const packet = buildCompactRedactedReviewPacket({
+    bundle: redactedBundle,
+    marketContext,
+    marketTrend,
+    watchlist,
+    freshnessVerdict,
+    snapshotComparison: buildRedactedSnapshotComparison({
+      firstBundle: redactedBundle,
+      secondBundle: improvedRedactedBundle,
+      nowIso: "2026-06-25T12:40:00.000Z",
+    }),
+  });
+
+  assert.equal(
+    packet.title,
+    "Compact redacted risk note for rr_redacted_packet",
+  );
+  assert.match(packet.summary, /high 65 redacted receipt/i);
+  assert.match(packet.markdown, /# Compact redacted risk note/);
+  assert.match(packet.markdown, /snapshot hash reference: 0x11111111...11111111/);
+  assert.match(packet.markdown, /freshness verdict: needs full recheck/);
+  assert.match(
+    packet.markdown,
+    /thresholds: age 4h\/1d, buffer 5.00%\/10.00%/,
+  );
+  assert.match(
+    packet.markdown,
+    /redacted comparison: risk improved; risk-score delta -27/,
+  );
+  assert.match(packet.markdown, /## top review cues/);
+  assert.match(packet.markdown, /\[comparison\]/);
+  assert.match(packet.markdown, /hidden full snapshot is required/);
+  assert.doesNotMatch(packet.markdown, /## disclosed market rows/);
+  assert.doesNotMatch(packet.markdown, /current mark \$/);
+  assert.doesNotMatch(packet.markdown, /account_value_usd/);
+  assert.doesNotMatch(packet.markdown, /entry_price_usd/);
+  assert.doesNotMatch(packet.markdown, /mark_price_usd/);
+  assert.doesNotMatch(packet.markdown, /liquidation_price_usd/);
+  assert.ok(packet.markdown.length < 2_400);
+});
+
 test("explains missing public context without claiming hash recomputation", () => {
   const watchlist = buildRedactedMarketWatchlist({
     bundle: redactedBundle,
@@ -260,6 +317,24 @@ test("explains missing public context without claiming hash recomputation", () =
   assert.match(packet.markdown, /Load market context or 24h trends/);
   assert.match(packet.markdown, /cannot recompute or verify it/);
   assert.match(packet.markdown, /not protocol-official risk calculations/);
+  assert.doesNotMatch(packet.markdown, /should close/i);
+  assert.doesNotMatch(packet.markdown, /should increase/i);
+});
+
+test("compact packet prompts for public context when no cues are loaded", () => {
+  const watchlist = buildRedactedMarketWatchlist({
+    bundle: redactedBundle,
+  });
+  const packet = buildCompactRedactedReviewPacket({
+    bundle: redactedBundle,
+    watchlist,
+  });
+
+  assert.match(packet.markdown, /current market context: not loaded/);
+  assert.match(packet.markdown, /24h trend context: not loaded/);
+  assert.match(packet.markdown, /redacted comparison: not loaded/);
+  assert.match(packet.markdown, /load current markets or 24h trends/i);
+  assert.match(packet.markdown, /compact public summary only/);
   assert.doesNotMatch(packet.markdown, /should close/i);
   assert.doesNotMatch(packet.markdown, /should increase/i);
 });

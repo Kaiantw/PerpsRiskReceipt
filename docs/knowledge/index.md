@@ -36,6 +36,7 @@ informed it and forward to related feature ideas.
 - [[sources/redacted-market-trend]] - candle and funding-history source notes for redacted share 24h public market trends.
 - [[sources/redacted-market-watchlist]] - liquidation, funding, volatility, and review-cue source notes for redacted share watchlists.
 - [[sources/redacted-review-packet]] - data-minimized markdown review packets for redacted shares.
+- [[sources/compact-redacted-risk-note]] - compact public risk-note framing for short redacted-share comments.
 - [[sources/redacted-share-assistant]] - cited, public-only assistant answers for redacted shares.
 - [[sources/redacted-freshness-verdict]] - receipt-age, public-market, buffer, trend, funding, and data-minimization notes for redacted freshness classification.
 - [[sources/redacted-snapshot-comparison]] - journal, risk-management, funding, buffer, and data-minimization notes for comparing two redacted snapshots.
@@ -79,6 +80,7 @@ informed it and forward to related feature ideas.
 - [[features/redacted-comparison-assistant-packet]] - feeds redacted comparison context into assistant answers and copyable packets.
 - [[features/redacted-review-thresholds]] - local strict/standard/relaxed sensitivity profiles for redacted current-market review.
 - [[features/redacted-review-packet]] - copyable markdown summary for redacted shares using disclosed fields and loaded public context.
+- [[features/compact-redacted-risk-note]] - compact/default copy mode for redacted shares when a short public note is better than row-level packet detail.
 - [[features/redacted-share-assistant]] - cited local assistant answers for redacted shares using disclosed fields and loaded public context.
 
 ## connected backlog ideas
@@ -95,8 +97,9 @@ informed it and forward to related feature ideas.
   per-market recheck checklist with configurable thresholds.
 - [[features/receipt-assistant-watchlist-citations]] could later expand into a
   redacted-share assistant that uses public-only watchlist citations.
-- [[features/redacted-review-packet]] could later support a compressed public
-  packet mode for social posts or issue comments.
+- [[features/compact-redacted-risk-note]] could later add a one-click
+  downloadable `.md` export or permalink preview if reviewers need to preserve
+  the compact note outside the clipboard.
 - [[features/redacted-share-assistant]] could later support a compressed answer
   mode for issue comments.
 - [[features/configurable-recheck-thresholds]] could later persist named review

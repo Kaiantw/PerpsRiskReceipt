@@ -15,6 +15,7 @@ hash-reference-only caveats.
 ## source links
 
 - [[../sources/redacted-review-packet]]
+- [[../sources/compact-redacted-risk-note]]
 - [[../sources/redacted-receipt-sharing]]
 - [[../sources/redacted-market-watchlist]]
 - [[../sources/redacted-freshness-verdict]]
@@ -30,10 +31,13 @@ hash-reference-only caveats.
 - [[redacted-review-thresholds]]
 - [[redacted-share-assistant]]
 - [[receipt-review-packet]]
+- [[compact-redacted-risk-note]]
 
 ## implemented behavior
 
 - Adds a `Redacted review packet` panel to imported redacted shares.
+- Adds compact/full packet modes, with compact selected by default for shorter
+  public comments.
 - Builds deterministic markdown from the redacted bundle and already-loaded
   public market context.
 - Includes receipt id, protocol, source/freshness, timestamps, snapshot hash
@@ -51,6 +55,9 @@ hash-reference-only caveats.
 - Includes the active redacted review threshold profile values so copied
   markdown preserves the local sensitivity used for the read.
 - Includes redacted review watchlist label, counts, and capped top cues.
+- Compact mode keeps the headline risk, short hash reference, threshold summary,
+  loaded-context state, freshness verdict, optional comparison headline, and
+  capped top review cues while omitting detailed market rows.
 - Explicitly says the packet cannot recompute or verify the hidden full snapshot
   hash and is not a trading recommendation.
 
@@ -65,6 +72,8 @@ hash-reference-only caveats.
 - [[redacted-comparison-assistant-packet]] carries loaded comparison context into
   this copyable markdown packet.
 - [[redacted-review-thresholds]] supplies the copied local sensitivity profile.
+- [[compact-redacted-risk-note]] is the concise sibling for issue comments or
+  social-style sharing.
 - [[redacted-share-assistant]] answers cited questions from the same public and
   disclosed fields.
 - [[receipt-review-packet]] is the full-snapshot sibling used after local live

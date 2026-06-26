@@ -46,7 +46,11 @@ import {
   type redacted_snapshot_comparison_metric,
   type redacted_snapshot_market_change,
 } from "@/lib/market/redacted-snapshot-comparison.ts";
-import { buildRedactedReviewPacket } from "@/lib/market/redacted-review-packet.ts";
+import {
+  buildCompactRedactedReviewPacket,
+  buildRedactedReviewPacket,
+  type redacted_review_packet_mode,
+} from "@/lib/market/redacted-review-packet.ts";
 import {
   answerRedactedShareQuestion,
   getRedactedShareAssistantSuggestions,
@@ -1610,6 +1614,8 @@ function RedactedReviewPacketPanel({
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
     "idle",
   );
+  const [packetMode, setPacketMode] =
+    useState<redacted_review_packet_mode>("compact");
   const marketContext =
     marketContextState.status === "loaded"
       ? marketContextState.context
@@ -1640,10 +1646,27 @@ function RedactedReviewPacketPanel({
         ? snapshotCompareState.comparison
         : undefined,
   });
+  const compactPacket = buildCompactRedactedReviewPacket({
+    bundle,
+    marketContext,
+    marketTrend,
+    watchlist,
+    freshnessVerdict,
+    snapshotComparison:
+      snapshotCompareState.status === "ready"
+        ? snapshotCompareState.comparison
+        : undefined,
+  });
+  const selectedPacket = packetMode === "compact" ? compactPacket : packet;
+
+  function updatePacketMode(nextPacketMode: redacted_review_packet_mode) {
+    setPacketMode(nextPacketMode);
+    setCopyState("idle");
+  }
 
   async function copyPacketMarkdown() {
     try {
-      await navigator.clipboard.writeText(packet.markdown);
+      await navigator.clipboard.writeText(selectedPacket.markdown);
       setCopyState("copied");
     } catch {
       setCopyState("failed");
@@ -1655,22 +1678,43 @@ function RedactedReviewPacketPanel({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 className="text-base font-semibold">Redacted review packet</h3>
-          <p className="mt-1 text-sm text-stone-600">{packet.summary}</p>
+          <p className="mt-1 text-sm text-stone-600">
+            {selectedPacket.summary}
+          </p>
         </div>
-        <button
-          className="inline-flex min-h-11 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-semibold text-white"
-          onClick={() => {
-            void copyPacketMarkdown();
-          }}
-          type="button"
-        >
-          Copy redacted markdown
-        </button>
+        <div className="flex flex-col gap-2 sm:items-end">
+          <div className="inline-flex rounded-lg border border-stone-300 bg-stone-50 p-1">
+            {(["compact", "full"] as const).map((mode) => (
+              <button
+                className={`rounded-md px-3 py-2 text-sm font-semibold ${
+                  packetMode === mode
+                    ? "bg-stone-950 text-white"
+                    : "text-stone-700 hover:bg-stone-100"
+                }`}
+                key={mode}
+                onClick={() => updatePacketMode(mode)}
+                type="button"
+              >
+                {mode === "compact" ? "Compact" : "Full"}
+              </button>
+            ))}
+          </div>
+          <button
+            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-semibold text-white"
+            onClick={() => {
+              void copyPacketMarkdown();
+            }}
+            type="button"
+          >
+            Copy {packetMode} markdown
+          </button>
+        </div>
       </div>
 
       {copyState === "copied" ? (
         <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-950">
-          Redacted review packet copied.
+          {packetMode === "compact" ? "Compact" : "Full"} redacted packet
+          copied.
         </p>
       ) : null}
 
@@ -1683,7 +1727,7 @@ function RedactedReviewPacketPanel({
       <textarea
         className="mt-4 h-96 w-full resize-y rounded-lg border border-stone-300 bg-stone-50 p-3 font-mono text-xs text-stone-950"
         readOnly
-        value={packet.markdown}
+        value={selectedPacket.markdown}
       />
     </div>
   );

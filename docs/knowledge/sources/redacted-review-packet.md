@@ -20,12 +20,15 @@
 - Public market context can make a redacted share more useful, but it should not
   imply access to hidden saved marks, account equity, exact size, PnL, or
   trading intent.
+- A compact mode should keep only the high-signal review fields for quick
+  comments and leave row-level public market details in the full packet.
 - Blockchain transparency makes privacy boundaries important for financial data;
   the packet should be explicit about what is hidden and why.
 
 ## linked feature ideas
 
 - [[../features/redacted-review-packet]]
+- [[../features/compact-redacted-risk-note]]
 - [[../features/redacted-receipt-share]]
 - [[../features/redacted-market-watchlist]]
 - [[../features/redacted-share-assistant]]

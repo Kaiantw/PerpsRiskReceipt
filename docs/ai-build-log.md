@@ -1116,3 +1116,25 @@ Review the profile values: strict uses 2h watch/12h full-recheck age, 7.50% thin
 - Browser verification used `http://localhost:3000/receipt/import`, pasted a 13-hour-old redacted bundle for `rr_browser_thresholds`, confirmed standard showed `stale but informative`, strict showed `needs full recheck` with `Receipt is older than 12h`, relaxed returned to `stale but informative`, the `Thresholds` assistant answer updated from strict to relaxed after profile change, copied markdown included `## redacted review thresholds`, strict copied `full-recheck age: 12h` and `thin disclosed buffer: 7.50%`, and zero browser console errors were captured.
 ### remaining risks:
 Redacted review thresholds are local public-only review heuristics. They are not saved, synced, protocol-official, a proof that stale redacted state is current, a substitute for full bundle hash recomputation, exact Hyperliquid liquidation logic, live alerting, or trading advice.
+
+### task id: post-t9 compact redacted packet
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a compact/default copy mode for imported redacted receipt shares so a reviewer can copy a shorter public risk note for issue comments or social-style sharing while keeping the full redacted markdown packet available for deep review.
+### output accepted:
+Added `buildCompactRedactedReviewPacket` beside the existing full packet builder. Compact mode summarizes receipt id, protocol/source, data timestamp, shortened snapshot hash reference, risk score/label, bucketed exposure, margin usage, disclosed liquidation-distance summary, funding buckets, loaded public-context state, freshness verdict, cue counts, active thresholds, optional redacted comparison headline, and capped top review cues. Wired `/receipt/import` to default the `Redacted review packet` panel to compact mode, add compact/full segmented controls, copy the selected markdown, and reset copy state when switching modes. Added focused tests for compact output, privacy boundaries, no-context fallbacks, and size. Updated source notes, knowledge graph, README, demo script, known limitations, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, bundle format, backend store, LLM API, wallet/RPC flow, trading/exchange endpoint, raw account lookup, full-snapshot disclosure, cryptographic selective-disclosure proof, EAS transaction, exact Hyperliquid liquidation formula, live alert, or protocol-official risk claim was added. The full packet remains available because compact mode intentionally omits detailed disclosed market rows and public mark-price rows.
+### human review notes:
+Review whether compact should be the long-term default or whether reviewers prefer the full packet first. Review whether the compact note should include one disclosed market cue per market or stay capped to top review cues only. Review whether a later slice should add a downloadable `.md` export for compact/full packets so reviewers are not clipboard-only.
+### tests/checks run:
+- `node --test src/lib/market/redacted-review-packet.test.ts` passed: 4 tests, 4 passing.
+- `npm test` passed: 184 tests, 184 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/`, `/receipt/import`, `/receipt/local/[id]`, `/api/hyperliquid/markets`, `/api/hyperliquid/market-history`, `/api/hyperliquid/portfolio`, `/api/hyperliquid/snapshot`, and the fixture receipt routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, pasted a generated redacted bundle for `rr_browser_compact_packet`, confirmed compact mode rendered by default, clicked `Copy compact markdown`, confirmed the clipboard started with `# Compact redacted risk note for rr_browser_compact_packet`, included the shortened hash and top review cues, omitted `## disclosed market rows`, and did not include hidden/internal field names. It then switched to `Full`, clicked `Copy full markdown`, confirmed the clipboard started with `# Redacted review packet for rr_browser_compact_packet`, included `## disclosed market rows` and `## redacted review thresholds`, and still omitted hidden/internal field names. Captured browser console errors: 0.
+### remaining risks:
+Compact redacted packets are short public communication notes only. They cannot recompute the hidden full snapshot hash, prove hidden receipt state, replace a full portable receipt bundle, provide cryptographic selective disclosure, monitor exact liquidation state, certify that stale data is current, or tell a trader what to do next.
