@@ -18,6 +18,7 @@ recipient to inspect every panel manually.
 - [[../sources/perp-configurable-recheck-thresholds]]
 - [[receipt-recheck-watchlist]]
 - [[configurable-recheck-thresholds]]
+- [[receipt-volatility-buffer]]
 - [[receipt-assistant-watchlist-citations]]
 - [[receipt-risk-driver-comparison]]
 - [[mark-price-context]]
@@ -33,6 +34,8 @@ recipient to inspect every panel manually.
   assistant citations, and market-context rows.
 - Includes the active review threshold profile so copied markdown explains what
   counted as a watchlist cue.
+- Includes loaded volatility-buffer context when the reviewer has fetched public
+  24h market history on the receipt page.
 - Limits watchlist and market-context rows to five items each for a readable
   first packet.
 - Renders a `Review packet` panel with copy-to-clipboard and read-only markdown.
@@ -44,4 +47,6 @@ recipient to inspect every panel manually.
 - [[receipt-assistant-watchlist-citations]] supplies the inspect-first assistant
   read embedded in the packet.
 - [[receipt-recheck-watchlist]] supplies ranked review cues.
+- [[receipt-volatility-buffer]] supplies public volatility-vs-buffer context
+  when loaded.
 - [[portable-receipt-bundle]] remains the full verification/export artifact.

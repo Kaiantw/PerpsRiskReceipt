@@ -15,8 +15,10 @@ resembles the current market without turning into a trading UI.
 
 - [[../sources/hyperliquid-live-risk-signals]]
 - [[../sources/perp-market-context]]
+- [[../sources/perp-volatility-buffer]]
 - [[live-receipt-recheck]]
 - [[funding-carry-watch]]
+- [[receipt-volatility-buffer]]
 
 ## implemented behavior
 
@@ -35,3 +37,5 @@ resembles the current market without turning into a trading UI.
 
 [[account-value-timeline]] can make this more useful by showing whether repeated
 receipts point to a persistent deterioration or just a one-off market move.
+[[receipt-volatility-buffer]] connects current listed buffer distance to public
+24h candle movement.

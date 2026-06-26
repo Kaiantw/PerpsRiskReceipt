@@ -830,3 +830,25 @@ Review the default threshold values: 500 bps thin listed buffer, 1000 bps tight 
 - Controlled browser verification mocked the read-only snapshot response for the same imported receipt, changed `Tight buffer bps` to `4000`, and confirmed `Tight current listed liquidation buffer` appeared in both the watchlist and review packet with zero browser console errors.
 ### remaining risks:
 Configurable thresholds are heuristic local review sensitivity settings. They are not saved, synced, protocol-official, financial advice, exact liquidation monitoring, exact funding settlement accounting, or proof of what a trader should do next. Open-interest thresholds remain informational participation context only.
+
+### task id: post-t9 receipt volatility buffer
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added source-backed current-market context for local receipt live rechecks by comparing current listed liquidation buffers with public 24h Hyperliquid candle range and ATR-style movement.
+### output accepted:
+Added `src/lib/receipts/receipt-volatility-buffer.ts` with deterministic high/watch/info reads for no comparable positions, unavailable history, missing current listed buffer, public 24h range exceeding the listed buffer, range using at least half the buffer, and tight buffers overlapping adverse 24h movement. Added tests for range-exceeds-buffer, range-near-buffer, unavailable history, and changed-position cases. Added a `Volatility buffer` panel after local live receipt recheck with lazy `Load 24h volatility`, public market-history fetch, matched/high/watch/window metrics, current buffer, 24h range, hourly ATR, ATR buffer multiple, and 24h move columns. Updated the review packet to include loaded volatility-buffer context. Updated package test registration, source notes, known limitations, knowledge graph, README, demo script, and this handoff.
+### output rejected or changed:
+No trading endpoint, order placement, private key, wallet/RPC flow, backend store, alerting system, prediction model, exact Hyperliquid liquidation formula, new dependency, or protocol-official risk claim was added. Market history is loaded only on demand and only for comparable current PERP positions already visible after live recheck.
+### human review notes:
+Review whether the default volatility thresholds feel right for the demo: high when 24h range is at least the current listed buffer, watch when range uses at least half the buffer, and high when a tight `<= 10%` buffer overlaps at least `2%` adverse 24h movement. Review whether ATR should stay in the table or be introduced with a short tooltip later for non-trader reviewers.
+### tests/checks run:
+- `node --test src/lib/receipts/receipt-volatility-buffer.test.ts src/lib/receipts/receipt-review-packet.test.ts` passed: 6 tests, 6 passing.
+- `npm test` passed: 129 tests, 129 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]`, `/api/hyperliquid/market-history`, and the existing receipt/API routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, mocked the read-only live snapshot and market-history responses, clicked `Recheck live account`, clicked `Load 24h volatility`, confirmed `Volatility buffer`, `range exceeds buffer`, `Current buffer`, `24h range`, `Hourly ATR`, `ATR buffer`, confirmed the review packet included `## volatility buffer` and `24h range:`, and saw zero browser console errors.
+### remaining risks:
+The volatility buffer is descriptive public-market context only. It compares public 24h candle history with current listed liquidation distance, but it does not model Hyperliquid's exact liquidation engine, cross-margin changes, order-book depth, liquidity, oracle-price settlement, future price movement, alerting, or what a trader should do next.

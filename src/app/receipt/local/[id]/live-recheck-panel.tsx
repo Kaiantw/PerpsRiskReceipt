@@ -13,6 +13,7 @@ import {
   formatUsd,
 } from "@/lib/formatters.ts";
 import type { receipt_account_value_context } from "@/lib/history/receipt-account-value-context.ts";
+import type { hyperliquid_market_history } from "@/lib/hyperliquid/adapter.ts";
 import {
   buildMarketContext,
   type market_context,
@@ -50,6 +51,12 @@ import {
   buildReceiptReviewPacket,
   type receipt_review_packet,
 } from "@/lib/receipts/receipt-review-packet.ts";
+import {
+  buildReceiptVolatilityBuffer,
+  type receipt_volatility_buffer,
+  type receipt_volatility_buffer_label,
+  type receipt_volatility_buffer_severity,
+} from "@/lib/receipts/receipt-volatility-buffer.ts";
 import { compareSnapshots } from "@/lib/receipts/snapshot-comparison.ts";
 import { ReceiptRiskAssistantPanel } from "./receipt-risk-assistant-panel.tsx";
 
@@ -66,6 +73,27 @@ type recheck_state =
 type hyperliquid_snapshot_response =
   | { snapshot: normalized_account_snapshot }
   | { error: string; fallback?: string };
+
+type hyperliquid_market_history_response =
+  | {
+      fetched_at_iso: string;
+      interval: string;
+      window_hours: number;
+      histories: hyperliquid_market_history[];
+    }
+  | { error: string; fallback?: string };
+
+type market_history_state =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | {
+      status: "loaded";
+      fetchedAtIso: string;
+      histories: hyperliquid_market_history[];
+      interval: string;
+      windowHours: number;
+    };
 
 const statusLabels: Record<snapshot_comparison["status"], string> = {
   account_mismatch: "account mismatch",
@@ -202,6 +230,35 @@ const recheckWatchSeverityTone: Record<
   info: "border-stone-200 bg-stone-100 text-stone-700",
 };
 
+const volatilityBufferLabels: Record<receipt_volatility_buffer_label, string> = {
+  no_comparable_positions: "no comparable positions",
+  no_history: "no history",
+  missing_buffer: "missing buffer",
+  range_exceeds_buffer: "range exceeds buffer",
+  range_near_buffer: "range near buffer",
+  adverse_trend_near_buffer: "adverse trend near buffer",
+  volatility_context_loaded: "volatility loaded",
+};
+
+const volatilityBufferTone: Record<receipt_volatility_buffer_label, string> = {
+  no_comparable_positions: "border-stone-300 bg-white text-stone-700",
+  no_history: "border-amber-200 bg-amber-100 text-amber-950",
+  missing_buffer: "border-amber-200 bg-amber-100 text-amber-950",
+  range_exceeds_buffer: "border-red-200 bg-red-100 text-red-950",
+  range_near_buffer: "border-yellow-200 bg-yellow-100 text-yellow-950",
+  adverse_trend_near_buffer: "border-red-200 bg-red-100 text-red-950",
+  volatility_context_loaded: "border-emerald-200 bg-emerald-100 text-emerald-950",
+};
+
+const volatilityBufferSeverityTone: Record<
+  receipt_volatility_buffer_severity,
+  string
+> = {
+  high: "border-red-200 bg-red-100 text-red-950",
+  watch: "border-yellow-200 bg-yellow-100 text-yellow-950",
+  info: "border-stone-200 bg-stone-100 text-stone-700",
+};
+
 export function LiveRecheckPanel({
   hashVerified,
   receipt,
@@ -290,6 +347,7 @@ export function LiveRecheckPanel({
           comparison={state.comparison}
           currentSnapshot={state.currentSnapshot}
           hashVerified={hashVerified}
+          key={`${state.currentSnapshot.data_time_iso}:${state.comparison.status}`}
           receipt={receipt}
           receiptAccountValueContext={receiptAccountValueContext ?? null}
         />
@@ -315,7 +373,20 @@ function LiveRecheckResult({
     useState<receipt_recheck_watchlist_thresholds>(
       defaultReceiptRecheckWatchlistThresholds,
     );
+  const [marketHistoryState, setMarketHistoryState] =
+    useState<market_history_state>({ status: "idle" });
   const marketContext = buildMarketContext(comparison);
+  const marketHistoryMarkets = getMarketHistoryMarkets(marketContext);
+  const volatilityBuffer =
+    marketHistoryState.status === "loaded"
+      ? buildReceiptVolatilityBuffer({
+          marketContext,
+          histories: marketHistoryState.histories,
+          fetchedAtIso: marketHistoryState.fetchedAtIso,
+          windowHours: marketHistoryState.windowHours,
+          interval: marketHistoryState.interval,
+        })
+      : null;
   const riskDriverComparison = compareReceiptRiskDrivers({
     savedSnapshot: receipt.snapshot,
     currentSnapshot,
@@ -350,6 +421,7 @@ function LiveRecheckResult({
     marketContext,
     changeSummary,
     riskDriverComparison,
+    volatilityBuffer,
     watchlist: recheckWatchlist,
     watchlistAssistantResponse,
     hashVerified,
@@ -367,6 +439,47 @@ function LiveRecheckResult({
     formatThresholdSignature(recheckWatchlist.thresholds),
     receiptAccountValueContext?.label ?? "no-account-context",
   ].join(":");
+
+  async function loadMarketHistory() {
+    if (marketHistoryMarkets.length === 0) {
+      return;
+    }
+
+    setMarketHistoryState({ status: "loading" });
+
+    try {
+      const response = await fetch(
+        `/api/hyperliquid/market-history?markets=${encodeURIComponent(
+          marketHistoryMarkets.join(","),
+        )}`,
+      );
+      const body = (await response.json()) as hyperliquid_market_history_response;
+
+      if (!response.ok || !("histories" in body)) {
+        throw new Error(
+          "error" in body
+            ? body.error
+            : "Hyperliquid market history lookup failed.",
+        );
+      }
+
+      setMarketHistoryState({
+        status: "loaded",
+        fetchedAtIso: body.fetched_at_iso,
+        histories: body.histories,
+        interval: body.interval,
+        windowHours: body.window_hours,
+      });
+    } catch (error) {
+      setMarketHistoryState({
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Hyperliquid market history lookup failed.",
+      });
+    }
+  }
 
   return (
     <div className="mt-4 flex flex-col gap-4">
@@ -397,6 +510,13 @@ function LiveRecheckResult({
 
       <ReceiptChangeSummaryResult summary={changeSummary} />
       <ReceiptRiskDriverComparisonResult comparison={riskDriverComparison} />
+      <MarketContextResult context={marketContext} />
+      <ReceiptVolatilityBufferResult
+        marketHistoryMarkets={marketHistoryMarkets}
+        onLoadMarketHistory={loadMarketHistory}
+        state={marketHistoryState}
+        volatilityBuffer={volatilityBuffer}
+      />
       <ReceiptRecheckThresholdsResult
         onThresholdsChange={setThresholds}
         thresholds={thresholds}
@@ -407,7 +527,6 @@ function LiveRecheckResult({
         key={assistantKey}
       />
       <ReceiptReviewPacketResult packet={reviewPacket} />
-      <MarketContextResult context={marketContext} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <ComparisonMetric
@@ -651,6 +770,175 @@ function ThresholdInput({
       />
       <span className="text-xs leading-5 text-stone-600">{description}</span>
     </label>
+  );
+}
+
+function ReceiptVolatilityBufferResult({
+  marketHistoryMarkets,
+  onLoadMarketHistory,
+  state,
+  volatilityBuffer,
+}: {
+  marketHistoryMarkets: string[];
+  onLoadMarketHistory: () => void;
+  state: market_history_state;
+  volatilityBuffer: receipt_volatility_buffer | null;
+}) {
+  const canLoad = marketHistoryMarkets.length > 0 && state.status !== "loading";
+
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-stone-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Volatility buffer</h3>
+          <p className="mt-1 text-sm text-stone-600">
+            Compare current listed liquidation distance with public 24h
+            Hyperliquid candle range and ATR-style movement.
+          </p>
+        </div>
+        <button
+          className="inline-flex min-h-10 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-stone-400"
+          disabled={!canLoad}
+          onClick={onLoadMarketHistory}
+          type="button"
+        >
+          {state.status === "loading" ? "Loading..." : "Load 24h volatility"}
+        </button>
+      </div>
+
+      {state.status === "idle" ? (
+        <p className="px-4 py-3 text-sm text-stone-600">
+          {marketHistoryMarkets.length === 0
+            ? "No comparable live positions are available for 24h volatility context."
+            : `Ready to load public candle history for ${marketHistoryMarkets.join(", ")}.`}
+        </p>
+      ) : null}
+
+      {state.status === "loading" ? (
+        <p className="px-4 py-3 text-sm text-stone-600">
+          Loading public market history from the read-only Hyperliquid info
+          endpoint.
+        </p>
+      ) : null}
+
+      {state.status === "error" ? (
+        <p className="border-t border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-950">
+          {state.message}
+        </p>
+      ) : null}
+
+      {state.status === "loaded" && volatilityBuffer ? (
+        <>
+          <div className="flex flex-col gap-3 border-t border-stone-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-stone-800">
+                {volatilityBuffer.headline}
+              </p>
+              <p className="mt-1 text-sm text-stone-600">
+                {volatilityBuffer.summary}
+              </p>
+            </div>
+            <span
+              className={`w-fit rounded-lg border px-3 py-2 text-sm font-semibold ${volatilityBufferTone[volatilityBuffer.label]}`}
+            >
+              {volatilityBufferLabels[volatilityBuffer.label]}
+            </span>
+          </div>
+
+          <dl className="grid gap-3 border-t border-stone-200 p-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
+            <MiniMetric
+              label="Focus market"
+              value={volatilityBuffer.focus_market ?? "n/a"}
+            />
+            <MiniMetric
+              label="Matched"
+              value={String(volatilityBuffer.matched_market_count)}
+            />
+            <MiniMetric label="High" value={String(volatilityBuffer.high_count)} />
+            <MiniMetric
+              label="Watch"
+              value={String(volatilityBuffer.watch_count)}
+            />
+            <MiniMetric
+              label="Window"
+              value={`${volatilityBuffer.window_hours}h ${volatilityBuffer.interval}`}
+            />
+          </dl>
+
+          {volatilityBuffer.rows.length === 0 ? (
+            <p className="border-t border-stone-200 px-4 py-3 text-sm text-stone-600">
+              No volatility-buffer rows are available.
+            </p>
+          ) : (
+            <div className="overflow-x-auto border-t border-stone-200">
+              <table className="w-full min-w-[1120px] text-left text-sm">
+                <thead className="bg-stone-100 text-xs uppercase text-stone-600">
+                  <tr>
+                    <th className="px-4 py-3">Market</th>
+                    <th className="px-4 py-3">Read</th>
+                    <th className="px-4 py-3">Current buffer</th>
+                    <th className="px-4 py-3">24h range</th>
+                    <th className="px-4 py-3">Hourly ATR</th>
+                    <th className="px-4 py-3">ATR buffer</th>
+                    <th className="px-4 py-3">24h move</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {volatilityBuffer.rows.map((row) => (
+                    <tr className="border-t border-stone-200" key={row.market}>
+                      <td className="px-4 py-3 font-mono">{row.market}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`rounded-lg border px-2 py-1 text-xs font-semibold uppercase ${volatilityBufferSeverityTone[row.severity]}`}
+                        >
+                          {row.severity}
+                        </span>
+                        <p className="mt-2 max-w-72 text-xs leading-5 text-stone-600">
+                          {row.summary}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3">
+                        {formatNullablePlainPercent(
+                          row.current_liquidation_distance_percent,
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {formatNullablePlainPercent(row.high_low_range_percent)}
+                        <p className="mt-1 text-xs text-stone-500">
+                          Ratio: {formatNullableMultiple(row.range_to_buffer_ratio)}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3">
+                        {formatNullablePlainPercent(
+                          row.average_true_range_percent,
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {formatNullableMultiple(row.atr_buffer_multiple)}
+                      </td>
+                      <td className="px-4 py-3">
+                        {formatNullableSignedPercent(row.price_change_percent)}
+                        <p className="mt-1 text-xs text-stone-500">
+                          Adverse:{" "}
+                          {formatNullablePlainPercent(
+                            row.adverse_price_change_percent,
+                          )}
+                        </p>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      ) : null}
+
+      <p className="border-t border-stone-200 px-4 py-3 text-xs text-stone-500">
+        Volatility buffer uses public 24h candles for context. It is not an
+        exact liquidation monitor, price forecast, or trade recommendation.
+      </p>
+    </section>
   );
 }
 
@@ -1200,6 +1488,22 @@ function formatNullableSignedPercent(value: number | null) {
   return formatSignedPercent(value);
 }
 
+function formatNullablePlainPercent(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return `${value.toFixed(2)}%`;
+}
+
+function formatNullableMultiple(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return `${value.toFixed(2)}x`;
+}
+
 function formatSignedNullableNumber(value: number | null) {
   if (value === null) {
     return "n/a";
@@ -1276,6 +1580,14 @@ function formatThresholdSignature(
     thresholds.thin_liquidation_distance_bps,
     thresholds.tight_liquidation_distance_bps,
   ].join(":");
+}
+
+function getMarketHistoryMarkets(context: market_context) {
+  const markets = context.positions
+    .filter((position) => position.status === "same_position")
+    .map((position) => position.market);
+
+  return Array.from(new Set(markets)).slice(0, 5);
 }
 
 function formatPrimaryDriver(category: position_risk_driver_category | null) {

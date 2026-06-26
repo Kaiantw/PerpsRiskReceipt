@@ -139,6 +139,13 @@ use this file for external protocol assumptions.
   - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
   - https://www.coinbase.com/learn/perpetual-futures/understanding-funding-rates-in-perpetual-futures
   - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
+- docs checked on 2026-06-26 for receipt volatility buffer:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://www.schwab.com/learn/story/average-true-range-indicator-and-volatility
+  - https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/atr
+  - https://www.chainalysis.com/blog/perpetual-futures/
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -278,8 +285,18 @@ use this file for external protocol assumptions.
   - it does not call a new endpoint, change the receipt model, or store packet state.
   - it includes a truncated account identifier, full snapshot hash, hash verification state, receipt change summary, risk-driver comparison, watchlist cues, assistant watchlist answer, assistant citations, and market-context rows.
   - it includes the active review threshold profile so the copied markdown says what counted as meaningful movement.
+  - it includes volatility-buffer context only after the reviewer loads public 24h market history on the receipt page.
   - the first version caps watchlist and market-context rows at five each for readability.
   - the packet is a communication summary only; a full portable receipt bundle remains required for another browser to recompute the snapshot hash.
+- receipt volatility buffer assumptions:
+  - local Hyperliquid receipt pages use the existing read-only `market-history` route after a live recheck.
+  - the lookup calls public `candleSnapshot` and `fundingHistory` info requests for comparable current PERP markets only.
+  - the feature is capped to five markets by the existing history route.
+  - current listed liquidation distance comes from already-loaded saved/current market context.
+  - 24h high-low range is compared with current listed liquidation distance as descriptive buffer coverage.
+  - average true range percent is calculated over the loaded hourly candles and is used as volatility context, not a directional signal.
+  - position-state changes are not treated as directly comparable volatility-buffer rows.
+  - the panel is not Hyperliquid's exact liquidation formula, a live alerting system, a price forecast, or a trading recommendation.
 
 ## eas
 

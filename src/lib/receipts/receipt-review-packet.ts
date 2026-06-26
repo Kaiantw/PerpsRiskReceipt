@@ -18,6 +18,10 @@ import type {
   receipt_recheck_watch_item,
   receipt_recheck_watchlist,
 } from "./receipt-recheck-watchlist.ts";
+import type {
+  receipt_volatility_buffer,
+  receipt_volatility_buffer_row,
+} from "./receipt-volatility-buffer.ts";
 import type { snapshot_comparison } from "./snapshot-comparison.ts";
 
 export type receipt_review_packet = {
@@ -33,6 +37,7 @@ export function buildReceiptReviewPacket(input: {
   marketContext: market_context;
   receipt: risk_receipt;
   riskDriverComparison: receipt_risk_driver_comparison;
+  volatilityBuffer?: receipt_volatility_buffer | null;
   watchlist: receipt_recheck_watchlist;
   watchlistAssistantResponse: receipt_risk_assistant_response;
 }): receipt_review_packet {
@@ -66,6 +71,7 @@ export function buildReceiptReviewPacket(input: {
     `- closest listed-buffer delta: ${formatSignedPercentFromBps(input.riskDriverComparison.closest_liquidation_distance_delta_bps)}`,
     `- daily funding delta: ${formatSignedNullableUsd(input.riskDriverComparison.daily_funding_delta_usd)}`,
     "",
+    ...formatVolatilityBufferSection(input.volatilityBuffer ?? null),
     "## recheck watchlist",
     `- label: ${input.watchlist.label.replaceAll("_", " ")}`,
     `- counts: ${input.watchlist.high_count} high, ${input.watchlist.watch_count} watch, ${input.watchlist.info_count} info`,
@@ -165,6 +171,39 @@ function formatWatchlistItems(items: receipt_recheck_watch_item[]) {
   ]);
 }
 
+function formatVolatilityBufferSection(
+  volatilityBuffer: receipt_volatility_buffer | null,
+) {
+  if (!volatilityBuffer) {
+    return [];
+  }
+
+  return [
+    "## volatility buffer",
+    `- label: ${volatilityBuffer.label.replaceAll("_", " ")}`,
+    `- headline: ${volatilityBuffer.headline}`,
+    `- focus market: ${volatilityBuffer.focus_market ?? "n/a"}`,
+    `- counts: ${volatilityBuffer.high_count} high, ${volatilityBuffer.watch_count} watch, ${volatilityBuffer.info_count} info`,
+    `- window: ${volatilityBuffer.window_hours}h ${volatilityBuffer.interval}`,
+    ...formatVolatilityBufferRows(volatilityBuffer.rows),
+    "",
+  ];
+}
+
+function formatVolatilityBufferRows(rows: receipt_volatility_buffer_row[]) {
+  if (rows.length === 0) {
+    return ["- no volatility-buffer rows are available"];
+  }
+
+  return rows.slice(0, 5).flatMap((row) => [
+    `- [${row.severity}] ${row.market}: ${row.summary}`,
+    `  - current listed buffer: ${formatNullablePercent(row.current_liquidation_distance_percent)}`,
+    `  - 24h range: ${formatNullablePercent(row.high_low_range_percent)}`,
+    `  - average true range: ${formatNullablePercent(row.average_true_range_percent)}`,
+    `  - ATR buffer multiple: ${formatNullableMultiple(row.atr_buffer_multiple)}`,
+  ]);
+}
+
 function formatReviewThresholds(watchlist: receipt_recheck_watchlist) {
   const thresholds = watchlist.thresholds;
 
@@ -177,6 +216,22 @@ function formatReviewThresholds(watchlist: receipt_recheck_watchlist) {
     `- 8h funding delta: ${formatPlainNumber(thresholds.material_funding_8h_bps)} bps`,
     `- open-interest delta: ${formatUsd(thresholds.material_open_interest_delta_usd)}`,
   ];
+}
+
+function formatNullablePercent(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return `${value.toFixed(2)}%`;
+}
+
+function formatNullableMultiple(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return `${value.toFixed(2)}x`;
 }
 
 function formatPlainNumber(value: number) {
