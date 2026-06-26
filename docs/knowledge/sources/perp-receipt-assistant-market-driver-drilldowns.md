@@ -21,9 +21,13 @@
   should not treat them as standalone direction signals or advice.
 - Funding is a recurring position-level cost or credit, so a named-market answer
   should show daily funding and the funding delta when available.
+- [[../features/receipt-assistant-market-context-fusion]] expands this answer
+  with the matching mark-price, listed-buffer, funding-rate, daily-funding, and
+  open-interest movement from `market_context.positions`.
 
 ## linked feature ideas
 
 - [[../features/receipt-assistant-market-driver-drilldowns]]
+- [[../features/receipt-assistant-market-context-fusion]]
 - [[../features/receipt-assistant-driver-citations]]
 - [[../features/receipt-risk-driver-comparison]]

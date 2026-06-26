@@ -108,6 +108,11 @@ use this file for external protocol assumptions.
   - https://metamask.io/news/perpetual-futures-funding-frequency-strategies
   - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
   - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
+- docs checked on 2026-06-26 for receipt assistant market-context fusion:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -180,6 +185,8 @@ use this file for external protocol assumptions.
   - account-value history answers are only available after the receipt account-value context panel has loaded sampled portfolio context.
   - driver-specific answers are available after live recheck and cite saved/current top driver, driver-score delta, gross exposure delta, closest listed-buffer delta, daily funding delta, and driver review points.
   - named-market driver answers cite the matching `market_changes` row and show saved/current component scores, notional, listed buffer, daily funding, and deltas.
+  - named-market driver answers also cite the matching `market_context.positions` row when available, including mark move, listed liquidation-distance move, 8-hour funding move, daily funding move, and open-interest move.
+  - if the named-market driver row has no matching market-context row, the assistant must say that context is unavailable rather than implying it inspected mark/funding/open-interest movement.
   - when a named market changes side or size, the assistant must say the row is historical rather than directly comparable as the same risk object.
 - portable receipt bundle assumptions:
   - the bundle is a user-controlled JSON export/import path; it does not call new Hyperliquid endpoints.

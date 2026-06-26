@@ -719,3 +719,25 @@ Review whether base-coin detection is too broad for short market symbols, and wh
 - Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Receipt change summary`, `Risk drivers since receipt`, `Receipt risk assistant`, and `ETH-PERP`, asked `Why is ETH-PERP the current risk driver?`, confirmed `per-market drilldown`, `Saved row: score`, `Current row:`, `Score delta`, `receipt_risk_driver_comparison.market_changes.ETH-PERP`, the no-advice caveat, and saw zero severe captured tab logs.
 ### remaining risks:
 Named-market assistant drilldowns inherit the heuristic receipt risk-driver comparison limits. They cite local per-market rows only and do not model Hyperliquid's exact liquidation engine, margin tiers, live order-book liquidity, exact funding settlement, hidden redacted-share fields, or trade advice.
+
+### task id: post-t9 receipt assistant market-context fusion
+### codex mode:
+product iteration + implementation
+### delegated work:
+Connected named-market receipt assistant answers to the matching `Market context since receipt` row, so a question like "Why is ETH-PERP the current risk driver?" can cite both risk-driver components and saved-vs-current mark, liquidation-distance, funding, daily funding, and open-interest context.
+### output accepted:
+Added market-context row lookup and formatting inside `src/lib/assistant/receipt-risk-assistant.ts`. Named-market answers now show the driver summary, saved/current driver rows, the matching market-context summary, mark move, listed liquidation-distance move, 8-hour funding move, daily funding move, open-interest move, driver deltas, and citations for both `receipt_risk_driver_comparison.market_changes.*` and `market_context.positions.*`. Added focused assertions for market-context content and citations. Updated source notes, limitations, knowledge graph, README, demo script, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, LLM API, data model, trading/exchange endpoint, wallet/RPC flow, backend store, exact Hyperliquid liquidation formula, or alerting system was added. The browser smoke used the existing full portable-bundle import path and a live recheck instead of writing localStorage directly.
+### human review notes:
+Review whether the named-market answer is too dense now that it includes both component-score and market-context rows. Review whether the fallback sentence for a missing market-context row should be surfaced as a warning chip in the UI later. Base-coin detection remains worth reviewing for very short market symbols.
+### tests/checks run:
+- `node --test src/lib/assistant/receipt-risk-assistant.test.ts` passed: 12 tests, 12 passing.
+- `npm test` passed: 115 tests, 115 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]` plus the existing API and receipt routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Risk drivers since receipt` and `Receipt risk assistant`, asked `Why is ETH-PERP the current risk driver?`, confirmed `Market context row`, `Mark move`, `Open interest`, `receipt_risk_driver_comparison.market_changes.ETH-PERP`, `market_context.positions.ETH-PERP`, the no-advice caveat, and zero browser console errors.
+### remaining risks:
+Market-context fusion is still deterministic local explanation over heuristic receipt-driver and market-context rows. It is not protocol-official risk attribution, exact liquidation monitoring, exact funding settlement, live order-book liquidity analysis, or trade advice. If no matching `market_context.positions` row is loaded, the assistant says that context is unavailable rather than inventing it.

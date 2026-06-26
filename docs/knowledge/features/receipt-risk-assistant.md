@@ -23,6 +23,7 @@ than giving uncited trading advice.
 - [[funding-carry-watch]]
 - [[receipt-assistant-driver-citations]]
 - [[receipt-assistant-market-driver-drilldowns]]
+- [[receipt-assistant-market-context-fusion]]
 
 ## implemented behavior
 
@@ -47,6 +48,8 @@ than giving uncited trading advice.
   a direct citation source for driver-specific receipt questions.
 - [[receipt-assistant-market-driver-drilldowns]] extends those citations to
   individual market rows.
+- [[receipt-assistant-market-context-fusion]] merges individual market rows with
+  the matching mark, funding, listed-buffer, and open-interest context.
 - [[account-value-timeline]] could later add richer account-history citations if
   the app imports more complete portfolio history.
 - [[portable-receipt-bundle]] lets the same assistant workflow apply after a

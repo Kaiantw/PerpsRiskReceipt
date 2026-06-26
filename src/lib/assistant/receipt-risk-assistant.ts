@@ -1,11 +1,15 @@
 import {
   formatPercentFromBps,
+  formatSignedBps,
   formatSignedUsd,
   formatUsd,
   truncateMiddle,
 } from "../formatters.ts";
 import type { receipt_account_value_context } from "../history/receipt-account-value-context.ts";
-import type { market_context } from "../market/market-context.ts";
+import type {
+  market_context,
+  market_context_position,
+} from "../market/market-context.ts";
 import type { risk_receipt } from "../perps/types.ts";
 import type { receipt_change_summary } from "../receipts/receipt-change-summary.ts";
 import type {
@@ -71,6 +75,22 @@ function formatNullableSignedUsd(value: number | null) {
   }
 
   return formatSignedUsd(value);
+}
+
+function formatNullableUsd(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return formatUsd(value);
+}
+
+function formatNullableSignedBps(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  return formatSignedBps(value);
 }
 
 function formatSignedNumber(value: number | null) {
@@ -147,6 +167,26 @@ function formatDriverRow(
   ].join("; ") + ".";
 }
 
+function formatMarketContextRow(position: market_context_position | null) {
+  if (!position) {
+    return "Market context row: no saved/current market-context row is loaded for this market.";
+  }
+
+  const markMove =
+    position.mark_price_change_percent === null
+      ? "n/a"
+      : `${formatSignedNumber(position.mark_price_change_percent)}%`;
+
+  return [
+    `Market context row: ${position.summary}`,
+    `Mark move: ${formatMetricMove(position.mark_price_usd, formatNullableUsd)} (${markMove}).`,
+    `Listed liquidation distance: ${formatMetricMove(position.liquidation_distance_bps, formatPercentFromBps)}.`,
+    `8h funding: ${formatMetricMove(position.funding_8h_bps_user_perspective, formatNullableSignedBps)}.`,
+    `Daily funding: ${formatMetricMove(position.daily_funding_usd, formatNullableSignedUsd)}.`,
+    `Open interest: ${formatMetricMove(position.open_interest_usd, formatNullableUsd)}.`,
+  ].join(" ");
+}
+
 function getRequestedMarketChange(input: {
   normalizedQuestion: string;
   riskDriverComparison: receipt_risk_driver_comparison | null;
@@ -168,6 +208,37 @@ function getRequestedMarketChange(input: {
       );
     }) ?? null
   );
+}
+
+function getMarketContextPositionByMarket(input: {
+  market: string;
+  marketContext: market_context;
+}) {
+  const requestedMarket = input.market.toUpperCase();
+
+  return (
+    input.marketContext.positions.find(
+      (position) => position.market.toUpperCase() === requestedMarket,
+    ) ?? null
+  );
+}
+
+function getMarketContextCitations(
+  position: market_context_position | null,
+): string[] {
+  if (!position) {
+    return [];
+  }
+
+  return [
+    `market_context.positions.${position.market}.summary`,
+    `market_context.positions.${position.market}.mark_price_usd`,
+    `market_context.positions.${position.market}.mark_price_change_percent`,
+    `market_context.positions.${position.market}.liquidation_distance_bps`,
+    `market_context.positions.${position.market}.funding_8h_bps_user_perspective`,
+    `market_context.positions.${position.market}.daily_funding_usd`,
+    `market_context.positions.${position.market}.open_interest_usd`,
+  ];
 }
 
 function getHashStatus(hashVerified: boolean | undefined) {
@@ -272,9 +343,11 @@ function buildDriverAnswer(
   };
 }
 
-function buildMarketDriverAnswer(
-  marketChange: receipt_risk_driver_market_change,
-): receipt_risk_assistant_response {
+function buildMarketDriverAnswer(input: {
+  marketChange: receipt_risk_driver_market_change;
+  marketContextPosition: market_context_position | null;
+}): receipt_risk_assistant_response {
+  const { marketChange, marketContextPosition } = input;
   const comparablePositionText =
     marketChange.status === "same_position"
       ? "This is the same market/side/size, so the app compares the saved and current driver components directly."
@@ -286,13 +359,14 @@ function buildMarketDriverAnswer(
       comparablePositionText,
       formatDriverRow("Saved", marketChange.saved_driver),
       formatDriverRow("Current", marketChange.current_driver),
+      formatMarketContextRow(marketContextPosition),
       [
         `Score delta: ${formatSignedNumber(marketChange.driver_score_delta)}.`,
         `Notional delta: ${formatNullableSignedUsd(marketChange.notional_delta_usd)}.`,
         `Listed-buffer delta: ${formatSignedPercentFromBps(marketChange.liquidation_distance_delta_bps)}.`,
         `Daily funding delta: ${formatNullableSignedUsd(marketChange.daily_funding_delta_usd)}.`,
       ].join(" "),
-      "This is a per-market drilldown from the receipt risk-driver comparison, not protocol-official attribution or a trade recommendation.",
+      "This is a per-market drilldown from the receipt risk-driver comparison and market context, not protocol-official attribution or a trade recommendation.",
     ].join(" "),
     citations: [
       `receipt_risk_driver_comparison.market_changes.${marketChange.market}.summary`,
@@ -303,6 +377,7 @@ function buildMarketDriverAnswer(
       `receipt_risk_driver_comparison.market_changes.${marketChange.market}.notional_delta_usd`,
       `receipt_risk_driver_comparison.market_changes.${marketChange.market}.liquidation_distance_delta_bps`,
       `receipt_risk_driver_comparison.market_changes.${marketChange.market}.daily_funding_delta_usd`,
+      ...getMarketContextCitations(marketContextPosition),
     ],
   };
 }
@@ -476,7 +551,13 @@ export function answerReceiptRiskQuestion(input: {
   }
 
   if (requestedMarketChange) {
-    return buildMarketDriverAnswer(requestedMarketChange);
+    return buildMarketDriverAnswer({
+      marketChange: requestedMarketChange,
+      marketContextPosition: getMarketContextPositionByMarket({
+        market: requestedMarketChange.market,
+        marketContext: input.context.marketContext,
+      }),
+    });
   }
 
   if (

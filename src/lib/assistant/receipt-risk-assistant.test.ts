@@ -223,11 +223,24 @@ test("answers market-specific driver drilldown questions", async () => {
   assert.match(response.answer, /ETH-PERP/);
   assert.match(response.answer, /Saved row: score/);
   assert.match(response.answer, /Current row: score/);
+  assert.match(response.answer, /Market context row:/);
+  assert.match(response.answer, /Mark move:/);
+  assert.match(response.answer, /Open interest:/);
   assert.match(response.answer, /Score delta/);
   assert.match(response.answer, /per-market drilldown/i);
   assert.ok(
     response.citations.includes(
       "receipt_risk_driver_comparison.market_changes.ETH-PERP.driver_score_delta",
+    ),
+  );
+  assert.ok(
+    response.citations.includes(
+      "market_context.positions.ETH-PERP.mark_price_usd",
+    ),
+  );
+  assert.ok(
+    response.citations.includes(
+      "market_context.positions.ETH-PERP.open_interest_usd",
     ),
   );
 });
@@ -252,6 +265,7 @@ test("explains when a named market changed position state", async () => {
     response.answer,
     /historical rather than the same live risk object/,
   );
+  assert.match(response.answer, /Market context row: Position state changed/);
   assert.match(response.answer, /Notional delta/);
   assert.ok(
     response.citations.includes(

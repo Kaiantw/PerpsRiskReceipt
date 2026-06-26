@@ -31,36 +31,34 @@
 - Post-t9 receipt risk-driver comparison is complete.
 - Post-t9 receipt assistant driver citations is complete.
 - Post-t9 receipt assistant market-driver drilldowns is complete.
+- Post-t9 receipt assistant market-context fusion is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
-- Remote state before commit: `main` tracks `origin/main`.
-- Baseline before this slice: `083396f feat: cite receipt risk drivers in assistant`.
-- Current work lets `Receipt risk assistant` answer named-market questions from `Risk drivers since receipt` per-market rows.
-- The assistant detects `*-PERP` market names and base coins in questions, then shows saved/current driver rows, component scores, primary factor, notional, listed buffer, daily funding, deltas, and comparability state.
-- A `Top market` quick prompt appears when the live recheck has a current top driver market.
-- Trade-intent refusal still runs before market-specific routing, so advice-seeking questions remain blocked.
-- No new endpoint, dependency, data model, wallet/RPC flow, backend store, LLM call, or trading behavior was added.
+- Remote tracking: `main` tracks `origin/main`.
+- Baseline before this slice: `e62dbc6`.
+- Current work lets `Receipt risk assistant` answer named-market questions from both the per-market risk-driver comparison row and the matching market-context row.
+- A named-market answer now includes saved/current driver rows, score/notional/listed-buffer/funding deltas, mark move, listed liquidation-distance move, 8-hour funding move, daily funding move, open-interest move, and citations for both local evidence families.
+- Trade-intent refusal still runs before market-specific routing.
+- No endpoint, dependency, data model, wallet/RPC flow, backend store, LLM call, or trading behavior was added.
 - A Next dev server was already running on `http://localhost:3000` for browser smoke verification.
 
 ## files changed
 
-- `src/lib/assistant/receipt-risk-assistant.ts`: adds market-name detection, named-market driver answers, saved/current driver-row formatting, and the `Top market` suggestion.
-- `src/lib/assistant/receipt-risk-assistant.test.ts`: covers named-market drilldowns, resized-position historical wording, and the `Top market` suggestion.
-- `docs/knowledge/sources/perp-receipt-assistant-market-driver-drilldowns.md`: source-backed assumptions for market-specific receipt assistant answers.
-- `docs/knowledge/features/receipt-assistant-market-driver-drilldowns.md`: implemented feature note.
+- `src/lib/assistant/receipt-risk-assistant.ts`: adds market-context row lookup, market-context formatting, market-context citations, and fused named-market answers.
+- `src/lib/assistant/receipt-risk-assistant.test.ts`: asserts named-market answers include market-context content and citations.
+- `docs/knowledge/sources/perp-receipt-assistant-market-context-fusion.md`: source-backed assumptions for fusing driver rows with market context.
+- `docs/knowledge/features/receipt-assistant-market-context-fusion.md`: implemented feature note.
 - `docs/knowledge/index.md`: links the new feature/source notes.
-- `docs/knowledge/features/receipt-risk-assistant.md`: documents named top-market drilldowns.
-- `docs/knowledge/features/receipt-risk-driver-comparison.md`: links assistant reuse of per-market rows.
-- `docs/knowledge/features/receipt-assistant-driver-citations.md`: links aggregate driver answers to named-market drilldowns.
-- `docs/knowledge/sources/perp-receipt-assistant-driver-citations.md`: links the follow-on feature.
-- `docs/knowledge/sources/perp-receipt-review-assistant.md`: records named-market citation and position-state assumptions.
-- `docs/source-notes.md`: documents market-driver drilldown sources and assumptions.
-- `docs/known-limitations.md`: documents local per-market-row limits.
-- `README.md`: documents the assistant's market drilldowns and updated resume bullet.
-- `docs/demo-script.md`: adds the named-market assistant walkthrough and updated resume bullet.
+- `docs/knowledge/features/receipt-assistant-market-driver-drilldowns.md`: links market drilldowns to market-context fusion.
+- `docs/knowledge/sources/perp-receipt-assistant-market-driver-drilldowns.md`: links the follow-on fusion feature.
+- `docs/knowledge/features/receipt-risk-assistant.md`: documents the new cited market-context answer path.
+- `docs/source-notes.md`: documents market-context fusion sources and assumptions.
+- `docs/known-limitations.md`: updates market-drilldown limitations.
+- `README.md`: documents market-context drilldowns.
+- `docs/demo-script.md`: updates the reviewer walkthrough and resume bullet.
 - `docs/ai-build-log.md`: records this feature slice.
 - `docs/session-handoff.md`: this handoff.
 
@@ -70,18 +68,17 @@
 - `npm test` passed: 115 tests, 115 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm run build` passed and listed `/receipt/local/[id]`.
+- `npm run build` passed and listed `/receipt/local/[id]` plus the existing API and receipt routes.
 - `git diff --check` passed.
-- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Receipt change summary`, `Risk drivers since receipt`, `Receipt risk assistant`, and `ETH-PERP`, asked `Why is ETH-PERP the current risk driver?`, confirmed `per-market drilldown`, `Saved row: score`, `Current row:`, `Score delta`, `receipt_risk_driver_comparison.market_changes.ETH-PERP`, the no-advice caveat, and saw zero severe captured tab logs.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Risk drivers since receipt` and `Receipt risk assistant`, asked `Why is ETH-PERP the current risk driver?`, confirmed `Market context row`, `Mark move`, `Open interest`, `receipt_risk_driver_comparison.market_changes.ETH-PERP`, `market_context.positions.ETH-PERP`, the no-advice caveat, and zero browser console errors.
 
 ## blockers
 
 - No hard blocker for this feature slice.
-- Named-market assistant drilldowns inherit the heuristic receipt risk-driver comparison limits and are not protocol-official attribution.
+- The fused answer is still heuristic local explanation, not protocol-official attribution or exact liquidation monitoring.
 - Base-coin detection may be too broad for very short symbols and should be reviewed as more markets are tested.
-- The named-market answer does not yet merge in `Market context since receipt` rows for mark movement or open-interest deltas.
-- The comparison uses listed liquidation price and normalized mark-price notional; it does not model Hyperliquid's exact liquidation formula, margin tiers, liquidity, cross-margin engine, or oracle-price funding settlement.
 - Position-state changes limit direct comparison because a resized, side-changed, new, or closed position is not the same risk object.
+- The comparison uses listed liquidation price and normalized mark-price notional; it does not model Hyperliquid's exact liquidation formula, margin tiers, liquidity, cross-margin engine, or oracle-price funding settlement.
 - Live Hyperliquid data still depends on API availability and response shape.
 - Live receipts remain browser-local unless explicitly exported/imported.
 - Redacted receipt shares remain minimized offchain JSON summaries, not cryptographic selective-disclosure proofs.
@@ -89,4 +86,4 @@
 
 ## exact next recommended action
 
-Merge named-market assistant drilldowns with `Market context since receipt`, so asking about a market can cite both driver components and saved-vs-current mark/funding/open-interest context in one answer.
+Add a local full-receipt "recheck watchlist" that ranks all saved/current market-context and driver cues together, similar to the redacted-share watchlist but using the full receipt and live recheck context.

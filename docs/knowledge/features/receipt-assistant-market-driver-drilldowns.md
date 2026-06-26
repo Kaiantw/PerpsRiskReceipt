@@ -26,6 +26,9 @@ score components, position-state changes, and deltas.
 - Shows saved and current driver rows with score, label, primary factor,
   component scores, notional, listed buffer, and daily funding.
 - Calls out whether the row is directly comparable or the position state changed.
+- Now links into [[receipt-assistant-market-context-fusion]] so named-market
+  answers also show mark, liquidation-distance, funding, and open-interest
+  movement when that row is loaded.
 - Adds a `Top market` quick prompt when the live recheck has a current top
   driver market.
 - Keeps trade-intent refusal ahead of market-specific routing.
@@ -34,5 +37,5 @@ score components, position-state changes, and deltas.
 
 - [[receipt-risk-driver-comparison]] remains the source of per-market rows.
 - [[receipt-assistant-driver-citations]] remains the aggregate driver answer.
-- [[mark-price-context]] can later provide richer market movement detail for the
-  same named-market questions.
+- [[receipt-assistant-market-context-fusion]] combines this driver answer with
+  [[mark-price-context]].
