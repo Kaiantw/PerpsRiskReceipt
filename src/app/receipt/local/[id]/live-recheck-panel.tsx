@@ -34,6 +34,12 @@ import {
   type receipt_risk_driver_comparison_severity,
   type receipt_risk_driver_market_status,
 } from "@/lib/receipts/receipt-risk-driver-comparison.ts";
+import {
+  buildReceiptRecheckWatchlist,
+  type receipt_recheck_watch_severity,
+  type receipt_recheck_watchlist,
+  type receipt_recheck_watchlist_label,
+} from "@/lib/receipts/receipt-recheck-watchlist.ts";
 import { compareSnapshots } from "@/lib/receipts/snapshot-comparison.ts";
 import { ReceiptRiskAssistantPanel } from "./receipt-risk-assistant-panel.tsx";
 
@@ -151,6 +157,41 @@ const riskDriverMarketStatusLabels: Record<
   new: "new",
 };
 
+const recheckWatchlistLabels: Record<
+  receipt_recheck_watchlist_label,
+  string
+> = {
+  no_live_recheck: "no live recheck",
+  no_watch_items: "no watch items",
+  watch_items_loaded: "watch items",
+  high_attention: "high attention",
+};
+
+const recheckWatchlistTone: Record<receipt_recheck_watchlist_label, string> = {
+  no_live_recheck: "border-stone-300 bg-white text-stone-700",
+  no_watch_items: "border-emerald-200 bg-emerald-100 text-emerald-950",
+  watch_items_loaded: "border-yellow-200 bg-yellow-100 text-yellow-950",
+  high_attention: "border-red-200 bg-red-100 text-red-950",
+};
+
+const recheckWatchSeverityLabels: Record<
+  receipt_recheck_watch_severity,
+  string
+> = {
+  high: "high",
+  watch: "watch",
+  info: "info",
+};
+
+const recheckWatchSeverityTone: Record<
+  receipt_recheck_watch_severity,
+  string
+> = {
+  high: "border-red-200 bg-red-100 text-red-950",
+  watch: "border-yellow-200 bg-yellow-100 text-yellow-950",
+  info: "border-stone-200 bg-stone-100 text-stone-700",
+};
+
 export function LiveRecheckPanel({
   hashVerified,
   receipt,
@@ -265,6 +306,10 @@ function LiveRecheckResult({
     savedSnapshot: receipt.snapshot,
     currentSnapshot,
   });
+  const recheckWatchlist = buildReceiptRecheckWatchlist({
+    marketContext,
+    riskDriverComparison,
+  });
   const changeSummary = buildReceiptChangeSummary({
     comparison,
     marketContext,
@@ -278,6 +323,8 @@ function LiveRecheckResult({
     changeSummary.label,
     riskDriverComparison.label,
     riskDriverComparison.current_top_driver_market ?? "no-current-driver",
+    recheckWatchlist.label,
+    String(recheckWatchlist.high_count),
     receiptAccountValueContext?.label ?? "no-account-context",
   ].join(":");
 
@@ -310,6 +357,7 @@ function LiveRecheckResult({
 
       <ReceiptChangeSummaryResult summary={changeSummary} />
       <ReceiptRiskDriverComparisonResult comparison={riskDriverComparison} />
+      <ReceiptRecheckWatchlistResult watchlist={recheckWatchlist} />
       <ReceiptRiskAssistantPanel
         context={{
           receipt,
@@ -410,6 +458,83 @@ function LiveRecheckResult({
         </div>
       )}
     </div>
+  );
+}
+
+function ReceiptRecheckWatchlistResult({
+  watchlist,
+}: {
+  watchlist: receipt_recheck_watchlist;
+}) {
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-stone-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Recheck watchlist</h3>
+          <p className="mt-1 text-sm font-medium text-stone-800">
+            {watchlist.headline}
+          </p>
+          <p className="mt-1 text-sm text-stone-600">{watchlist.summary}</p>
+        </div>
+        <span
+          className={`rounded-lg border px-3 py-2 text-sm font-semibold ${recheckWatchlistTone[watchlist.label]}`}
+        >
+          {recheckWatchlistLabels[watchlist.label]}
+        </span>
+      </div>
+
+      <dl className="grid gap-3 p-4 text-sm sm:grid-cols-4">
+        <MiniMetric label="Items" value={String(watchlist.item_count)} />
+        <MiniMetric label="High" value={String(watchlist.high_count)} />
+        <MiniMetric label="Watch" value={String(watchlist.watch_count)} />
+        <MiniMetric label="Info" value={String(watchlist.info_count)} />
+      </dl>
+
+      {watchlist.items.length === 0 ? (
+        <p className="border-t border-stone-200 px-4 py-3 text-sm text-stone-600">
+          No ranked review cues crossed the current watchlist thresholds.
+        </p>
+      ) : (
+        <div className="divide-y divide-stone-200 border-t border-stone-200">
+          {watchlist.items.map((item) => (
+            <article className="px-4 py-3" key={item.id}>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="font-mono text-xs text-stone-500">
+                    {item.market}
+                  </p>
+                  <h4 className="mt-1 text-sm font-semibold text-stone-950">
+                    {item.title}
+                  </h4>
+                  <p className="mt-1 text-sm text-stone-700">{item.detail}</p>
+                </div>
+                <span
+                  className={`w-fit rounded-lg border px-2 py-1 text-xs font-semibold uppercase ${recheckWatchSeverityTone[item.severity]}`}
+                >
+                  {recheckWatchSeverityLabels[item.severity]}
+                </span>
+              </div>
+              <ul className="mt-3 space-y-1 text-xs leading-5 text-stone-600">
+                {item.review_points.map((point) => (
+                  <li className="flex gap-2" key={point}>
+                    <span
+                      aria-hidden="true"
+                      className="mt-2 h-1.5 w-1.5 rounded-full bg-stone-400"
+                    />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+      )}
+
+      <p className="border-t border-stone-200 px-4 py-3 text-xs text-stone-500">
+        The watchlist ranks saved/current receipt review cues. It is not a
+        trading recommendation or Hyperliquid&apos;s official risk engine.
+      </p>
+    </section>
   );
 }
 

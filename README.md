@@ -23,6 +23,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - Live receipt recheck that compares a saved receipt against a fresh read-only Hyperliquid snapshot.
 - Receipt change summary that combines live recheck, market context, funding movement, position changes, and sampled account-value context into one quick read.
 - Receipt risk-driver comparison that shows whether the saved top driver, driver score, gross exposure, listed buffer, and funding burden changed after live recheck.
+- Recheck watchlist that ranks high/watch/info cues from full saved/current driver rows and market context after live recheck.
 - Receipt risk assistant that answers cited questions about a saved live receipt after recheck, including saved-vs-current risk-driver questions and named-market drilldowns with mark, funding, liquidation-distance, and open-interest context.
 - Receipt account-value context that shows whether a saved live receipt was near a sampled account peak, in drawdown, or materially different from latest sampled account value.
 - Market context since receipt: saved-vs-current mark price, liquidation direction, funding change, and open-interest change for live rechecks.
@@ -49,6 +50,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - `src/app/receipt/local/[id]/receipt-risk-assistant-panel.tsx` renders the local assistant chat for a rechecked receipt.
 - `src/lib/receipts/receipt-change-summary.ts` synthesizes live recheck, market context, and account-value context into a compact receipt summary.
 - `src/lib/receipts/receipt-risk-driver-comparison.ts` compares saved and current position risk drivers after local live receipt recheck.
+- `src/lib/receipts/receipt-recheck-watchlist.ts` ranks full-receipt saved/current review cues after local live receipt recheck.
 - `src/lib/perps/types.ts` defines the normalized snapshot, position, scenario, and receipt models.
 - `src/lib/perps/fixtures.ts` contains the demo account snapshots.
 - `src/lib/risk/risk-engine.ts` contains pure risk math.
@@ -98,6 +100,7 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - Receipt account-value context uses the nearest sampled portfolio point to the receipt timestamp and shows the sample gap.
 - Receipt change summary is a heuristic review aid and does not recommend position changes.
 - Receipt risk-driver comparison reuses the heuristic dashboard driver score for saved and current snapshots; it is not protocol-official attribution.
+- Receipt recheck watchlist is heuristic review triage over saved/current local fields; it is not protocol-official risk attribution or a recommendation.
 - Portable receipt bundles have two modes: redacted shares for minimized review and full-snapshot exports for hash recomputation/import.
 - Redacted receipt shares hide raw account and exact position values, preserve the original snapshot hash as a reference, and disclose only bucketed summary values plus market-level review cues.
 - Redacted market context uses public Hyperliquid market metadata for disclosed markets and does not send a raw account address.
@@ -152,6 +155,7 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 - Redacted market watchlist is heuristic public-context triage only and cannot prove hidden state, recompute hashes, or monitor exact liquidation state.
 - Position risk drivers are heuristic and do not prove protocol-official risk attribution.
 - Receipt risk-driver comparison is heuristic saved-vs-live attribution and cannot compare changed positions as the same risk object.
+- Receipt recheck watchlist is heuristic triage only and cannot prove exact liquidation state, funding settlement, or what a trader should do next.
 - Account value history is sampled from Hyperliquid portfolio windows and is not complete accounting.
 - Receipt account-value context uses a nearest sampled point, not an exact historical account audit.
 - Receipt change summary is heuristic and descriptive; it is not a trading recommendation.
@@ -179,4 +183,4 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 
 ## Resume Bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with assistant citations and market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with full-recheck watchlists, assistant citations and market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

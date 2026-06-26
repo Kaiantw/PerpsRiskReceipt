@@ -16,6 +16,7 @@ informed it and forward to related feature ideas.
 - [[sources/perp-receipt-assistant-driver-citations]] - source notes for assistant answers that cite receipt driver comparisons.
 - [[sources/perp-receipt-assistant-market-driver-drilldowns]] - source notes for assistant answers about individual market driver rows.
 - [[sources/perp-receipt-assistant-market-context-fusion]] - source notes for assistant answers that fuse market driver rows with mark, funding, liquidation-distance, and open-interest context.
+- [[sources/perp-receipt-recheck-watchlist]] - source notes for ranking full-receipt saved/current review cues after live recheck.
 - [[sources/perp-account-value-history]] - Hyperliquid portfolio history and drawdown context.
 - [[sources/perp-risk-review-checklist]] - liquidation, funding, leverage, and market-condition review framing.
 - [[sources/perp-receipt-review-assistant]] - receipt-question source notes for hash scope, live recheck review, funding, liquidation, and guardrails.
@@ -41,6 +42,7 @@ informed it and forward to related feature ideas.
 - [[features/receipt-assistant-driver-citations]] - receipt assistant answers for saved-vs-current risk-driver questions.
 - [[features/receipt-assistant-market-driver-drilldowns]] - named-market receipt assistant answers from per-market driver rows.
 - [[features/receipt-assistant-market-context-fusion]] - named-market receipt assistant answers that merge driver rows with saved-vs-current market context.
+- [[features/receipt-recheck-watchlist]] - ranked review cues from full saved/current receipt recheck context.
 - [[features/portable-receipt-bundle]] - explicit full-snapshot export/import flow for reviewing local live receipts across browsers.
 - [[features/redacted-receipt-share]] - minimized receipt share that hides raw account and exact position values while preserving a hash reference and risk summary.
 - [[features/redacted-market-context]] - current public Hyperliquid mark, funding, and open-interest context for redacted shares.
@@ -59,3 +61,5 @@ informed it and forward to related feature ideas.
   side-by-side cited answers for each per-market driver row.
 - [[features/receipt-assistant-market-context-fusion]] could later grow into a
   per-market recheck checklist with configurable thresholds.
+- [[features/receipt-recheck-watchlist]] could later feed the receipt assistant
+  so "what should I inspect first?" cites the ranked watchlist directly.

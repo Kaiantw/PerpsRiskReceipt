@@ -32,58 +32,61 @@
 - Post-t9 receipt assistant driver citations is complete.
 - Post-t9 receipt assistant market-driver drilldowns is complete.
 - Post-t9 receipt assistant market-context fusion is complete.
+- Post-t9 full receipt recheck watchlist is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote tracking: `main` tracks `origin/main`.
-- Baseline before this slice: `e62dbc6`.
-- Current work lets `Receipt risk assistant` answer named-market questions from both the per-market risk-driver comparison row and the matching market-context row.
-- A named-market answer now includes saved/current driver rows, score/notional/listed-buffer/funding deltas, mark move, listed liquidation-distance move, 8-hour funding move, daily funding move, open-interest move, and citations for both local evidence families.
-- Trade-intent refusal still runs before market-specific routing.
+- Baseline before this slice: `3fcdfe7`.
+- Current work adds `Recheck watchlist` to local Hyperliquid receipt live rechecks.
+- The watchlist ranks full saved/current receipt cues from `receipt_risk_driver_comparison` and `market_context` without calling any new endpoint.
+- It shows total/high/watch/info counts and ranked items for account mismatch, position-state changes, listed liquidation buffer, adverse mark movement, driver-score movement, funding cost, open-interest movement, and missing market-context rows.
+- Trade-intent guardrails are unchanged; this is a review checklist, not advice.
 - No endpoint, dependency, data model, wallet/RPC flow, backend store, LLM call, or trading behavior was added.
 - A Next dev server was already running on `http://localhost:3000` for browser smoke verification.
 
 ## files changed
 
-- `src/lib/assistant/receipt-risk-assistant.ts`: adds market-context row lookup, market-context formatting, market-context citations, and fused named-market answers.
-- `src/lib/assistant/receipt-risk-assistant.test.ts`: asserts named-market answers include market-context content and citations.
-- `docs/knowledge/sources/perp-receipt-assistant-market-context-fusion.md`: source-backed assumptions for fusing driver rows with market context.
-- `docs/knowledge/features/receipt-assistant-market-context-fusion.md`: implemented feature note.
+- `src/lib/receipts/receipt-recheck-watchlist.ts`: new pure full-receipt watchlist builder with high/watch/info cues.
+- `src/lib/receipts/receipt-recheck-watchlist.test.ts`: tests high-attention cues, position-state changes, unchanged snapshots, and missing market-context rows.
+- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: renders `Recheck watchlist` after `Risk drivers since receipt`.
+- `package.json`: adds the watchlist test to `npm test`.
+- `docs/knowledge/sources/perp-receipt-recheck-watchlist.md`: source-backed assumptions for full receipt watchlist cues.
+- `docs/knowledge/features/receipt-recheck-watchlist.md`: implemented feature note.
 - `docs/knowledge/index.md`: links the new feature/source notes.
-- `docs/knowledge/features/receipt-assistant-market-driver-drilldowns.md`: links market drilldowns to market-context fusion.
-- `docs/knowledge/sources/perp-receipt-assistant-market-driver-drilldowns.md`: links the follow-on fusion feature.
-- `docs/knowledge/features/receipt-risk-assistant.md`: documents the new cited market-context answer path.
-- `docs/source-notes.md`: documents market-context fusion sources and assumptions.
-- `docs/known-limitations.md`: updates market-drilldown limitations.
-- `README.md`: documents market-context drilldowns.
-- `docs/demo-script.md`: updates the reviewer walkthrough and resume bullet.
+- `docs/knowledge/features/receipt-risk-driver-comparison.md`: links driver comparison to the watchlist.
+- `docs/knowledge/features/receipt-assistant-market-context-fusion.md`: links market-context fusion to the watchlist.
+- `docs/source-notes.md`: documents watchlist sources and assumptions.
+- `docs/known-limitations.md`: documents watchlist limitations.
+- `README.md`: documents the full recheck watchlist and resume bullet.
+- `docs/demo-script.md`: adds the watchlist to the reviewer walkthrough and resume bullet.
 - `docs/ai-build-log.md`: records this feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `node --test src/lib/assistant/receipt-risk-assistant.test.ts` passed: 12 tests, 12 passing.
-- `npm test` passed: 115 tests, 115 passing.
+- `node --test src/lib/receipts/receipt-recheck-watchlist.test.ts` passed: 4 tests, 4 passing.
+- `npm test` passed: 119 tests, 119 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
 - `npm run build` passed and listed `/receipt/local/[id]` plus the existing API and receipt routes.
 - `git diff --check` passed.
-- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Risk drivers since receipt` and `Receipt risk assistant`, asked `Why is ETH-PERP the current risk driver?`, confirmed `Market context row`, `Mark move`, `Open interest`, `receipt_risk_driver_comparison.market_changes.ETH-PERP`, `market_context.positions.ETH-PERP`, the no-advice caveat, and zero browser console errors.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Recheck watchlist`, `high attention`, `Position state changed since receipt`, the no-trade-recommendation caveat, `Risk drivers since receipt`, `Receipt risk assistant`, and zero browser console errors.
 
 ## blockers
 
 - No hard blocker for this feature slice.
-- The fused answer is still heuristic local explanation, not protocol-official attribution or exact liquidation monitoring.
-- Base-coin detection may be too broad for very short symbols and should be reviewed as more markets are tested.
-- Position-state changes limit direct comparison because a resized, side-changed, new, or closed position is not the same risk object.
+- The watchlist is heuristic local triage, not protocol-official attribution or exact liquidation monitoring.
+- Review thresholds may need tuning after seeing more real Hyperliquid accounts.
+- Position-state changes are currently high severity for closed/new/resized/side-changed rows; this is intentionally conservative but should be reviewed.
+- Open interest is informational participation context only and not a direction signal.
 - The comparison uses listed liquidation price and normalized mark-price notional; it does not model Hyperliquid's exact liquidation formula, margin tiers, liquidity, cross-margin engine, or oracle-price funding settlement.
 - Live Hyperliquid data still depends on API availability and response shape.
 - Live receipts remain browser-local unless explicitly exported/imported.
-- Redacted receipt shares remain minimized offchain JSON summaries, not cryptographic selective-disclosure proofs.
 - EAS schema registration and attestation transactions are documented fallback steps only.
 
 ## exact next recommended action
 
-Add a local full-receipt "recheck watchlist" that ranks all saved/current market-context and driver cues together, similar to the redacted-share watchlist but using the full receipt and live recheck context.
+Connect the receipt assistant to the `Recheck watchlist`, so questions like "what should I inspect first?" cite the ranked watchlist before drilling into individual markets.

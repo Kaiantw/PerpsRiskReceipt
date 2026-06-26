@@ -741,3 +741,25 @@ Review whether the named-market answer is too dense now that it includes both co
 - Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Risk drivers since receipt` and `Receipt risk assistant`, asked `Why is ETH-PERP the current risk driver?`, confirmed `Market context row`, `Mark move`, `Open interest`, `receipt_risk_driver_comparison.market_changes.ETH-PERP`, `market_context.positions.ETH-PERP`, the no-advice caveat, and zero browser console errors.
 ### remaining risks:
 Market-context fusion is still deterministic local explanation over heuristic receipt-driver and market-context rows. It is not protocol-official risk attribution, exact liquidation monitoring, exact funding settlement, live order-book liquidity analysis, or trade advice. If no matching `market_context.positions` row is loaded, the assistant says that context is unavailable rather than inventing it.
+
+### task id: post-t9 full receipt recheck watchlist
+### codex mode:
+product iteration + implementation
+### delegated work:
+Turned the full local receipt live recheck into a ranked review watchlist that synthesizes saved/current risk-driver rows and market-context rows.
+### output accepted:
+Added `src/lib/receipts/receipt-recheck-watchlist.ts` with deterministic high/watch/info cues for account mismatch, position-state changes, at/through or thin listed liquidation buffers, adverse mark movement toward liquidation, higher driver score, higher funding cost, material open-interest movement, and missing market-context rows. Added tests for high-attention buffer/adverse/funding/open-interest cues, position-state changes, unchanged snapshots, and missing market-context rows. Mounted `Recheck watchlist` in the local live receipt recheck UI with total/high/watch/info counts, ranked items, review points, and a no-trade-recommendation caveat. Updated package test registration, source notes, knowledge graph, README, demo script, limitations, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, data model, LLM API, alert system, trading/exchange endpoint, wallet/RPC flow, exact Hyperliquid liquidation formula, or backend store was added. The watchlist reuses already-loaded receipt recheck data rather than fetching additional market data.
+### human review notes:
+Review the thresholds: thin current listed liquidation buffer `<= 500` bps, tight buffer `<= 1000` bps, material adverse mark move `>= 2%`, material driver-score delta `>= 10`, daily funding delta `>= 1 USD/day`, 8h funding delta `>= 1` bps, and material open-interest delta `>= 50,000,000 USD`. Review whether position-state changes should remain high severity for closed/new/resized positions.
+### tests/checks run:
+- `node --test src/lib/receipts/receipt-recheck-watchlist.test.ts` passed: 4 tests, 4 passing.
+- `npm test` passed: 119 tests, 119 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]` plus the existing API and receipt routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Recheck watchlist`, `high attention`, `Position state changed since receipt`, the no-trade-recommendation caveat, `Risk drivers since receipt`, `Receipt risk assistant`, and zero browser console errors.
+### remaining risks:
+The watchlist is heuristic local triage over saved/current receipt fields. It cannot prove exact liquidation state, exact funding settlement, order-book liquidity, hidden redacted-share fields, or what a trader should do next. Open interest remains informational participation context only.

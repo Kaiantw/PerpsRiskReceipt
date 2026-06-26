@@ -40,3 +40,5 @@ distance, funding movement, daily funding, and open-interest movement.
 - [[mark-price-context]] supplies the saved-vs-current market row.
 - [[redacted-market-watchlist]] applies a similar "turn context into review
   cues" idea for redacted shares without a raw account address.
+- [[receipt-recheck-watchlist]] applies that review-cue idea to full local
+  receipts after live recheck.

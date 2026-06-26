@@ -113,6 +113,12 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
   - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
+- docs checked on 2026-06-26 for receipt recheck watchlist:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -234,6 +240,14 @@ use this file for external protocol assumptions.
   - material driver-score movement uses 10 points, material listed-buffer movement uses 500 bps, and material daily funding movement uses 1 USD/day.
   - top-driver changes are review cues only when material worsening/improvement thresholds are not crossed first.
   - the panel compares heuristic driver attribution, not Hyperliquid's official liquidation engine, cross-margin model, or a trade recommendation.
+- receipt recheck watchlist assumptions:
+  - the watchlist is a synthesis layer over already-loaded `receipt_risk_driver_comparison` and `market_context` rows.
+  - it does not call a new endpoint and does not change the receipt data model.
+  - high-attention cues include account mismatch, position-state changes, at/through or thin current listed liquidation buffers, and adverse mark movement near a tight listed buffer.
+  - watch cues include tight current listed liquidation buffers, adverse mark moves, materially higher driver score, and higher funding cost.
+  - informational cues include lower driver score, material open-interest movement, and missing market-context rows.
+  - open interest is displayed as participation context only, not as a standalone direction signal.
+  - the watchlist is a review checklist only; it is not Hyperliquid's official risk engine or a trading recommendation.
 
 ## eas
 

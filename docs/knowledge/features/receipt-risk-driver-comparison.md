@@ -44,3 +44,5 @@ materially, and which markets deserve inspection first.
   specific per-market row from this panel.
 - [[receipt-change-summary]] remains the highest-level verdict.
 - [[mark-price-context]] remains the detailed mark/funding/open-interest table.
+- [[receipt-recheck-watchlist]] ranks the highest-attention cues from this panel
+  and the market-context table.
