@@ -21,6 +21,9 @@ import type {
   receipt_recheck_watchlist,
 } from "../receipts/receipt-recheck-watchlist.ts";
 import type {
+  receipt_recheck_history_summary,
+} from "../receipts/receipt-recheck-history.ts";
+import type {
   receipt_market_regime,
   receipt_market_regime_signal,
 } from "../receipts/receipt-market-regime.ts";
@@ -52,6 +55,7 @@ export type receipt_risk_assistant_context = {
   marketRegimeDrilldown?: receipt_market_regime_drilldown | null;
   volatilityBuffer?: receipt_volatility_buffer | null;
   accountValueContext?: receipt_account_value_context | null;
+  recheckHistorySummary?: receipt_recheck_history_summary | null;
   hashVerified?: boolean;
 };
 
@@ -123,6 +127,18 @@ function formatSignedNumber(value: number | null) {
   }
 
   return `${value > 0 ? "+" : "-"}${Math.abs(value).toFixed(2)}`;
+}
+
+function formatSignedRiskScoreDelta(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  if (value === 0) {
+    return "0";
+  }
+
+  return `${value > 0 ? "+" : "-"}${Math.abs(value)}`;
 }
 
 function formatSignedPercentFromBps(value: number | null) {
@@ -745,6 +761,67 @@ function buildAccountHistoryAnswer(
   };
 }
 
+function buildRecheckHistoryAnswer(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_response {
+  const historySummary = context.recheckHistorySummary ?? null;
+
+  if (!historySummary || historySummary.entry_count === 0) {
+    return {
+      answer:
+        "No local recheck history is saved for this receipt yet. Run a live recheck to save compact browser-local rows, then ask again to compare saved checks. This will still be review context, not a live alert feed or trading recommendation.",
+      citations: ["receipt_recheck_history"],
+    };
+  }
+
+  const repeatedFocusMarket = historySummary.most_repeated_focus_market
+    ? `${historySummary.most_repeated_focus_market} appeared as the focus market in ${historySummary.most_repeated_focus_market_count} of ${historySummary.entry_count} saved checks.`
+    : "No repeated focus market is available in the compact saved rows.";
+  const latestRiskRead =
+    historySummary.latest_risk_score === null
+      ? "Latest saved risk score is n/a."
+      : `Latest saved risk score is ${historySummary.latest_risk_score} (${historySummary.latest_risk_label ?? "n/a"}).`;
+  const oldestRiskRead =
+    historySummary.oldest_risk_score === null
+      ? "Oldest saved risk score is n/a."
+      : `Oldest saved risk score is ${historySummary.oldest_risk_score} (${historySummary.oldest_risk_label ?? "n/a"}).`;
+  const reviewPoints = historySummary.review_points
+    .map((point) => `- ${point}`)
+    .join(" ");
+
+  return {
+    answer: [
+      historySummary.headline,
+      historySummary.summary,
+      latestRiskRead,
+      oldestRiskRead,
+      `Risk-score delta: ${formatSignedRiskScoreDelta(historySummary.risk_score_delta)}.`,
+      `Latest regime: ${historySummary.latest_regime_label ?? "n/a"}. Oldest regime: ${historySummary.oldest_regime_label ?? "n/a"}.`,
+      repeatedFocusMarket,
+      `Latest watchlist counts: ${historySummary.latest_watchlist_high_count} high, ${historySummary.latest_watchlist_watch_count} watch, ${historySummary.latest_watchlist_info_count} info.`,
+      `Volatility context loaded in ${historySummary.volatility_loaded_count} of ${historySummary.entry_count} saved rows.`,
+      reviewPoints,
+      "This is compact browser-local history for receipt review; it is not synced, not a full snapshot archive, not a live alert, and not a trading recommendation.",
+    ].join(" "),
+    citations: [
+      "receipt_recheck_history.entry_count",
+      "receipt_recheck_history.headline",
+      "receipt_recheck_history.summary",
+      "receipt_recheck_history.latest_risk_score",
+      "receipt_recheck_history.latest_risk_label",
+      "receipt_recheck_history.oldest_risk_score",
+      "receipt_recheck_history.oldest_risk_label",
+      "receipt_recheck_history.risk_score_delta",
+      "receipt_recheck_history.latest_regime_label",
+      "receipt_recheck_history.oldest_regime_label",
+      "receipt_recheck_history.most_repeated_focus_market",
+      "receipt_recheck_history.latest_watchlist_counts",
+      "receipt_recheck_history.volatility_loaded_count",
+      "receipt_recheck_history.review_points",
+    ],
+  };
+}
+
 function buildHashAnswer(
   context: receipt_risk_assistant_context,
 ): receipt_risk_assistant_response {
@@ -907,6 +984,20 @@ export function answerReceiptRiskQuestion(input: {
 
   if (
     includesAny(normalizedQuestion, [
+      "recheck history",
+      "local history",
+      "saved checks",
+      "timeline",
+      "rechecks",
+      "history rows",
+      "receipt history",
+    ])
+  ) {
+    return buildRecheckHistoryAnswer(input.context);
+  }
+
+  if (
+    includesAny(normalizedQuestion, [
       "market",
       "mark",
       "price",
@@ -954,6 +1045,8 @@ export function getReceiptRiskAssistantSuggestions(
   const hasMarketRegime = Boolean(context.marketRegime);
   const hasMarketRegimeDrilldown = Boolean(context.marketRegimeDrilldown);
   const hasVolatilityBuffer = Boolean(context.volatilityBuffer);
+  const hasRecheckHistory =
+    (context.recheckHistorySummary?.entry_count ?? 0) > 0;
   const suggestions = [
     {
       id: "review",
@@ -1003,6 +1096,15 @@ export function getReceiptRiskAssistantSuggestions(
             id: "volatility",
             label: "Volatility",
             question: "What does the volatility buffer say?",
+          },
+        ]
+      : []),
+    ...(hasRecheckHistory
+      ? [
+          {
+            id: "recheck-history",
+            label: "Rechecks",
+            question: "What does local recheck history show?",
           },
         ]
       : []),

@@ -13,6 +13,7 @@ import { buildReceiptMarketRegime } from "./receipt-market-regime.ts";
 import { buildReceiptMarketRegimeDrilldown } from "./receipt-market-regime-drilldown.ts";
 import { compareReceiptRiskDrivers } from "./receipt-risk-driver-comparison.ts";
 import {
+  buildReceiptRecheckHistorySummary,
   createReceiptRecheckHistoryEntry,
   parseReceiptRecheckHistory,
   parseStoredReceiptRecheckHistory,
@@ -211,4 +212,88 @@ test("parses stored history defensively and filters malformed rows", () => {
   assert.deepEqual(parseStoredReceiptRecheckHistory("not json"), []);
   assert.deepEqual(parseReceiptRecheckHistory({ rows: [entry] }), []);
   assert.deepEqual(parseStoredReceiptRecheckHistory(storedValue), [entry]);
+});
+
+test("summarizes empty and single-row recheck history", () => {
+  const emptySummary = buildReceiptRecheckHistorySummary([]);
+  const singleEntry = buildHistoryEntry({
+    recheckedAtIso: "2026-06-26T00:01:00.000Z",
+    volatilityLoaded: true,
+  });
+  const singleSummary = buildReceiptRecheckHistorySummary([singleEntry]);
+
+  assert.equal(emptySummary.label, "no_history");
+  assert.equal(emptySummary.entry_count, 0);
+  assert.equal(emptySummary.latest_entry, null);
+  assert.match(emptySummary.summary, /Run a live recheck/);
+
+  assert.equal(singleSummary.label, "single_check");
+  assert.equal(singleSummary.entry_count, 1);
+  assert.equal(singleSummary.latest_entry?.id, singleEntry.id);
+  assert.equal(singleSummary.risk_score_delta, null);
+  assert.equal(singleSummary.latest_risk_score, 30);
+  assert.equal(singleSummary.volatility_loaded_count, 1);
+  assert.match(singleSummary.summary, /Run another live recheck/);
+});
+
+test("summarizes local recheck history trends newest to oldest", () => {
+  const oldest = {
+    ...buildHistoryEntry({
+      recheckedAtIso: "2026-06-26T00:01:00.000Z",
+    }),
+    current_risk_score: 30,
+    current_risk_label: "medium",
+    market_regime_label: "active",
+    market_regime_severity: "info",
+    market_regime_focus_market: "ETH-PERP",
+    watchlist_high_count: 0,
+    top_drilldown_primary_cue: "Listed buffer stayed comfortable",
+  } satisfies ReturnType<typeof buildHistoryEntry>;
+  const newest = {
+    ...buildHistoryEntry({
+      recheckedAtIso: "2026-06-26T00:03:00.000Z",
+      volatilityLoaded: true,
+    }),
+    current_risk_score: 76,
+    current_risk_label: "high",
+    market_regime_label: "stress",
+    market_regime_severity: "high",
+    market_regime_focus_market: "ETH-PERP",
+    watchlist_high_count: 2,
+    top_drilldown_primary_cue: "Public 24h range exceeds current buffer",
+  } satisfies ReturnType<typeof buildHistoryEntry>;
+  const middle = {
+    ...buildHistoryEntry({
+      recheckedAtIso: "2026-06-26T00:02:00.000Z",
+    }),
+    current_risk_score: 55,
+    market_regime_focus_market: "BTC-PERP",
+  } satisfies ReturnType<typeof buildHistoryEntry>;
+
+  const summary = buildReceiptRecheckHistorySummary([
+    middle,
+    newest,
+    oldest,
+  ]);
+
+  assert.equal(summary.label, "risk_higher");
+  assert.equal(summary.entry_count, 3);
+  assert.equal(summary.latest_entry?.id, newest.id);
+  assert.equal(summary.oldest_entry?.id, oldest.id);
+  assert.equal(summary.latest_risk_score, 76);
+  assert.equal(summary.oldest_risk_score, 30);
+  assert.equal(summary.risk_score_delta, 46);
+  assert.equal(summary.latest_regime_label, "stress");
+  assert.equal(summary.oldest_regime_label, "active");
+  assert.equal(summary.most_repeated_focus_market, "ETH-PERP");
+  assert.equal(summary.most_repeated_focus_market_count, 2);
+  assert.equal(summary.volatility_loaded_count, 1);
+  assert.equal(summary.latest_watchlist_high_count, 2);
+  assert.match(summary.headline, /risk score is higher/i);
+  assert.match(summary.summary, /Latest risk score is 76/);
+  assert.match(summary.summary, /ETH-PERP appeared as focus market/);
+  assert.match(
+    summary.review_points.join(" "),
+    /higher than the oldest local recheck/i,
+  );
 });

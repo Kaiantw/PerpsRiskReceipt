@@ -36,6 +36,8 @@ turning the app into a backend account journal.
   generated entry id, sorts newest-first, and caps each receipt at 12 rows.
 - Renders the local timeline on the receipt page with clear local-only and
   no-trading-recommendation caveats.
+- Exposes a compact trend summary used by [[receipt-assistant-recheck-history]]
+  and by the local history panel.
 
 ## related ideas
 
@@ -45,3 +47,5 @@ turning the app into a backend account journal.
   to scan.
 - [[receipt-review-packet]] remains the shareable communication artifact; the
   local history is deliberately not exported or synced in this version.
+- [[receipt-assistant-recheck-history]] explains the saved local rows without
+  turning them into a live alert or trading recommendation.

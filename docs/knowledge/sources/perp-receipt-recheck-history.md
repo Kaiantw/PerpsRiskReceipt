@@ -22,10 +22,13 @@
   private trading snapshots by default.
 - Local history should not become a trade journal, alert feed, exact
   liquidation monitor, or recommendation engine.
+- Assistant answers can summarize compact history rows only if they clearly
+  distinguish local recheck trends from precise account-value accounting.
 
 ## linked feature ideas
 
 - [[../features/receipt-recheck-history]]
+- [[../features/receipt-assistant-recheck-history]]
 - [[../features/receipt-market-regime]]
 - [[../features/receipt-market-regime-drilldown]]
 - [[../features/receipt-recheck-watchlist]]

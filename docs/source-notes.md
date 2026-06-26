@@ -171,6 +171,12 @@ use this file for external protocol assumptions.
   - https://metamask.io/news/perpetual-futures-funding-frequency-strategies
   - https://www.coinapi.io/blog/historical-data-for-perpetual-futures
   - https://www.chainalysis.com/blog/perpetual-futures/
+- docs checked on 2026-06-26 for receipt assistant recheck-history answers:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/portfolio-graphs
+  - https://docs.chainstack.com/reference/hyperliquid-info-portfolio
+  - https://metamask.io/news/perpetual-futures-funding-frequency-strategies
+  - https://www.coinapi.io/blog/historical-data-for-perpetual-futures
+  - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -353,6 +359,12 @@ use this file for external protocol assumptions.
   - the history preserves the recheck timestamp, current data timestamp, freshness, risk score, market-regime label, focus market, watchlist counts, and top per-market drilldown cue.
   - loaded public volatility context is recorded as a boolean so reviewers can tell whether volatility-buffer cues were part of that recheck row.
   - the history is a local review aid only; it is not a trade journal, accounting ledger, alert feed, exact liquidation monitor, or trading recommendation.
+- receipt assistant recheck-history assumptions:
+  - assistant recheck-history answers are deterministic local summaries over the compact browser-local history rows.
+  - the assistant does not call a new endpoint, LLM API, backend store, account-history import, or full snapshot archive.
+  - the summary compares latest versus oldest saved local rows for risk score, regime label, repeated focus market, watchlist counts, and volatility-loaded coverage.
+  - local recheck history is separate from sampled Hyperliquid portfolio/account-value history; the assistant routes explicit local/recheck-history questions to the compact local row summary.
+  - the answer must preserve the local-only, compact, no-alert, and no-trade-recommendation caveats.
 
 ## eas
 

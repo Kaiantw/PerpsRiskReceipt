@@ -53,12 +53,14 @@ import {
   type receipt_review_packet,
 } from "@/lib/receipts/receipt-review-packet.ts";
 import {
+  buildReceiptRecheckHistorySummary,
   createReceiptRecheckHistoryEntry,
   getLocalRecheckHistoryStorageKey,
   parseStoredReceiptRecheckHistory,
   stringifyReceiptRecheckHistory,
   upsertReceiptRecheckHistoryEntry,
   type receipt_recheck_history_entry,
+  type receipt_recheck_history_summary,
 } from "@/lib/receipts/receipt-recheck-history.ts";
 import {
   buildReceiptMarketRegime,
@@ -310,6 +312,8 @@ export function LiveRecheckPanel({
     receipt_recheck_history_entry[]
   >([]);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const recheckHistorySummary =
+    buildReceiptRecheckHistorySummary(historyEntries);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -437,6 +441,7 @@ export function LiveRecheckPanel({
           onHistoryEntry={appendHistoryEntry}
           receipt={receipt}
           receiptAccountValueContext={receiptAccountValueContext ?? null}
+          recheckHistorySummary={recheckHistorySummary}
           recheckedAtIso={state.rechecked_at_iso}
         />
       ) : null}
@@ -446,6 +451,7 @@ export function LiveRecheckPanel({
           entries={historyEntries}
           error={historyError}
           onClear={clearHistory}
+          summary={recheckHistorySummary}
         />
       ) : null}
     </section>
@@ -482,6 +488,7 @@ function LiveRecheckResult({
   onHistoryEntry,
   receipt,
   receiptAccountValueContext,
+  recheckHistorySummary,
   recheckedAtIso,
 }: {
   comparison: snapshot_comparison;
@@ -490,6 +497,7 @@ function LiveRecheckResult({
   onHistoryEntry: (entry: receipt_recheck_history_entry) => void;
   receipt: risk_receipt;
   receiptAccountValueContext: receipt_account_value_context | null;
+  recheckHistorySummary: receipt_recheck_history_summary;
   recheckedAtIso: string;
 }) {
   const savedHistoryEntrySignatureRef = useRef<string | null>(null);
@@ -552,6 +560,7 @@ function LiveRecheckResult({
     marketRegimeDrilldown,
     volatilityBuffer,
     accountValueContext: receiptAccountValueContext,
+    recheckHistorySummary,
     hashVerified,
   };
   const watchlistAssistantResponse = answerReceiptRiskQuestion({
@@ -598,6 +607,10 @@ function LiveRecheckResult({
     String(marketRegimeDrilldown.high_count),
     volatilityBuffer?.label ?? "no-volatility-buffer",
     String(volatilityBuffer?.high_count ?? 0),
+    recheckHistorySummary.label,
+    String(recheckHistorySummary.entry_count),
+    recheckHistorySummary.latest_entry?.id ?? "no-latest-history",
+    String(recheckHistorySummary.risk_score_delta ?? "no-history-delta"),
     formatThresholdSignature(recheckWatchlist.thresholds),
     receiptAccountValueContext?.label ?? "no-account-context",
   ].join(":");
@@ -1258,10 +1271,12 @@ function ReceiptRecheckHistoryResult({
   entries,
   error,
   onClear,
+  summary,
 }: {
   entries: receipt_recheck_history_entry[];
   error: string | null;
   onClear: () => void;
+  summary: receipt_recheck_history_summary;
 }) {
   const latestEntry = entries[0] ?? null;
 
@@ -1291,27 +1306,35 @@ function ReceiptRecheckHistoryResult({
       ) : null}
 
       {latestEntry ? (
-        <dl className="grid gap-3 p-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
-          <MiniMetric label="Saved checks" value={String(entries.length)} />
-          <MiniMetric
-            label="Latest recheck"
-            value={formatIsoDate(latestEntry.rechecked_at_iso)}
-          />
-          <MiniMetric
-            label="Risk score"
-            value={`${formatScore(latestEntry.current_risk_score)} · ${latestEntry.current_risk_label}`}
-          />
-          <MiniMetric
-            label="Account value"
-            value={formatUsd(latestEntry.current_account_value_usd)}
-          />
-          <MiniMetric
-            label="Min buffer"
-            value={formatPercentFromBps(
-              latestEntry.current_min_liquidation_distance_bps,
-            )}
-          />
-        </dl>
+        <>
+          <div className="border-b border-stone-200 px-4 py-3">
+            <p className="text-sm font-medium text-stone-800">
+              {summary.headline}
+            </p>
+            <p className="mt-1 text-sm text-stone-600">{summary.summary}</p>
+          </div>
+          <dl className="grid gap-3 p-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
+            <MiniMetric label="Saved checks" value={String(entries.length)} />
+            <MiniMetric
+              label="Latest recheck"
+              value={formatIsoDate(latestEntry.rechecked_at_iso)}
+            />
+            <MiniMetric
+              label="Risk score"
+              value={`${formatScore(latestEntry.current_risk_score)} · ${latestEntry.current_risk_label}`}
+            />
+            <MiniMetric
+              label="Account value"
+              value={formatUsd(latestEntry.current_account_value_usd)}
+            />
+            <MiniMetric
+              label="Min buffer"
+              value={formatPercentFromBps(
+                latestEntry.current_min_liquidation_distance_bps,
+              )}
+            />
+          </dl>
+        </>
       ) : null}
 
       {entries.length === 0 ? (

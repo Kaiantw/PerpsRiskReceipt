@@ -36,6 +36,7 @@
 - receipt assistant watchlist, volatility, regime, and regime-row answers cite heuristic local fields and do not decide what a trader should do next.
 - receipt risk assistant driver answers inherit the heuristic receipt risk-driver comparison limits and do not inspect hidden fields beyond the local receipt context.
 - receipt risk assistant market drilldowns cite local per-market driver rows plus available market-context rows; they still do not combine exact protocol margin tiers, live order-book liquidity, or hidden redacted-share fields.
+- receipt assistant recheck-history answers summarize compact browser-local history rows only; they are not synced, exported, full-snapshot archives, exact account history, live alerts, or advice.
 - market context requires comparable saved/current positions and treats open interest as descriptive context, not a standalone direction signal.
 - risk assistant is deterministic local explanation logic, not a connected LLM, and it must not be treated as financial advice.
 - funding carry watch assumes current funding and notional stay unchanged and estimates from normalized mark-price notional rather than Hyperliquid oracle-price settlement.

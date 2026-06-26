@@ -61,6 +61,36 @@ export type receipt_recheck_history_entry = {
   volatility_loaded: boolean;
 };
 
+export type receipt_recheck_history_trend =
+  | "no_history"
+  | "single_check"
+  | "risk_higher"
+  | "risk_lower"
+  | "risk_unchanged";
+
+export type receipt_recheck_history_summary = {
+  label: receipt_recheck_history_trend;
+  headline: string;
+  summary: string;
+  review_points: string[];
+  entry_count: number;
+  latest_entry: receipt_recheck_history_entry | null;
+  oldest_entry: receipt_recheck_history_entry | null;
+  latest_risk_score: number | null;
+  latest_risk_label: risk_label | null;
+  oldest_risk_score: number | null;
+  oldest_risk_label: risk_label | null;
+  risk_score_delta: number | null;
+  latest_regime_label: receipt_market_regime_label | null;
+  oldest_regime_label: receipt_market_regime_label | null;
+  most_repeated_focus_market: string | null;
+  most_repeated_focus_market_count: number;
+  volatility_loaded_count: number;
+  latest_watchlist_high_count: number;
+  latest_watchlist_watch_count: number;
+  latest_watchlist_info_count: number;
+};
+
 export function getLocalRecheckHistoryStorageKey(receiptId: string) {
   return `${LOCAL_RECHECK_HISTORY_STORAGE_PREFIX}${receiptId}`;
 }
@@ -170,6 +200,134 @@ export function upsertReceiptRecheckHistoryEntry(input: {
     .slice(0, maxEntries);
 }
 
+export function buildReceiptRecheckHistorySummary(
+  entries: receipt_recheck_history_entry[],
+): receipt_recheck_history_summary {
+  const sortedEntries = [...entries].sort(compareReceiptRecheckHistoryEntries);
+  const latestEntry = sortedEntries[0] ?? null;
+  const oldestEntry = sortedEntries.at(-1) ?? null;
+  const entryCount = sortedEntries.length;
+  const volatilityLoadedCount = sortedEntries.filter(
+    (entry) => entry.volatility_loaded,
+  ).length;
+  const repeatedFocusMarket = getMostRepeatedFocusMarket(sortedEntries);
+
+  if (!latestEntry || !oldestEntry) {
+    return {
+      label: "no_history",
+      headline: "No local recheck history yet.",
+      summary:
+        "Run a live recheck to save the first compact local history row for this receipt.",
+      review_points: [
+        "Run a live recheck before treating this saved receipt as current.",
+      ],
+      entry_count: 0,
+      latest_entry: null,
+      oldest_entry: null,
+      latest_risk_score: null,
+      latest_risk_label: null,
+      oldest_risk_score: null,
+      oldest_risk_label: null,
+      risk_score_delta: null,
+      latest_regime_label: null,
+      oldest_regime_label: null,
+      most_repeated_focus_market: null,
+      most_repeated_focus_market_count: 0,
+      volatility_loaded_count: 0,
+      latest_watchlist_high_count: 0,
+      latest_watchlist_watch_count: 0,
+      latest_watchlist_info_count: 0,
+    };
+  }
+
+  if (entryCount === 1) {
+    const focusMarket =
+      latestEntry.market_regime_focus_market ??
+      latestEntry.top_drilldown_market ??
+      "n/a";
+
+    return {
+      label: "single_check",
+      headline: "One local recheck is saved.",
+      summary: [
+        `Latest saved risk score is ${latestEntry.current_risk_score} (${latestEntry.current_risk_label}).`,
+        `Regime is ${latestEntry.market_regime_label}; focus market is ${focusMarket}.`,
+        "Run another live recheck later to compare direction over time.",
+      ].join(" "),
+      review_points: [
+        "Use the latest row as a point-in-time recheck only; there is not enough local history for a trend.",
+        getVolatilityHistoryReviewPoint({
+          entryCount,
+          volatilityLoadedCount,
+        }),
+      ],
+      entry_count: entryCount,
+      latest_entry: latestEntry,
+      oldest_entry: oldestEntry,
+      latest_risk_score: latestEntry.current_risk_score,
+      latest_risk_label: latestEntry.current_risk_label,
+      oldest_risk_score: oldestEntry.current_risk_score,
+      oldest_risk_label: oldestEntry.current_risk_label,
+      risk_score_delta: null,
+      latest_regime_label: latestEntry.market_regime_label,
+      oldest_regime_label: oldestEntry.market_regime_label,
+      most_repeated_focus_market: repeatedFocusMarket.market,
+      most_repeated_focus_market_count: repeatedFocusMarket.count,
+      volatility_loaded_count: volatilityLoadedCount,
+      latest_watchlist_high_count: latestEntry.watchlist_high_count,
+      latest_watchlist_watch_count: latestEntry.watchlist_watch_count,
+      latest_watchlist_info_count: latestEntry.watchlist_info_count,
+    };
+  }
+
+  const riskScoreDelta =
+    latestEntry.current_risk_score - oldestEntry.current_risk_score;
+  const trendLabel = getRiskScoreTrendLabel(riskScoreDelta);
+  const trendPhrase = getRiskScoreTrendPhrase(trendLabel);
+  const focusMarketText = repeatedFocusMarket.market
+    ? `${repeatedFocusMarket.market} appeared as focus market in ${repeatedFocusMarket.count} of ${entryCount} saved checks.`
+    : "No repeated focus market was captured across saved checks.";
+  const latestCue = latestEntry.top_drilldown_market
+    ? `Latest top cue: ${latestEntry.top_drilldown_market} - ${latestEntry.top_drilldown_primary_cue ?? "review the latest drilldown row"}.`
+    : "Latest top cue is unavailable in the compact history row.";
+
+  return {
+    label: trendLabel,
+    headline: `Local recheck risk score is ${trendPhrase} across ${entryCount} saved checks.`,
+    summary: [
+      `Latest risk score is ${latestEntry.current_risk_score} (${latestEntry.current_risk_label}) versus oldest ${oldestEntry.current_risk_score} (${oldestEntry.current_risk_label}).`,
+      `Regime moved ${oldestEntry.market_regime_label} to ${latestEntry.market_regime_label}.`,
+      focusMarketText,
+      latestCue,
+    ].join(" "),
+    review_points: [
+      getRiskScoreTrendReviewPoint(trendLabel),
+      focusMarketText,
+      getVolatilityHistoryReviewPoint({
+        entryCount,
+        volatilityLoadedCount,
+      }),
+      "Compare the newest row with the oldest row before treating the saved receipt as current.",
+    ],
+    entry_count: entryCount,
+    latest_entry: latestEntry,
+    oldest_entry: oldestEntry,
+    latest_risk_score: latestEntry.current_risk_score,
+    latest_risk_label: latestEntry.current_risk_label,
+    oldest_risk_score: oldestEntry.current_risk_score,
+    oldest_risk_label: oldestEntry.current_risk_label,
+    risk_score_delta: riskScoreDelta,
+    latest_regime_label: latestEntry.market_regime_label,
+    oldest_regime_label: oldestEntry.market_regime_label,
+    most_repeated_focus_market: repeatedFocusMarket.market,
+    most_repeated_focus_market_count: repeatedFocusMarket.count,
+    volatility_loaded_count: volatilityLoadedCount,
+    latest_watchlist_high_count: latestEntry.watchlist_high_count,
+    latest_watchlist_watch_count: latestEntry.watchlist_watch_count,
+    latest_watchlist_info_count: latestEntry.watchlist_info_count,
+  };
+}
+
 function buildReceiptRecheckHistoryEntryId(input: {
   comparisonStatus: snapshot_comparison_status;
   currentDataTimeIso: string;
@@ -191,6 +349,92 @@ function compareReceiptRecheckHistoryEntries(
     Date.parse(secondEntry.rechecked_at_iso) -
     Date.parse(firstEntry.rechecked_at_iso)
   );
+}
+
+function getMostRepeatedFocusMarket(
+  entries: receipt_recheck_history_entry[],
+): { market: string | null; count: number } {
+  const marketCounts = new Map<string, number>();
+
+  for (const entry of entries) {
+    const market =
+      entry.market_regime_focus_market ?? entry.top_drilldown_market;
+
+    if (!market) {
+      continue;
+    }
+
+    marketCounts.set(market, (marketCounts.get(market) ?? 0) + 1);
+  }
+
+  const [market, count] =
+    Array.from(marketCounts.entries()).sort(
+      (firstEntry, secondEntry) =>
+        secondEntry[1] - firstEntry[1] ||
+        firstEntry[0].localeCompare(secondEntry[0]),
+    )[0] ?? [];
+
+  return {
+    market: market ?? null,
+    count: count ?? 0,
+  };
+}
+
+function getRiskScoreTrendLabel(
+  riskScoreDelta: number,
+): receipt_recheck_history_trend {
+  if (riskScoreDelta > 0) {
+    return "risk_higher";
+  }
+
+  if (riskScoreDelta < 0) {
+    return "risk_lower";
+  }
+
+  return "risk_unchanged";
+}
+
+function getRiskScoreTrendPhrase(label: receipt_recheck_history_trend) {
+  switch (label) {
+    case "risk_higher":
+      return "higher";
+    case "risk_lower":
+      return "lower";
+    case "risk_unchanged":
+      return "unchanged";
+    case "single_check":
+      return "based on one saved check";
+    case "no_history":
+      return "unavailable";
+  }
+}
+
+function getRiskScoreTrendReviewPoint(
+  label: receipt_recheck_history_trend,
+) {
+  switch (label) {
+    case "risk_higher":
+      return "Risk score is higher than the oldest local recheck; inspect the latest high/watch cues first.";
+    case "risk_lower":
+      return "Risk score is lower than the oldest local recheck; confirm the newest live row still matches the account being reviewed.";
+    case "risk_unchanged":
+      return "Risk score is unchanged across the oldest and newest local rechecks; inspect regime, focus-market, and volatility context for movement not captured by the score.";
+    case "single_check":
+      return "Only one local recheck is saved; run another later to compare direction.";
+    case "no_history":
+      return "No local recheck rows are saved yet.";
+  }
+}
+
+function getVolatilityHistoryReviewPoint(input: {
+  entryCount: number;
+  volatilityLoadedCount: number;
+}) {
+  if (input.volatilityLoadedCount === 0) {
+    return "No saved history row includes loaded 24h volatility context.";
+  }
+
+  return `${input.volatilityLoadedCount} of ${input.entryCount} saved history rows include loaded 24h volatility context.`;
 }
 
 function isReceiptRecheckHistoryEntry(

@@ -78,6 +78,7 @@ Open `http://localhost:3000`.
    - Show `Local recheck history`.
    - Point out the saved-check count, latest recheck timestamp, current risk score, account value, minimum listed buffer, market-regime label, focus market, top cue, watch cue counts, and whether volatility context was loaded for that history row.
    - Explain that running recheck again adds another compact local row without changing the saved receipt hash.
+   - Click `Rechecks` in the receipt assistant, or ask `What does local recheck history show?`, and point out the latest-versus-oldest risk score, regime movement, repeated focus market, watchlist counts, volatility-loaded coverage, and local-only/no-alert caveat.
    - Show `Receipt change summary`.
    - Point out that it combines account match, position state, liquidation buffer movement, funding changes, market movement, and sampled account-value context.
    - Show `Market regime`.
@@ -99,7 +100,7 @@ Open `http://localhost:3000`.
    - Show `Recheck watchlist`.
    - Point out the high/watch/info counts and the ranked items for position changes, thin listed buffer, volatility-buffer cues, adverse mark movement, higher funding cost, driver-score movement, open-interest movement, or missing market context.
    - Show `Receipt risk assistant`.
-   - Click `Review`, `Regime`, `Regime rows`, `Watchlist`, `Volatility`, `Drivers`, `Funding`, and `Hash` to show cited answers from the receipt summary, market-regime read, per-market regime rows, ranked recheck watchlist, loaded volatility buffer, risk-driver comparison, live recheck, funding delta, and snapshot hash.
+   - Click `Review`, `Regime`, `Regime rows`, `Watchlist`, `Volatility`, `Rechecks`, `Drivers`, `Funding`, and `Hash` to show cited answers from the receipt summary, market-regime read, per-market regime rows, ranked recheck watchlist, loaded volatility buffer, local recheck history, risk-driver comparison, live recheck, funding delta, and snapshot hash.
    - Ask `What should I inspect first?` and show that the answer cites `receipt_recheck_watchlist` item fields while preserving the no-trade-recommendation caveat.
    - Show `Review packet`, click `Copy markdown`, and point out that it packages the hash, live recheck, market regime, per-market regime rows, watchlist, active thresholds, loaded volatility buffer, assistant read, driver comparison, and market context for quick review.
    - Explain that the review packet is for communication; a full portable receipt bundle is still required when another browser needs to recompute the snapshot hash.
@@ -114,4 +115,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, local recheck history, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, local recheck history with history-aware assistant reads, market-regime summaries, per-market regime drilldowns and volatility-buffer cues, assistant-cited watchlist/volatility/regime-row reads, copyable review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

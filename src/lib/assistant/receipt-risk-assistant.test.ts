@@ -11,6 +11,10 @@ import { createRiskReceipt } from "../receipts/receipt.ts";
 import { buildReceiptChangeSummary } from "../receipts/receipt-change-summary.ts";
 import { buildReceiptMarketRegime } from "../receipts/receipt-market-regime.ts";
 import { buildReceiptMarketRegimeDrilldown } from "../receipts/receipt-market-regime-drilldown.ts";
+import {
+  buildReceiptRecheckHistorySummary,
+  type receipt_recheck_history_entry,
+} from "../receipts/receipt-recheck-history.ts";
 import { compareReceiptRiskDrivers } from "../receipts/receipt-risk-driver-comparison.ts";
 import { buildReceiptRecheckWatchlist } from "../receipts/receipt-recheck-watchlist.ts";
 import { buildReceiptVolatilityBuffer } from "../receipts/receipt-volatility-buffer.ts";
@@ -150,6 +154,57 @@ function buildEthHistory(input?: {
   };
 }
 
+function buildAssistantHistoryEntry(input: {
+  currentRiskLabel?: receipt_recheck_history_entry["current_risk_label"];
+  currentRiskScore: number;
+  focusMarket?: string;
+  id: string;
+  marketRegimeLabel?: receipt_recheck_history_entry["market_regime_label"];
+  marketRegimeSeverity?: receipt_recheck_history_entry["market_regime_severity"];
+  recheckedAtIso: string;
+  topCue?: string;
+  volatilityLoaded?: boolean;
+  watchlistHighCount?: number;
+}) {
+  return {
+    id: input.id,
+    receipt_id: "rr_assistant_history",
+    rechecked_at_iso: input.recheckedAtIso,
+    current_data_time_iso: input.recheckedAtIso,
+    current_freshness: "live",
+    comparison_status: "market_moved",
+    comparison_headline: "Saved recheck row",
+    changed_position_count: 0,
+    max_abs_mark_price_change_percent: 4.8,
+    current_risk_score: input.currentRiskScore,
+    current_risk_label: input.currentRiskLabel ?? "medium",
+    current_account_value_usd: 10_000,
+    current_margin_usage_bps: 4_200,
+    current_total_notional_usd: 25_000,
+    current_min_liquidation_distance_bps: 850,
+    current_daily_funding_usd: 18,
+    market_regime_label: input.marketRegimeLabel ?? "active",
+    market_regime_severity: input.marketRegimeSeverity ?? "watch",
+    market_regime_focus_market: input.focusMarket ?? "ETH-PERP",
+    market_regime_high_count: 1,
+    market_regime_watch_count: 1,
+    market_regime_info_count: 0,
+    watchlist_label: "watch_items_loaded",
+    watchlist_high_count: input.watchlistHighCount ?? 0,
+    watchlist_watch_count: 1,
+    watchlist_info_count: 0,
+    watchlist_item_count: 1,
+    top_drilldown_market: input.focusMarket ?? "ETH-PERP",
+    top_drilldown_severity: input.marketRegimeSeverity ?? "watch",
+    top_drilldown_primary_cue:
+      input.topCue ?? "Listed buffer tightened on the latest recheck",
+    top_drilldown_summary: "Compact row summary for assistant test.",
+    top_drilldown_current_liquidation_distance_bps: 850,
+    top_drilldown_current_funding_burden_bps: 6,
+    volatility_loaded: input.volatilityLoaded ?? false,
+  } satisfies receipt_recheck_history_entry;
+}
+
 test("summarizes receipt recheck with receipt-specific citations", async () => {
   const context = await buildAssistantContext();
   const response = answerReceiptRiskQuestion({
@@ -234,6 +289,68 @@ test("answers account history questions only from loaded context", async () => {
       "receipt_account_value_context.latest_vs_receipt_percent",
     ),
   );
+});
+
+test("answers local recheck-history questions from saved rows", async () => {
+  const context = await buildAssistantContext({
+    includeVolatilityBuffer: true,
+  });
+  const recheckHistorySummary = buildReceiptRecheckHistorySummary([
+    buildAssistantHistoryEntry({
+      currentRiskScore: 28,
+      currentRiskLabel: "medium",
+      id: "older",
+      marketRegimeLabel: "active",
+      marketRegimeSeverity: "watch",
+      recheckedAtIso: "2026-06-26T00:01:00.000Z",
+    }),
+    buildAssistantHistoryEntry({
+      currentRiskScore: 81,
+      currentRiskLabel: "critical",
+      id: "newer",
+      marketRegimeLabel: "stress",
+      marketRegimeSeverity: "high",
+      recheckedAtIso: "2026-06-26T00:03:00.000Z",
+      topCue: "Public 24h range exceeds current buffer",
+      volatilityLoaded: true,
+      watchlistHighCount: 2,
+    }),
+  ]);
+  const response = answerReceiptRiskQuestion({
+    context: {
+      ...context,
+      recheckHistorySummary,
+    },
+    question: "What does local recheck history show?",
+  });
+
+  assert.match(response.answer, /Local recheck risk score is higher/i);
+  assert.match(response.answer, /Latest saved risk score is 81/);
+  assert.match(response.answer, /Oldest saved risk score is 28/);
+  assert.match(response.answer, /Risk-score delta: \+53/);
+  assert.match(response.answer, /ETH-PERP appeared as the focus market/);
+  assert.match(response.answer, /not a live alert/);
+  assert.match(response.answer, /not a trading recommendation/);
+  assert.ok(
+    response.citations.includes("receipt_recheck_history.risk_score_delta"),
+  );
+  assert.ok(
+    response.citations.includes(
+      "receipt_recheck_history.volatility_loaded_count",
+    ),
+  );
+});
+
+test("explains when local recheck history is not saved", async () => {
+  const context = await buildAssistantContext();
+  const response = answerReceiptRiskQuestion({
+    context,
+    question: "Show local history rows",
+  });
+
+  assert.match(response.answer, /No local recheck history is saved/);
+  assert.match(response.answer, /Run a live recheck/);
+  assert.deepEqual(response.citations, ["receipt_recheck_history"]);
 });
 
 test("explains when account history is not loaded", async () => {
@@ -519,6 +636,16 @@ test("suggestions include account history only when context exists", async () =>
   const withHistory = getReceiptRiskAssistantSuggestions(
     await buildAssistantContext({ includeAccountHistory: true }),
   );
+  const withRecheckHistory = getReceiptRiskAssistantSuggestions({
+    ...(await buildAssistantContext()),
+    recheckHistorySummary: buildReceiptRecheckHistorySummary([
+      buildAssistantHistoryEntry({
+        currentRiskScore: 42,
+        id: "single-row",
+        recheckedAtIso: "2026-06-26T00:01:00.000Z",
+      }),
+    ]),
+  });
 
   assert.equal(
     withoutHistory.some((suggestion) => suggestion.id === "drivers"),
@@ -556,6 +683,16 @@ test("suggestions include account history only when context exists", async () =>
   );
   assert.equal(
     withHistory.some((suggestion) => suggestion.id === "history"),
+    true,
+  );
+  assert.equal(
+    withoutHistory.some((suggestion) => suggestion.id === "recheck-history"),
+    false,
+  );
+  assert.equal(
+    withRecheckHistory.some(
+      (suggestion) => suggestion.id === "recheck-history",
+    ),
     true,
   );
 });

@@ -940,3 +940,25 @@ Review whether 12 rows per receipt is the right cap for the demo. Review whether
 - Browser verification used `http://localhost:3000/receipt/import`, imported a generated full portable Hyperliquid-shaped bundle for `/receipt/local/rr_340044a994e7af1c`, confirmed `Hash verified`, confirmed `Local recheck history` initially empty, clicked `Recheck live account`, confirmed `Saved checks` became `1`, `Risk score 100 · critical`, `ETH-PERP: Position state changed`, and the local-only caveat, clicked `Recheck live account` again, confirmed `Saved checks` became `2` with two newest-first ETH-PERP rows, then reran the final browser check after the save-guard tweak and confirmed `Saved checks` became `3` with three newest-first ETH-PERP rows and zero captured browser console errors.
 ### remaining risks:
 Local recheck history is compact browser-local review context only. It is not synced, exported, encrypted, precise accounting, a full private-snapshot archive, a trade journal, an alert feed, exact liquidation monitoring, exact funding settlement accounting, protocol-official risk attribution, or advice about what a trader should do next.
+
+### task id: post-t9 receipt assistant recheck-history answer
+### codex mode:
+product iteration + implementation
+### delegated work:
+Connected compact browser-local receipt recheck history to the receipt risk assistant so reviewers can ask what local saved checks show over time.
+### output accepted:
+Added a pure `buildReceiptRecheckHistorySummary` helper that labels saved local rows as no history, single check, risk higher, risk lower, or risk unchanged. The summary compares latest versus oldest risk score, regime label movement, most repeated focus market, latest watchlist counts, and volatility-loaded coverage. The local receipt page now passes that summary into the receipt assistant, shows the same trend headline in the `Local recheck history` panel, and exposes a `Rechecks` quick prompt when history exists. Assistant answers cite `receipt_recheck_history.*` fields and preserve the local-only/no-alert/no-trade-recommendation caveat. Updated tests, source notes, knowledge docs, limitations, README, demo script, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, backend sync, database, export format, LLM API, wallet/RPC flow, trading/exchange endpoint, alert feed, full private-snapshot archive, exact Hyperliquid liquidation formula, or protocol-official risk claim was added. The assistant summarizes compact derived local rows only.
+### human review notes:
+Review the trend wording for non-trader clarity and whether the `Rechecks` prompt should appear after one saved row or only after two rows. Review whether local history should later feed the copyable review packet or an explicit history export.
+### tests/checks run:
+- `node --test src/lib/receipts/receipt-recheck-history.test.ts src/lib/assistant/receipt-risk-assistant.test.ts` passed: 24 tests, 24 passing.
+- `npm test` passed: 148 tests, 148 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]`, `/receipt/import`, `/api/hyperliquid/market-history`, and the existing receipt/API routes.
+- `git diff --check` passed.
+- Browser verification imported a generated full portable Hyperliquid-shaped bundle for `/receipt/local/rr_78b061a0af37c810`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `One local recheck is saved.` and the `Rechecks` assistant prompt, clicked `Recheck live account` again, confirmed `Local recheck risk score is unchanged across 2 saved checks.`, `Saved checks 2`, repeated `ETH-PERP` focus, local/no-advice caveats, clicked `Rechecks`, confirmed the answer included `Risk-score delta: 0.`, `receipt_recheck_history.risk_score_delta`, `receipt_recheck_history.volatility_loaded_count`, no-alert/no-trade-recommendation language, and zero browser console errors.
+### remaining risks:
+Assistant recheck-history answers inherit the local-history limits. They are browser-local, compact, capped, not synced, not exported, not full-snapshot archives, not precise account history, not live alerts, not protocol-official risk attribution, and not advice about what a trader should do next.
