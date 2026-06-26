@@ -40,9 +40,11 @@ import {
 } from "@/lib/receipts/receipt-risk-driver-comparison.ts";
 import {
   buildReceiptRecheckWatchlist,
+  defaultReceiptRecheckWatchlistThresholds,
   type receipt_recheck_watch_severity,
   type receipt_recheck_watchlist,
   type receipt_recheck_watchlist_label,
+  type receipt_recheck_watchlist_thresholds,
 } from "@/lib/receipts/receipt-recheck-watchlist.ts";
 import {
   buildReceiptReviewPacket,
@@ -309,6 +311,10 @@ function LiveRecheckResult({
   receipt: risk_receipt;
   receiptAccountValueContext: receipt_account_value_context | null;
 }) {
+  const [thresholds, setThresholds] =
+    useState<receipt_recheck_watchlist_thresholds>(
+      defaultReceiptRecheckWatchlistThresholds,
+    );
   const marketContext = buildMarketContext(comparison);
   const riskDriverComparison = compareReceiptRiskDrivers({
     savedSnapshot: receipt.snapshot,
@@ -317,6 +323,7 @@ function LiveRecheckResult({
   const recheckWatchlist = buildReceiptRecheckWatchlist({
     marketContext,
     riskDriverComparison,
+    thresholds,
   });
   const changeSummary = buildReceiptChangeSummary({
     comparison,
@@ -357,6 +364,7 @@ function LiveRecheckResult({
     riskDriverComparison.current_top_driver_market ?? "no-current-driver",
     recheckWatchlist.label,
     String(recheckWatchlist.high_count),
+    formatThresholdSignature(recheckWatchlist.thresholds),
     receiptAccountValueContext?.label ?? "no-account-context",
   ].join(":");
 
@@ -389,6 +397,10 @@ function LiveRecheckResult({
 
       <ReceiptChangeSummaryResult summary={changeSummary} />
       <ReceiptRiskDriverComparisonResult comparison={riskDriverComparison} />
+      <ReceiptRecheckThresholdsResult
+        onThresholdsChange={setThresholds}
+        thresholds={thresholds}
+      />
       <ReceiptRecheckWatchlistResult watchlist={recheckWatchlist} />
       <ReceiptRiskAssistantPanel
         context={assistantContext}
@@ -483,6 +495,162 @@ function LiveRecheckResult({
         </div>
       )}
     </div>
+  );
+}
+
+function ReceiptRecheckThresholdsResult({
+  onThresholdsChange,
+  thresholds,
+}: {
+  onThresholdsChange: (thresholds: receipt_recheck_watchlist_thresholds) => void;
+  thresholds: receipt_recheck_watchlist_thresholds;
+}) {
+  function updateThreshold(
+    key: keyof receipt_recheck_watchlist_thresholds,
+    value: number,
+  ) {
+    onThresholdsChange(
+      normalizeUiThresholds({
+        ...thresholds,
+        [key]: value,
+      }),
+    );
+  }
+
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-stone-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Review thresholds</h3>
+          <p className="mt-1 text-sm text-stone-600">
+            Tune which saved/current market changes appear in the recheck
+            watchlist and copied review packet.
+          </p>
+        </div>
+        <button
+          className="inline-flex min-h-10 items-center justify-center rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-950"
+          onClick={() =>
+            onThresholdsChange(defaultReceiptRecheckWatchlistThresholds)
+          }
+          type="button"
+        >
+          Reset defaults
+        </button>
+      </div>
+
+      <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <ThresholdInput
+          description="High cue when listed buffer is at or below this value."
+          label="Thin buffer bps"
+          min={0}
+          onValueChange={(value) =>
+            updateThreshold("thin_liquidation_distance_bps", value)
+          }
+          step={50}
+          value={thresholds.thin_liquidation_distance_bps}
+        />
+        <ThresholdInput
+          description="Watch cue when listed buffer is at or below this value."
+          label="Tight buffer bps"
+          min={0}
+          onValueChange={(value) =>
+            updateThreshold("tight_liquidation_distance_bps", value)
+          }
+          step={50}
+          value={thresholds.tight_liquidation_distance_bps}
+        />
+        <ThresholdInput
+          description="Watch cue when mark moves this percent toward liquidation."
+          label="Adverse mark %"
+          min={0}
+          onValueChange={(value) =>
+            updateThreshold("material_mark_move_percent", value)
+          }
+          step={0.25}
+          value={thresholds.material_mark_move_percent}
+        />
+        <ThresholdInput
+          description="Cue when the heuristic driver score changes this much."
+          label="Driver score delta"
+          min={0}
+          onValueChange={(value) =>
+            updateThreshold("material_driver_score_delta", value)
+          }
+          step={1}
+          value={thresholds.material_driver_score_delta}
+        />
+        <ThresholdInput
+          description="Cue when daily funding cost increases by this amount."
+          label="Daily funding USD"
+          min={0}
+          onValueChange={(value) =>
+            updateThreshold("material_daily_funding_usd", value)
+          }
+          step={1}
+          value={thresholds.material_daily_funding_usd}
+        />
+        <ThresholdInput
+          description="Cue when the 8h funding rate changes by this many bps."
+          label="8h funding bps"
+          min={0}
+          onValueChange={(value) =>
+            updateThreshold("material_funding_8h_bps", value)
+          }
+          step={0.25}
+          value={thresholds.material_funding_8h_bps}
+        />
+        <ThresholdInput
+          description="Info cue when open interest changes by this many millions."
+          label="Open interest USD m"
+          min={0}
+          onValueChange={(value) =>
+            updateThreshold("material_open_interest_delta_usd", value * 1_000_000)
+          }
+          step={5}
+          value={thresholds.material_open_interest_delta_usd / 1_000_000}
+        />
+      </div>
+
+      <p className="border-t border-stone-200 px-4 py-3 text-xs text-stone-500">
+        These local settings change review sensitivity only. They do not change
+        the saved receipt, snapshot hash, live Hyperliquid data, or the app risk
+        model.
+      </p>
+    </section>
+  );
+}
+
+function ThresholdInput({
+  description,
+  label,
+  min,
+  onValueChange,
+  step,
+  value,
+}: {
+  description: string;
+  label: string;
+  min: number;
+  onValueChange: (value: number) => void;
+  step: number;
+  value: number;
+}) {
+  return (
+    <label className="flex min-h-36 flex-col gap-2 rounded-lg border border-stone-200 bg-stone-50 p-3">
+      <span className="text-sm font-semibold text-stone-950">{label}</span>
+      <input
+        aria-label={label}
+        className="min-h-10 w-full rounded-lg border border-stone-300 bg-white px-3 font-mono text-sm text-stone-950 outline-none focus:border-stone-950"
+        min={min}
+        onChange={(event) =>
+          onValueChange(parseThresholdInput(event.target.value))
+        }
+        step={step}
+        type="number"
+        value={formatThresholdInput(value)}
+      />
+      <span className="text-xs leading-5 text-stone-600">{description}</span>
+    </label>
   );
 }
 
@@ -1042,6 +1210,72 @@ function formatSignedNullableNumber(value: number | null) {
   }
 
   return `${value > 0 ? "+" : "-"}${Math.abs(value).toFixed(2)}`;
+}
+
+function normalizeUiThresholds(
+  thresholds: receipt_recheck_watchlist_thresholds,
+) {
+  const thinLiquidationDistanceBps = Math.max(
+    0,
+    thresholds.thin_liquidation_distance_bps,
+  );
+
+  return {
+    material_daily_funding_usd: Math.max(
+      0,
+      thresholds.material_daily_funding_usd,
+    ),
+    material_driver_score_delta: Math.max(
+      0,
+      thresholds.material_driver_score_delta,
+    ),
+    material_funding_8h_bps: Math.max(0, thresholds.material_funding_8h_bps),
+    material_mark_move_percent: Math.max(
+      0,
+      thresholds.material_mark_move_percent,
+    ),
+    material_open_interest_delta_usd: Math.max(
+      0,
+      thresholds.material_open_interest_delta_usd,
+    ),
+    thin_liquidation_distance_bps: thinLiquidationDistanceBps,
+    tight_liquidation_distance_bps: Math.max(
+      thinLiquidationDistanceBps,
+      thresholds.tight_liquidation_distance_bps,
+    ),
+  };
+}
+
+function parseThresholdInput(value: string) {
+  const parsedValue = Number(value);
+
+  if (!Number.isFinite(parsedValue)) {
+    return 0;
+  }
+
+  return Math.max(0, parsedValue);
+}
+
+function formatThresholdInput(value: number) {
+  if (Number.isInteger(value)) {
+    return value.toFixed(0);
+  }
+
+  return value.toFixed(2);
+}
+
+function formatThresholdSignature(
+  thresholds: receipt_recheck_watchlist_thresholds,
+) {
+  return [
+    thresholds.material_daily_funding_usd,
+    thresholds.material_driver_score_delta,
+    thresholds.material_funding_8h_bps,
+    thresholds.material_mark_move_percent,
+    thresholds.material_open_interest_delta_usd,
+    thresholds.thin_liquidation_distance_bps,
+    thresholds.tight_liquidation_distance_bps,
+  ].join(":");
 }
 
 function formatPrimaryDriver(category: position_risk_driver_category | null) {

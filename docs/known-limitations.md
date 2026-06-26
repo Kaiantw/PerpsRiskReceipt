@@ -24,6 +24,7 @@
 - live receipt recheck compares against a fresh read-only snapshot but is not an exact liquidation monitor or historical account audit.
 - receipt risk-driver comparison reuses heuristic position-driver scores for saved and live snapshots; it is not protocol-official attribution and position-state changes limit direct comparison.
 - receipt recheck watchlist is heuristic triage over saved/current local fields; it cannot prove exact liquidation state, exact funding settlement, or what a trader should do next.
+- configurable recheck thresholds are local UI sensitivity settings and are not saved, synced, or protocol-official.
 - receipt review packet is a markdown communication summary, not a full private snapshot, encrypted share, access-controlled artifact, or hash-recomputable portable bundle.
 - receipt account-value context uses the nearest sampled Hyperliquid portfolio point, so the visible sample gap matters for interpretation.
 - receipt change summary is heuristic and prioritizes review cues; it is not a trading recommendation or exact risk monitor.

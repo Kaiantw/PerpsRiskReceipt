@@ -807,3 +807,26 @@ Review whether the packet should stay summary-only with a truncated account iden
 - Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Review packet`, `Copy markdown`, markdown sections for `snapshot hash`, `recheck watchlist`, `assistant read`, `market context`, and the full-bundle caveat, clicked `Copy markdown`, confirmed `Review packet copied.`, read clipboard markdown containing `# Review packet for`, `receipt_recheck_watchlist.high_count`, `## limitations`, and confirmed zero browser console errors.
 ### remaining risks:
 The review packet is a communication summary only. It is not encrypted, access-controlled, a full private snapshot, a redacted proof, a hash-recomputable bundle, Hyperliquid's official risk engine, exact liquidation/funding settlement monitoring, or advice about what a trader should do next.
+
+### task id: post-t9 configurable receipt review thresholds
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added local review-threshold controls so the live receipt recheck can answer what is valuable in the current market without hard-coding one sensitivity level for every reviewer.
+### output accepted:
+Added typed default thresholds to `src/lib/receipts/receipt-recheck-watchlist.ts`, accepted optional custom thresholds, sanitized negative values, kept tight listed-buffer thresholds at or above thin thresholds, and returned the active threshold profile with the watchlist. Added `Review thresholds` controls to the local receipt live recheck panel for thin/tight listed buffer bps, adverse mark percent, driver-score delta, daily funding USD, 8h funding bps, and open-interest USD millions. The active thresholds rebuild the recheck watchlist, receipt assistant context, and copyable review packet. The review packet now includes a `## review thresholds` section. Updated tests, source notes, limitations, knowledge graph, README, demo script, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, backend store, saved user setting, data-model migration, LLM call, wallet/RPC flow, trading/exchange endpoint, or protocol-official risk model was added. Thresholds are local UI sensitivity settings only and do not alter the saved receipt, snapshot hash, live Hyperliquid data, or risk model.
+### human review notes:
+Review the default threshold values: 500 bps thin listed buffer, 1000 bps tight listed buffer, 2 percent adverse mark move, 10 driver-score points, 1 USD daily funding delta, 1 bps 8h funding delta, and 50 million USD open-interest delta. Review whether any thresholds should be hidden behind an advanced disclosure if the panel feels dense for a non-trader demo.
+### tests/checks run:
+- `node --test src/lib/receipts/receipt-recheck-watchlist.test.ts src/lib/receipts/receipt-review-packet.test.ts` passed: 8 tests, 8 passing.
+- `npm test` passed: 125 tests, 125 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]` plus existing receipt/API routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, clicked `Recheck live account`, confirmed `Review thresholds`, changed `Tight buffer bps` to `4000`, confirmed the review packet changed from `tight listed buffer: 10.00%` to `tight listed buffer: 40.00%`, and confirmed zero browser console errors against a live API recheck.
+- Controlled browser verification mocked the read-only snapshot response for the same imported receipt, changed `Tight buffer bps` to `4000`, and confirmed `Tight current listed liquidation buffer` appeared in both the watchlist and review packet with zero browser console errors.
+### remaining risks:
+Configurable thresholds are heuristic local review sensitivity settings. They are not saved, synced, protocol-official, financial advice, exact liquidation monitoring, exact funding settlement accounting, or proof of what a trader should do next. Open-interest thresholds remain informational participation context only.

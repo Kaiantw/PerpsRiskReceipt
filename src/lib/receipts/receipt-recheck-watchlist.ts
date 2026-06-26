@@ -4,14 +4,6 @@ import type {
   receipt_risk_driver_market_change,
 } from "./receipt-risk-driver-comparison.ts";
 
-const THIN_LIQUIDATION_DISTANCE_BPS = 500;
-const TIGHT_LIQUIDATION_DISTANCE_BPS = 1_000;
-const MATERIAL_MARK_MOVE_PERCENT = 2;
-const MATERIAL_DRIVER_SCORE_DELTA = 10;
-const MATERIAL_DAILY_FUNDING_USD = 1;
-const MATERIAL_FUNDING_8H_BPS = 1;
-const MATERIAL_OPEN_INTEREST_DELTA_USD = 50_000_000;
-
 export type receipt_recheck_watch_severity = "info" | "watch" | "high";
 
 export type receipt_recheck_watch_category =
@@ -44,6 +36,7 @@ export type receipt_recheck_watchlist = {
   label: receipt_recheck_watchlist_label;
   headline: string;
   summary: string;
+  thresholds: receipt_recheck_watchlist_thresholds;
   item_count: number;
   high_count: number;
   watch_count: number;
@@ -51,14 +44,39 @@ export type receipt_recheck_watchlist = {
   items: receipt_recheck_watch_item[];
 };
 
+export type receipt_recheck_watchlist_thresholds = {
+  material_daily_funding_usd: number;
+  material_driver_score_delta: number;
+  material_funding_8h_bps: number;
+  material_mark_move_percent: number;
+  material_open_interest_delta_usd: number;
+  thin_liquidation_distance_bps: number;
+  tight_liquidation_distance_bps: number;
+};
+
+export const defaultReceiptRecheckWatchlistThresholds: receipt_recheck_watchlist_thresholds =
+  {
+    material_daily_funding_usd: 1,
+    material_driver_score_delta: 10,
+    material_funding_8h_bps: 1,
+    material_mark_move_percent: 2,
+    material_open_interest_delta_usd: 50_000_000,
+    thin_liquidation_distance_bps: 500,
+    tight_liquidation_distance_bps: 1_000,
+  };
+
 export function buildReceiptRecheckWatchlist(input: {
   marketContext: market_context;
   riskDriverComparison: receipt_risk_driver_comparison;
+  thresholds?: Partial<receipt_recheck_watchlist_thresholds>;
 }): receipt_recheck_watchlist {
+  const thresholds = resolveThresholds(input.thresholds);
+
   if (input.riskDriverComparison.label === "no_live_snapshot") {
     return buildWatchlistResult({
       label: "no_live_recheck",
       items: [],
+      thresholds,
     });
   }
 
@@ -69,6 +87,7 @@ export function buildReceiptRecheckWatchlist(input: {
       buildMarketWatchItems({
         marketChange,
         contextRow: contextRowsByMarket.get(marketChange.market) ?? null,
+        thresholds,
       }),
   );
   const items = [...accountItems, ...marketItems].sort(compareWatchItems);
@@ -76,7 +95,38 @@ export function buildReceiptRecheckWatchlist(input: {
   return buildWatchlistResult({
     label: getWatchlistLabel(items),
     items,
+    thresholds,
   });
+}
+
+function resolveThresholds(
+  thresholds: Partial<receipt_recheck_watchlist_thresholds> | undefined,
+): receipt_recheck_watchlist_thresholds {
+  const merged = {
+    ...defaultReceiptRecheckWatchlistThresholds,
+    ...thresholds,
+  };
+  const thinLiquidationDistanceBps = Math.max(
+    0,
+    merged.thin_liquidation_distance_bps,
+  );
+  const tightLiquidationDistanceBps = Math.max(
+    thinLiquidationDistanceBps,
+    merged.tight_liquidation_distance_bps,
+  );
+
+  return {
+    material_daily_funding_usd: Math.max(0, merged.material_daily_funding_usd),
+    material_driver_score_delta: Math.max(0, merged.material_driver_score_delta),
+    material_funding_8h_bps: Math.max(0, merged.material_funding_8h_bps),
+    material_mark_move_percent: Math.max(0, merged.material_mark_move_percent),
+    material_open_interest_delta_usd: Math.max(
+      0,
+      merged.material_open_interest_delta_usd,
+    ),
+    thin_liquidation_distance_bps: thinLiquidationDistanceBps,
+    tight_liquidation_distance_bps: tightLiquidationDistanceBps,
+  };
 }
 
 function getAccountItems(
@@ -105,12 +155,13 @@ function getAccountItems(
 function buildMarketWatchItems(input: {
   marketChange: receipt_risk_driver_market_change;
   contextRow: market_context_position | null;
+  thresholds: receipt_recheck_watchlist_thresholds;
 }) {
   const items: Array<receipt_recheck_watch_item | null> = [
     getPositionStateItem(input.marketChange),
     getLiquidationBufferItem(input),
     getAdverseMarkMoveItem(input),
-    getDriverScoreItem(input.marketChange),
+    getDriverScoreItem(input),
     getFundingCostItem(input),
     getOpenInterestItem(input),
     getMissingMarketContextItem(input),
@@ -143,6 +194,7 @@ function getPositionStateItem(
 function getLiquidationBufferItem(input: {
   marketChange: receipt_risk_driver_market_change;
   contextRow: market_context_position | null;
+  thresholds: receipt_recheck_watchlist_thresholds;
 }): receipt_recheck_watch_item | null {
   const currentBufferBps =
     input.contextRow?.liquidation_distance_bps.current_value ??
@@ -168,7 +220,7 @@ function getLiquidationBufferItem(input: {
     };
   }
 
-  if (currentBufferBps <= THIN_LIQUIDATION_DISTANCE_BPS) {
+  if (currentBufferBps <= input.thresholds.thin_liquidation_distance_bps) {
     return {
       id: `${input.marketChange.market}:liquidation-buffer:thin`,
       market: input.marketChange.market,
@@ -185,7 +237,7 @@ function getLiquidationBufferItem(input: {
     };
   }
 
-  if (currentBufferBps <= TIGHT_LIQUIDATION_DISTANCE_BPS) {
+  if (currentBufferBps <= input.thresholds.tight_liquidation_distance_bps) {
     return {
       id: `${input.marketChange.market}:liquidation-buffer:tight`,
       market: input.marketChange.market,
@@ -207,20 +259,22 @@ function getLiquidationBufferItem(input: {
 function getAdverseMarkMoveItem(input: {
   marketChange: receipt_risk_driver_market_change;
   contextRow: market_context_position | null;
+  thresholds: receipt_recheck_watchlist_thresholds;
 }): receipt_recheck_watch_item | null {
   const contextRow = input.contextRow;
 
   if (
     !contextRow ||
     contextRow.mark_move_direction !== "toward_liquidation" ||
-    Math.abs(contextRow.mark_price_change_percent ?? 0) < MATERIAL_MARK_MOVE_PERCENT
+    Math.abs(contextRow.mark_price_change_percent ?? 0) <
+      input.thresholds.material_mark_move_percent
   ) {
     return null;
   }
 
   const isNearListedBuffer =
     (contextRow.liquidation_distance_bps.current_value ?? Infinity) <=
-    TIGHT_LIQUIDATION_DISTANCE_BPS;
+    input.thresholds.tight_liquidation_distance_bps;
 
   return {
     id: `${input.marketChange.market}:adverse-mark-move`,
@@ -240,22 +294,23 @@ function getAdverseMarkMoveItem(input: {
   };
 }
 
-function getDriverScoreItem(
-  marketChange: receipt_risk_driver_market_change,
-): receipt_recheck_watch_item | null {
-  const driverScoreDelta = marketChange.driver_score_delta;
+function getDriverScoreItem(input: {
+  marketChange: receipt_risk_driver_market_change;
+  thresholds: receipt_recheck_watchlist_thresholds;
+}): receipt_recheck_watch_item | null {
+  const driverScoreDelta = input.marketChange.driver_score_delta;
 
   if (
     driverScoreDelta === null ||
-    Math.abs(driverScoreDelta) < MATERIAL_DRIVER_SCORE_DELTA
+    Math.abs(driverScoreDelta) < input.thresholds.material_driver_score_delta
   ) {
     return null;
   }
 
   if (driverScoreDelta > 0) {
     return {
-      id: `${marketChange.market}:driver-score:higher`,
-      market: marketChange.market,
+      id: `${input.marketChange.market}:driver-score:higher`,
+      market: input.marketChange.market,
       severity: "watch",
       category: "driver_score",
       title: "Driver score is higher now",
@@ -269,8 +324,8 @@ function getDriverScoreItem(
   }
 
   return {
-    id: `${marketChange.market}:driver-score:lower`,
-    market: marketChange.market,
+    id: `${input.marketChange.market}:driver-score:lower`,
+    market: input.marketChange.market,
     severity: "info",
     category: "driver_score",
     title: "Driver score is lower now",
@@ -286,6 +341,7 @@ function getDriverScoreItem(
 function getFundingCostItem(input: {
   marketChange: receipt_risk_driver_market_change;
   contextRow: market_context_position | null;
+  thresholds: receipt_recheck_watchlist_thresholds;
 }): receipt_recheck_watch_item | null {
   const dailyFundingDelta =
     input.marketChange.daily_funding_delta_usd ??
@@ -301,9 +357,10 @@ function getFundingCostItem(input: {
     currentDailyFunding !== null &&
     currentDailyFunding > 0 &&
     dailyFundingDelta !== null &&
-    dailyFundingDelta >= MATERIAL_DAILY_FUNDING_USD;
+    dailyFundingDelta >= input.thresholds.material_daily_funding_usd;
   const hasFundingRateIncrease =
-    fundingBpsDelta !== null && fundingBpsDelta >= MATERIAL_FUNDING_8H_BPS;
+    fundingBpsDelta !== null &&
+    fundingBpsDelta >= input.thresholds.material_funding_8h_bps;
 
   if (!hasDailyFundingCostIncrease && !hasFundingRateIncrease) {
     return null;
@@ -329,12 +386,14 @@ function getFundingCostItem(input: {
 function getOpenInterestItem(input: {
   marketChange: receipt_risk_driver_market_change;
   contextRow: market_context_position | null;
+  thresholds: receipt_recheck_watchlist_thresholds;
 }): receipt_recheck_watch_item | null {
   const openInterestDelta = input.contextRow?.open_interest_usd.delta ?? null;
 
   if (
     openInterestDelta === null ||
-    Math.abs(openInterestDelta) < MATERIAL_OPEN_INTEREST_DELTA_USD
+    Math.abs(openInterestDelta) <
+      input.thresholds.material_open_interest_delta_usd
   ) {
     return null;
   }
@@ -401,6 +460,7 @@ function getWatchlistLabel(
 function buildWatchlistResult(input: {
   label: receipt_recheck_watchlist_label;
   items: receipt_recheck_watch_item[];
+  thresholds: receipt_recheck_watchlist_thresholds;
 }): receipt_recheck_watchlist {
   const highCount = input.items.filter((item) => item.severity === "high").length;
   const watchCount = input.items.filter(
@@ -412,6 +472,7 @@ function buildWatchlistResult(input: {
     label: input.label,
     headline: getHeadline(input.label),
     summary: getSummary(input.label),
+    thresholds: input.thresholds,
     item_count: input.items.length,
     high_count: highCount,
     watch_count: watchCount,

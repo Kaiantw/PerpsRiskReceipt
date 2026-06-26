@@ -82,6 +82,9 @@ test("builds a copyable markdown packet with receipt, watchlist, assistant, and 
   assert.match(packet.markdown, /## risk drivers since receipt/);
   assert.match(packet.markdown, /## recheck watchlist/);
   assert.match(packet.markdown, /\[high\] ETH-PERP/);
+  assert.match(packet.markdown, /## review thresholds/);
+  assert.match(packet.markdown, /thin listed buffer: 5\.00%/);
+  assert.match(packet.markdown, /open-interest delta: \$50,000,000\.00/);
   assert.match(packet.markdown, /## assistant read/);
   assert.match(packet.markdown, /receipt_recheck_watchlist.high_count/);
   assert.match(packet.markdown, /## market context/);

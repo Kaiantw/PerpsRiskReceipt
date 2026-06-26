@@ -15,7 +15,9 @@ recipient to inspect every panel manually.
 ## source links
 
 - [[../sources/perp-receipt-review-packet]]
+- [[../sources/perp-configurable-recheck-thresholds]]
 - [[receipt-recheck-watchlist]]
+- [[configurable-recheck-thresholds]]
 - [[receipt-assistant-watchlist-citations]]
 - [[receipt-risk-driver-comparison]]
 - [[mark-price-context]]
@@ -29,6 +31,8 @@ recipient to inspect every panel manually.
 - Includes live recheck status, receipt change summary, driver-comparison
   headline metrics, recheck watchlist counts/items, assistant watchlist answer,
   assistant citations, and market-context rows.
+- Includes the active review threshold profile so copied markdown explains what
+  counted as a watchlist cue.
 - Limits watchlist and market-context rows to five items each for a readable
   first packet.
 - Renders a `Review packet` panel with copy-to-clipboard and read-only markdown.

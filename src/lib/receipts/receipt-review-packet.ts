@@ -71,6 +71,9 @@ export function buildReceiptReviewPacket(input: {
     `- counts: ${input.watchlist.high_count} high, ${input.watchlist.watch_count} watch, ${input.watchlist.info_count} info`,
     ...formatWatchlistItems(input.watchlist.items),
     "",
+    "## review thresholds",
+    ...formatReviewThresholds(input.watchlist),
+    "",
     "## assistant read",
     input.watchlistAssistantResponse.answer,
     "",
@@ -160,6 +163,28 @@ function formatWatchlistItems(items: receipt_recheck_watch_item[]) {
     `  - detail: ${item.detail}`,
     ...item.review_points.map((point) => `  - review: ${point}`),
   ]);
+}
+
+function formatReviewThresholds(watchlist: receipt_recheck_watchlist) {
+  const thresholds = watchlist.thresholds;
+
+  return [
+    `- thin listed buffer: ${formatPercentFromBps(thresholds.thin_liquidation_distance_bps)}`,
+    `- tight listed buffer: ${formatPercentFromBps(thresholds.tight_liquidation_distance_bps)}`,
+    `- adverse mark move: ${formatPlainNumber(thresholds.material_mark_move_percent)}%`,
+    `- driver score delta: ${formatPlainNumber(thresholds.material_driver_score_delta)} points`,
+    `- daily funding delta: ${formatUsd(thresholds.material_daily_funding_usd)}`,
+    `- 8h funding delta: ${formatPlainNumber(thresholds.material_funding_8h_bps)} bps`,
+    `- open-interest delta: ${formatUsd(thresholds.material_open_interest_delta_usd)}`,
+  ];
+}
+
+function formatPlainNumber(value: number) {
+  if (Number.isInteger(value)) {
+    return value.toFixed(0);
+  }
+
+  return value.toFixed(2);
 }
 
 function formatMetricMove(

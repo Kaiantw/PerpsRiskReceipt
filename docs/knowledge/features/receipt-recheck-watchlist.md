@@ -13,9 +13,11 @@ rank concrete review cues and show what deserves attention first.
 ## source links
 
 - [[../sources/perp-receipt-recheck-watchlist]]
+- [[../sources/perp-configurable-recheck-thresholds]]
 - [[receipt-risk-driver-comparison]]
 - [[receipt-assistant-market-context-fusion]]
 - [[mark-price-context]]
+- [[configurable-recheck-thresholds]]
 - [[redacted-market-watchlist]]
 
 ## implemented behavior
@@ -27,6 +29,8 @@ rank concrete review cues and show what deserves attention first.
   driver score, higher funding cost, material open-interest movement, and
   missing market-context rows.
 - Shows counts for total, high, watch, and info items.
+- Accepts local review thresholds for listed liquidation buffer, adverse mark
+  movement, driver-score movement, funding deltas, and open-interest movement.
 - Renders review points for each item without adding trade recommendations.
 - Reuses existing live recheck data and does not call a new endpoint.
 
@@ -40,5 +44,7 @@ rank concrete review cues and show what deserves attention first.
   inspect-first questions from these ranked items.
 - [[receipt-review-packet]] packages the top watchlist cues into a copyable
   markdown summary.
+- [[configurable-recheck-thresholds]] lets the reviewer tune what crosses the
+  watchlist threshold in the current review.
 - [[receipt-risk-driver-comparison]] and [[mark-price-context]] remain the
   underlying sources of truth.

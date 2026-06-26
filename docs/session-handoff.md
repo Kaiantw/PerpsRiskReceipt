@@ -35,61 +35,62 @@
 - Post-t9 full receipt recheck watchlist is complete.
 - Post-t9 receipt assistant watchlist citations is complete.
 - Post-t9 receipt review packet is complete.
+- Post-t9 configurable receipt review thresholds is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote tracking: `main` tracks `origin/main`.
-- Baseline before this slice: `2bac9ab`.
-- Current work adds a `Review packet` panel after local receipt live recheck.
-- The packet is deterministic markdown built from the saved receipt, hash verification state, live recheck comparison, receipt change summary, risk-driver comparison, recheck watchlist, assistant watchlist answer, assistant citations, and market context.
-- The packet includes a truncated account identifier and full snapshot hash.
-- The packet can be copied to clipboard and shown in a read-only textarea.
-- The packet is a communication summary; full portable receipt bundles remain the hash-recomputable cross-browser artifact.
-- No endpoint, dependency, data model, wallet/RPC flow, backend store, LLM call, access-control layer, encrypted share, or trading behavior was added.
+- Baseline before this slice: `4070cf5`.
+- Current work adds a `Review thresholds` panel after local receipt live recheck.
+- The active threshold values drive the full receipt recheck watchlist, receipt assistant context, and copyable review packet.
+- Tunable values are thin/tight listed liquidation buffer bps, adverse mark percent, driver-score delta, daily funding USD, 8h funding bps, and open-interest USD millions.
+- Threshold changes do not alter the saved receipt, snapshot hash, live Hyperliquid data, normalized data model, or risk model.
+- The review packet now includes a `## review thresholds` section so copied markdown preserves the sensitivity settings used for that review.
+- No endpoint, dependency, backend store, saved user setting, wallet/RPC flow, LLM call, access-control layer, encrypted share, or trading behavior was added.
 - A Next dev server was already running on `http://localhost:3000` for browser smoke verification.
 
 ## files changed
 
-- `src/lib/receipts/receipt-review-packet.ts`: new pure markdown packet builder.
-- `src/lib/receipts/receipt-review-packet.test.ts`: tests packet content, citations, no-advice wording, and full-bundle caveat.
-- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: builds the packet from live recheck context and renders `Review packet` with copy-to-clipboard.
-- `package.json`: adds the packet test to `npm test`.
-- `docs/knowledge/sources/perp-receipt-review-packet.md`: source-backed packet assumptions.
-- `docs/knowledge/features/receipt-review-packet.md`: implemented feature note.
+- `src/lib/receipts/receipt-recheck-watchlist.ts`: exported typed default thresholds, accepted optional custom thresholds, sanitized values, and returned active thresholds with the watchlist.
+- `src/lib/receipts/receipt-recheck-watchlist.test.ts`: tests default thresholds, custom threshold behavior, and threshold sanitization.
+- `src/lib/receipts/receipt-review-packet.ts`: adds active review thresholds to copied markdown.
+- `src/lib/receipts/receipt-review-packet.test.ts`: asserts the review-threshold markdown section.
+- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: renders `Review thresholds` controls and passes active thresholds into watchlist, assistant, and packet context.
+- `docs/knowledge/features/configurable-recheck-thresholds.md`: implemented feature note.
+- `docs/knowledge/sources/perp-configurable-recheck-thresholds.md`: source-backed product assumptions.
 - `docs/knowledge/index.md`: links the new feature/source notes.
-- `docs/knowledge/features/receipt-assistant-watchlist-citations.md`: links assistant watchlist answers to the packet.
-- `docs/knowledge/features/receipt-recheck-watchlist.md`: links watchlist cues to the packet.
-- `docs/source-notes.md`: documents packet sources and assumptions.
-- `docs/known-limitations.md`: documents packet limitations.
-- `README.md`: documents the review packet and updates the resume bullet.
-- `docs/demo-script.md`: adds the review packet walkthrough and updates the resume bullet.
+- `docs/knowledge/features/receipt-recheck-watchlist.md`: links the configurable threshold feature.
+- `docs/knowledge/features/receipt-review-packet.md`: documents packet threshold disclosure.
+- `docs/source-notes.md`: documents threshold sources and assumptions.
+- `docs/known-limitations.md`: records threshold limitations.
+- `README.md`: documents configurable thresholds and updates the resume bullet.
+- `docs/demo-script.md`: adds the threshold walkthrough and updates the resume bullet.
 - `docs/ai-build-log.md`: records this feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `node --test src/lib/receipts/receipt-review-packet.test.ts` passed: 2 tests, 2 passing.
-- `npm test` passed: 123 tests, 123 passing.
+- `node --test src/lib/receipts/receipt-recheck-watchlist.test.ts src/lib/receipts/receipt-review-packet.test.ts` passed: 8 tests, 8 passing.
+- `npm test` passed: 125 tests, 125 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm run build` passed and listed `/receipt/local/[id]` plus the existing API and receipt routes.
+- `npm run build` passed and listed `/receipt/local/[id]` plus existing receipt/API routes.
 - `git diff --check` passed.
-- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Review packet`, `Copy markdown`, markdown sections for `snapshot hash`, `recheck watchlist`, `assistant read`, `market context`, and the full-bundle caveat, clicked `Copy markdown`, confirmed `Review packet copied.`, read clipboard markdown containing `# Review packet for`, `receipt_recheck_watchlist.high_count`, `## limitations`, and confirmed zero browser console errors.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, clicked `Recheck live account`, confirmed `Review thresholds`, changed `Tight buffer bps` to `4000`, confirmed the review packet changed from `tight listed buffer: 10.00%` to `tight listed buffer: 40.00%`, and confirmed zero browser console errors against a live API recheck.
+- Controlled browser verification mocked the read-only snapshot response for the same imported receipt, changed `Tight buffer bps` to `4000`, and confirmed `Tight current listed liquidation buffer` appeared in both the watchlist and review packet with zero browser console errors.
 
 ## blockers
 
 - No hard blocker for this feature slice.
-- The review packet is a markdown communication summary, not a hash-recomputable full bundle.
-- It is not encrypted, access-controlled, or selectively disclosed.
-- It caps watchlist and market-context rows at five each for readability.
-- The packet includes a truncated account identifier and full snapshot hash, so users should still copy it intentionally.
-- The comparison uses listed liquidation price and normalized mark-price notional; it does not model Hyperliquid's exact liquidation formula, margin tiers, liquidity, cross-margin engine, or oracle-price funding settlement.
+- Configurable thresholds are local UI sensitivity settings only.
+- Thresholds are not saved, synced, protocol-official, or a strategy configuration system.
+- The comparison still uses listed liquidation price and normalized mark-price notional; it does not model Hyperliquid's exact liquidation formula, margin tiers, liquidity, cross-margin engine, or oracle-price funding settlement.
 - Live Hyperliquid data still depends on API availability and response shape.
 - Live receipts remain browser-local unless explicitly exported/imported.
 - EAS schema registration and attestation transactions are documented fallback steps only.
 
 ## exact next recommended action
 
-Add configurable review thresholds for watchlists and packets, so a trader can tune "thin buffer", "material funding", and "material open-interest" sensitivity without changing code.
+Add saved review presets or a compact "basic/strict/lenient" threshold mode only if the current numeric controls feel too dense in user review; otherwise move to the next highest-value receipt-sharing or market-context slice.

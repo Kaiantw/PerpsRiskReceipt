@@ -132,6 +132,13 @@ use this file for external protocol assumptions.
   - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
   - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
   - https://www.w3.org/TR/vc-data-model-2.0/
+- docs checked on 2026-06-26 for configurable receipt recheck thresholds:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://www.coinbase.com/learn/perpetual-futures/understanding-funding-rates-in-perpetual-futures
+  - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -258,6 +265,9 @@ use this file for external protocol assumptions.
 - receipt recheck watchlist assumptions:
   - the watchlist is a synthesis layer over already-loaded `receipt_risk_driver_comparison` and `market_context` rows.
   - it does not call a new endpoint and does not change the receipt data model.
+  - configurable thresholds are local review sensitivity settings only; they do not change the risk model, saved receipt, snapshot hash, live API, or normalized data.
+  - the active thresholds apply to the full local recheck watchlist and copied review packet.
+  - default thresholds are 500 bps thin listed buffer, 1000 bps tight listed buffer, 2 percent adverse mark move, 10 driver-score points, 1 USD daily funding delta, 1 bps 8h funding delta, and 50 million USD open-interest delta.
   - high-attention cues include account mismatch, position-state changes, at/through or thin current listed liquidation buffers, and adverse mark movement near a tight listed buffer.
   - watch cues include tight current listed liquidation buffers, adverse mark moves, materially higher driver score, and higher funding cost.
   - informational cues include lower driver score, material open-interest movement, and missing market-context rows.
@@ -267,6 +277,7 @@ use this file for external protocol assumptions.
   - the packet is deterministic markdown built from already-loaded local receipt recheck context.
   - it does not call a new endpoint, change the receipt model, or store packet state.
   - it includes a truncated account identifier, full snapshot hash, hash verification state, receipt change summary, risk-driver comparison, watchlist cues, assistant watchlist answer, assistant citations, and market-context rows.
+  - it includes the active review threshold profile so the copied markdown says what counted as meaningful movement.
   - the first version caps watchlist and market-context rows at five each for readability.
   - the packet is a communication summary only; a full portable receipt bundle remains required for another browser to recompute the snapshot hash.
 

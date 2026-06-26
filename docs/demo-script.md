@@ -80,12 +80,15 @@ Open `http://localhost:3000`.
    - Show `Risk drivers since receipt`.
    - Point out saved top driver versus current top driver, score delta, gross exposure delta, closest listed-buffer delta, daily funding delta, and the per-market driver table.
    - Explain that this answers what is valuable in the current market: whether the current account is still driven by the same risk, whether the buffer tightened or widened, and whether funding burden changed.
+   - Show `Review thresholds`.
+   - Point out that the reviewer can tune what counts as a thin/tight listed buffer, adverse mark move, driver-score delta, funding delta, or open-interest move for this review.
+   - Change `Tight buffer bps` and point out that the watchlist and review packet update without changing the receipt hash or live data.
    - Show `Recheck watchlist`.
    - Point out the high/watch/info counts and the ranked items for position changes, thin listed buffer, adverse mark movement, higher funding cost, driver-score movement, open-interest movement, or missing market context.
    - Show `Receipt risk assistant`.
    - Click `Review`, `Watchlist`, `Drivers`, `Funding`, and `Hash` to show cited answers from the receipt summary, ranked recheck watchlist, risk-driver comparison, live recheck, funding delta, and snapshot hash.
    - Ask `What should I inspect first?` and show that the answer cites `receipt_recheck_watchlist` item fields while preserving the no-trade-recommendation caveat.
-   - Show `Review packet`, click `Copy markdown`, and point out that it packages the hash, live recheck, watchlist, assistant read, driver comparison, and market context for quick review.
+   - Show `Review packet`, click `Copy markdown`, and point out that it packages the hash, live recheck, watchlist, active thresholds, assistant read, driver comparison, and market context for quick review.
    - Explain that the review packet is for communication; a full portable receipt bundle is still required when another browser needs to recompute the snapshot hash.
    - Click `Top market` or ask `Why is ETH-PERP the current risk driver?` to show a named-market driver drilldown with saved/current component scores plus mark, listed-buffer, funding, and open-interest context.
    - Ask `Should I increase leverage?` and show that it refuses trade recommendations while still explaining receipt signals.
@@ -100,4 +103,4 @@ Open `http://localhost:3000`.
 
 ## exact resume bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with full-recheck watchlists, assistant-cited watchlist priority, copyable review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with configurable full-recheck watchlists, assistant-cited watchlist priority, copyable review packets, market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

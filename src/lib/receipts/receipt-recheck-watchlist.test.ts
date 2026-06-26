@@ -8,7 +8,11 @@ import type {
   normalized_account_snapshot,
 } from "../perps/types.ts";
 import { normalizeAccountSnapshot } from "../risk/risk-engine.ts";
-import { buildReceiptRecheckWatchlist } from "./receipt-recheck-watchlist.ts";
+import {
+  buildReceiptRecheckWatchlist,
+  defaultReceiptRecheckWatchlistThresholds,
+  type receipt_recheck_watchlist_thresholds,
+} from "./receipt-recheck-watchlist.ts";
 import { compareReceiptRiskDrivers } from "./receipt-risk-driver-comparison.ts";
 import { compareSnapshots } from "./snapshot-comparison.ts";
 
@@ -43,6 +47,7 @@ function toSnapshotInput(
 function buildWatchlist(input: {
   receiptSnapshot: normalized_account_snapshot;
   currentSnapshot: normalized_account_snapshot;
+  thresholds?: Partial<receipt_recheck_watchlist_thresholds>;
 }) {
   const comparison = compareSnapshots({
     receiptSnapshot: input.receiptSnapshot,
@@ -55,6 +60,7 @@ function buildWatchlist(input: {
       savedSnapshot: input.receiptSnapshot,
       currentSnapshot: input.currentSnapshot,
     }),
+    thresholds: input.thresholds,
   });
 }
 
@@ -127,7 +133,50 @@ test("returns no watch items when receipt and live snapshot are unchanged", () =
 
   assert.equal(watchlist.label, "no_watch_items");
   assert.equal(watchlist.item_count, 0);
+  assert.deepEqual(
+    watchlist.thresholds,
+    defaultReceiptRecheckWatchlistThresholds,
+  );
   assert.match(watchlist.summary, /not protocol-official risk/i);
+});
+
+test("uses custom thresholds to tune current market review cues", () => {
+  const receiptSnapshot = loadFixtureAccount("demo-safe-eth-long");
+  const watchlist = buildWatchlist({
+    receiptSnapshot,
+    currentSnapshot: receiptSnapshot,
+    thresholds: {
+      tight_liquidation_distance_bps: 4_000,
+    },
+  });
+
+  assert.equal(watchlist.label, "watch_items_loaded");
+  assert.equal(watchlist.thresholds.tight_liquidation_distance_bps, 4_000);
+  assert.ok(
+    watchlist.items.some(
+      (item) =>
+        item.category === "liquidation_buffer" &&
+        item.severity === "watch" &&
+        item.title === "Tight current listed liquidation buffer",
+    ),
+  );
+});
+
+test("sanitizes custom thresholds before building watch items", () => {
+  const receiptSnapshot = loadFixtureAccount("demo-safe-eth-long");
+  const watchlist = buildWatchlist({
+    receiptSnapshot,
+    currentSnapshot: receiptSnapshot,
+    thresholds: {
+      material_open_interest_delta_usd: -1,
+      thin_liquidation_distance_bps: 1_500,
+      tight_liquidation_distance_bps: 500,
+    },
+  });
+
+  assert.equal(watchlist.thresholds.material_open_interest_delta_usd, 0);
+  assert.equal(watchlist.thresholds.thin_liquidation_distance_bps, 1_500);
+  assert.equal(watchlist.thresholds.tight_liquidation_distance_bps, 1_500);
 });
 
 test("surfaces missing market context without inventing mark or funding reads", () => {
