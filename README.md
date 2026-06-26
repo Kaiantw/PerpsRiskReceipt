@@ -24,7 +24,7 @@ The project is built as a one-day, fixture-first portfolio demo for serious onch
 - Receipt change summary that combines live recheck, market context, funding movement, position changes, and sampled account-value context into one quick read.
 - Receipt risk-driver comparison that shows whether the saved top driver, driver score, gross exposure, listed buffer, and funding burden changed after live recheck.
 - Recheck watchlist that ranks high/watch/info cues from full saved/current driver rows and market context after live recheck.
-- Receipt risk assistant that answers cited questions about a saved live receipt after recheck, including saved-vs-current risk-driver questions and named-market drilldowns with mark, funding, liquidation-distance, and open-interest context.
+- Receipt risk assistant that answers cited questions about a saved live receipt after recheck, including watchlist priority, saved-vs-current risk-driver questions, and named-market drilldowns with mark, funding, liquidation-distance, and open-interest context.
 - Receipt account-value context that shows whether a saved live receipt was near a sampled account peak, in drawdown, or materially different from latest sampled account value.
 - Market context since receipt: saved-vs-current mark price, liquidation direction, funding change, and open-interest change for live rechecks.
 - Guarded local risk assistant chat that explains the loaded snapshot and refuses trade recommendations.
@@ -91,7 +91,7 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - EAS support is a fallback payload and manual Sepolia flow, not an in-app wallet transaction.
 - The EAS payload hashes account/protocol identifiers instead of placing raw account identifiers onchain.
 - The risk assistant is local and deterministic in this build; it does not call an LLM API.
-- The receipt risk assistant is local and deterministic in this build; it answers only from receipt, hash, live recheck, risk-driver comparison rows, market-context rows, funding, and sampled account-value context.
+- The receipt risk assistant is local and deterministic in this build; it answers only from receipt, hash, live recheck, recheck watchlist, risk-driver comparison rows, market-context rows, funding, and sampled account-value context.
 - Position risk drivers are heuristic triage scores over listed liquidation buffer, notional exposure, positive funding burden, and unrealized loss.
 - Liquidation buffer ladder uses listed liquidation prices and does not compute exact Hyperliquid liquidation behavior.
 - Funding carry watch assumes current funding and notional stay unchanged and uses normalized mark-price notional as an estimate.
@@ -101,6 +101,7 @@ Labels are `low`, `medium`, `high`, and `critical`. The score is for UX review a
 - Receipt change summary is a heuristic review aid and does not recommend position changes.
 - Receipt risk-driver comparison reuses the heuristic dashboard driver score for saved and current snapshots; it is not protocol-official attribution.
 - Receipt recheck watchlist is heuristic review triage over saved/current local fields; it is not protocol-official risk attribution or a recommendation.
+- Receipt assistant watchlist answers cite ranked watchlist items only; they are inspect-first explanations, not trading instructions.
 - Portable receipt bundles have two modes: redacted shares for minimized review and full-snapshot exports for hash recomputation/import.
 - Redacted receipt shares hide raw account and exact position values, preserve the original snapshot hash as a reference, and disclose only bucketed summary values plus market-level review cues.
 - Redacted market context uses public Hyperliquid market metadata for disclosed markets and does not send a raw account address.
@@ -160,6 +161,7 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 - Receipt account-value context uses a nearest sampled point, not an exact historical account audit.
 - Receipt change summary is heuristic and descriptive; it is not a trading recommendation.
 - Receipt risk assistant responses are deterministic explanations of local receipt/recheck fields, not financial advice or LLM reasoning.
+- Receipt assistant watchlist answers cite the heuristic recheck watchlist and do not decide what a trader should do next.
 - Receipt assistant driver answers cite the heuristic saved-vs-live risk-driver comparison and do not add protocol-official attribution.
 - Receipt assistant market drilldowns cite local per-market driver rows plus available market-context rows, but they still do not model exact protocol margin tiers or live order-book liquidity.
 - Live receipt recheck compares the saved receipt to a fresh snapshot but is not an exact liquidation monitor.
@@ -183,4 +185,4 @@ See `docs/known-limitations.md` for the current list. The major limitations are:
 
 ## Resume Bullet
 
-Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with full-recheck watchlists, assistant citations and market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.
+Built a fixture-first Perp Risk Receipt app in Next.js/TypeScript with tested risk math, live account-value history, position risk drivers, saved-vs-live receipt risk-driver comparison with full-recheck watchlists, assistant-cited watchlist priority and market-context drilldowns, portable full/redacted receipt bundles, redacted-share market context, 24h trend history and review watchlist, receipt change summaries, receipt account-history context, receipt risk assistant, liquidation buffer ladder, funding carry watch, receipt live rechecks with market context, scenario simulation, deterministic snapshot hashing, guarded risk-assistant chat, read-only Hyperliquid lookup, and documented EAS Sepolia attestation fallback.

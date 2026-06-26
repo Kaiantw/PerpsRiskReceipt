@@ -27,6 +27,7 @@
 - receipt account-value context uses the nearest sampled Hyperliquid portfolio point, so the visible sample gap matters for interpretation.
 - receipt change summary is heuristic and prioritizes review cues; it is not a trading recommendation or exact risk monitor.
 - receipt risk assistant is deterministic local explanation logic over visible receipt/recheck fields, not a connected LLM or financial adviser.
+- receipt assistant watchlist answers cite heuristic recheck watchlist items and do not decide what a trader should do next.
 - receipt risk assistant driver answers inherit the heuristic receipt risk-driver comparison limits and do not inspect hidden fields beyond the local receipt context.
 - receipt risk assistant market drilldowns cite local per-market driver rows plus available market-context rows; they still do not combine exact protocol margin tiers, live order-book liquidity, or hidden redacted-share fields.
 - market context requires comparable saved/current positions and treats open interest as descriptive context, not a standalone direction signal.

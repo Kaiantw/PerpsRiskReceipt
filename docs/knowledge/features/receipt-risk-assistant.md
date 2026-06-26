@@ -24,15 +24,16 @@ than giving uncited trading advice.
 - [[receipt-assistant-driver-citations]]
 - [[receipt-assistant-market-driver-drilldowns]]
 - [[receipt-assistant-market-context-fusion]]
+- [[receipt-assistant-watchlist-citations]]
 
 ## implemented behavior
 
 - Shows after `Recheck live account` on local Hyperliquid receipt pages.
 - Opens with a receipt-specific summary that cites the receipt change summary,
   saved risk score, live recheck status, and snapshot hash.
-- Quick prompts cover review points, market context, risk drivers,
-  named top-market drilldowns, liquidation distance, funding carry, receipt hash
-  scope, and account-value history when loaded.
+- Quick prompts cover review points, market context, risk drivers, recheck
+  watchlist priority, named top-market drilldowns, liquidation distance, funding
+  carry, receipt hash scope, and account-value history when loaded.
 - Free-form questions route through deterministic local logic.
 - Trade-intent questions are refused while still explaining receipt signals.
 - Responses cite local evidence keys such as `receipt_change_summary`,
@@ -50,6 +51,8 @@ than giving uncited trading advice.
   individual market rows.
 - [[receipt-assistant-market-context-fusion]] merges individual market rows with
   the matching mark, funding, listed-buffer, and open-interest context.
+- [[receipt-assistant-watchlist-citations]] makes [[receipt-recheck-watchlist]]
+  a direct citation source for inspect-first receipt questions.
 - [[account-value-timeline]] could later add richer account-history citations if
   the app imports more complete portfolio history.
 - [[portable-receipt-bundle]] lets the same assistant workflow apply after a

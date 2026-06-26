@@ -763,3 +763,25 @@ Review the thresholds: thin current listed liquidation buffer `<= 500` bps, tigh
 - Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Recheck watchlist`, `high attention`, `Position state changed since receipt`, the no-trade-recommendation caveat, `Risk drivers since receipt`, `Receipt risk assistant`, and zero browser console errors.
 ### remaining risks:
 The watchlist is heuristic local triage over saved/current receipt fields. It cannot prove exact liquidation state, exact funding settlement, order-book liquidity, hidden redacted-share fields, or what a trader should do next. Open interest remains informational participation context only.
+
+### task id: post-t9 receipt assistant watchlist citations
+### codex mode:
+product iteration + implementation
+### delegated work:
+Connected the receipt risk assistant to the full local `Recheck watchlist` so inspect-first questions can cite ranked watchlist items directly.
+### output accepted:
+Added optional `recheckWatchlist` context to `src/lib/assistant/receipt-risk-assistant.ts`, a deterministic watchlist answer path, a `Watchlist` quick prompt, and routing for watchlist/priority/attention/inspect-first questions. Watchlist answers include high/watch/info counts, the top three ranked items, review points, and citations for `receipt_recheck_watchlist` headline, summary, counts, item severity, item detail, and item review points. Passed the built watchlist from the local live recheck panel into the assistant context. Added focused tests for inspect-first watchlist answers, no-ranked-item answers, and the Watchlist quick prompt. Updated source notes, limitations, knowledge graph, README, demo script, and this handoff.
+### output rejected or changed:
+No LLM API, new endpoint, dependency, data model, trading/exchange endpoint, wallet/RPC flow, backend store, alert system, or protocol-official risk model was added. Trade-intent refusal still runs before the watchlist route.
+### human review notes:
+Review the keyword routing for `priority`, `attention`, `urgent`, `inspect first`, and `review first`, and confirm whether the assistant should show more or fewer than the top three watchlist items in dense accounts.
+### tests/checks run:
+- `node --test src/lib/assistant/receipt-risk-assistant.test.ts` passed: 14 tests, 14 passing.
+- `npm test` passed: 121 tests, 121 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]` plus the existing API and receipt routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Recheck watchlist`, `high attention`, `Position state changed since receipt`, `Receipt risk assistant`, and the `Watchlist` quick prompt, clicked `Watchlist`, confirmed `High-attention receipt recheck cues are available.`, `Counts:`, `receipt_recheck_watchlist.high_count`, `receipt_recheck_watchlist.items.`, the no-trade-recommendation caveat, and zero browser console errors.
+### remaining risks:
+Assistant watchlist answers inherit the heuristic watchlist limits. They rank inspect-first review cues from local saved/current fields, but they are not an LLM, not Hyperliquid's official risk engine, not exact liquidation or funding settlement monitoring, and not advice about what a trader should do next.

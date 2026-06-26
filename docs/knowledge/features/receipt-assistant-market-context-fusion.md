@@ -42,3 +42,5 @@ distance, funding movement, daily funding, and open-interest movement.
   cues" idea for redacted shares without a raw account address.
 - [[receipt-recheck-watchlist]] applies that review-cue idea to full local
   receipts after live recheck.
+- [[receipt-assistant-watchlist-citations]] uses the ranked watchlist as an
+  inspect-first entry point before named-market drilldowns.

@@ -119,6 +119,12 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
   - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
   - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
+- docs checked on 2026-06-26 for receipt assistant watchlist citations:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -194,6 +200,8 @@ use this file for external protocol assumptions.
   - named-market driver answers also cite the matching `market_context.positions` row when available, including mark move, listed liquidation-distance move, 8-hour funding move, daily funding move, and open-interest move.
   - if the named-market driver row has no matching market-context row, the assistant must say that context is unavailable rather than implying it inspected mark/funding/open-interest movement.
   - when a named market changes side or size, the assistant must say the row is historical rather than directly comparable as the same risk object.
+  - watchlist-priority answers cite `receipt_recheck_watchlist` fields when the local live recheck has built a watchlist.
+  - the assistant should describe watchlist items as inspect-first review cues, not trading instructions.
 - portable receipt bundle assumptions:
   - the bundle is a user-controlled JSON export/import path; it does not call new Hyperliquid endpoints.
   - the bundle contains the full `risk_receipt` snapshot so another browser can recompute the same snapshot hash and render the same local receipt page.

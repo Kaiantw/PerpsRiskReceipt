@@ -17,6 +17,10 @@ import type {
   receipt_risk_driver_market_change,
 } from "../receipts/receipt-risk-driver-comparison.ts";
 import type {
+  receipt_recheck_watch_item,
+  receipt_recheck_watchlist,
+} from "../receipts/receipt-recheck-watchlist.ts";
+import type {
   position_risk_driver,
   position_risk_driver_category,
 } from "../risk/position-risk-drivers.ts";
@@ -31,6 +35,7 @@ export type receipt_risk_assistant_context = {
   marketContext: market_context;
   changeSummary: receipt_change_summary;
   riskDriverComparison?: receipt_risk_driver_comparison | null;
+  recheckWatchlist?: receipt_recheck_watchlist | null;
   accountValueContext?: receipt_account_value_context | null;
   hashVerified?: boolean;
 };
@@ -187,6 +192,12 @@ function formatMarketContextRow(position: market_context_position | null) {
   ].join(" ");
 }
 
+function formatWatchlistItem(item: receipt_recheck_watch_item) {
+  const reviewPoints = item.review_points.join(" ");
+
+  return `${item.severity.toUpperCase()} ${item.market}: ${item.title}. ${item.detail} Review: ${reviewPoints}`;
+}
+
 function getRequestedMarketChange(input: {
   normalizedQuestion: string;
   riskDriverComparison: receipt_risk_driver_comparison | null;
@@ -339,6 +350,48 @@ function buildDriverAnswer(
       "receipt_risk_driver_comparison.closest_liquidation_distance_delta_bps",
       "receipt_risk_driver_comparison.daily_funding_delta_usd",
       "receipt_risk_driver_comparison.review_points",
+    ],
+  };
+}
+
+function buildWatchlistAnswer(
+  context: receipt_risk_assistant_context,
+): receipt_risk_assistant_response {
+  const watchlist = context.recheckWatchlist ?? null;
+
+  if (!watchlist) {
+    return {
+      answer:
+        "The recheck watchlist is not loaded in this assistant context. Run a live recheck to rank saved/current receipt review cues.",
+      citations: ["receipt_recheck_watchlist"],
+    };
+  }
+
+  const topItems = watchlist.items.slice(0, 3);
+  const topItemSummary =
+    topItems.length === 0
+      ? "No ranked watchlist items crossed the current app thresholds."
+      : topItems.map(formatWatchlistItem).join(" ");
+
+  return {
+    answer: [
+      watchlist.headline,
+      watchlist.summary,
+      `Counts: ${watchlist.high_count} high, ${watchlist.watch_count} watch, ${watchlist.info_count} info.`,
+      topItemSummary,
+      "Use this to decide what to inspect first on the receipt page; it is not a trading recommendation.",
+    ].join(" "),
+    citations: [
+      "receipt_recheck_watchlist.headline",
+      "receipt_recheck_watchlist.summary",
+      "receipt_recheck_watchlist.high_count",
+      "receipt_recheck_watchlist.watch_count",
+      "receipt_recheck_watchlist.info_count",
+      ...topItems.flatMap((item) => [
+        `receipt_recheck_watchlist.items.${item.id}.severity`,
+        `receipt_recheck_watchlist.items.${item.id}.detail`,
+        `receipt_recheck_watchlist.items.${item.id}.review_points`,
+      ]),
     ],
   };
 }
@@ -562,6 +615,22 @@ export function answerReceiptRiskQuestion(input: {
 
   if (
     includesAny(normalizedQuestion, [
+      "watchlist",
+      "inspect first",
+      "review first",
+      "look at first",
+      "focus first",
+      "priority",
+      "prioritize",
+      "attention",
+      "urgent",
+    ])
+  ) {
+    return buildWatchlistAnswer(input.context);
+  }
+
+  if (
+    includesAny(normalizedQuestion, [
       "driver",
       "drivers",
       "top risk",
@@ -637,6 +706,7 @@ export function getReceiptRiskAssistantSuggestions(
 ): receipt_risk_assistant_suggestion[] {
   const currentTopDriverMarket =
     context.riskDriverComparison?.current_top_driver_market ?? null;
+  const hasRecheckWatchlist = Boolean(context.recheckWatchlist);
   const suggestions = [
     {
       id: "review",
@@ -653,6 +723,15 @@ export function getReceiptRiskAssistantSuggestions(
       label: "Drivers",
       question: "Which risk drivers changed since the receipt?",
     },
+    ...(hasRecheckWatchlist
+      ? [
+          {
+            id: "watchlist",
+            label: "Watchlist",
+            question: "What should I inspect first in the recheck watchlist?",
+          },
+        ]
+      : []),
     ...(currentTopDriverMarket
       ? [
           {

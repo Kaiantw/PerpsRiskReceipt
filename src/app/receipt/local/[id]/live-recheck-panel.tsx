@@ -365,6 +365,7 @@ function LiveRecheckResult({
           marketContext,
           changeSummary,
           riskDriverComparison,
+          recheckWatchlist,
           accountValueContext: receiptAccountValueContext,
           hashVerified,
         }}

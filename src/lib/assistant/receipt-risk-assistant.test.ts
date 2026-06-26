@@ -9,6 +9,7 @@ import type { normalized_account_snapshot } from "../perps/types.ts";
 import { createRiskReceipt } from "../receipts/receipt.ts";
 import { buildReceiptChangeSummary } from "../receipts/receipt-change-summary.ts";
 import { compareReceiptRiskDrivers } from "../receipts/receipt-risk-driver-comparison.ts";
+import { buildReceiptRecheckWatchlist } from "../receipts/receipt-recheck-watchlist.ts";
 import { compareSnapshots } from "../receipts/snapshot-comparison.ts";
 import {
   answerReceiptRiskQuestion,
@@ -27,6 +28,10 @@ async function buildAssistantContext(input?: {
   const currentSnapshot = input?.currentSnapshot ?? receiptSnapshot;
   const comparison = compareSnapshots({ receiptSnapshot, currentSnapshot });
   const marketContext = buildMarketContext(comparison);
+  const riskDriverComparison = compareReceiptRiskDrivers({
+    savedSnapshot: receiptSnapshot,
+    currentSnapshot,
+  });
   const accountValueContext = input?.includeAccountHistory
     ? buildReceiptAccountValueContext({
         receipt_data_time_iso: receiptSnapshot.data_time_iso,
@@ -55,9 +60,10 @@ async function buildAssistantContext(input?: {
     marketContext,
     accountValueContext,
     hashVerified: input?.hashVerified ?? true,
-    riskDriverComparison: compareReceiptRiskDrivers({
-      savedSnapshot: receiptSnapshot,
-      currentSnapshot,
+    riskDriverComparison,
+    recheckWatchlist: buildReceiptRecheckWatchlist({
+      marketContext,
+      riskDriverComparison,
     }),
     changeSummary: buildReceiptChangeSummary({
       comparison,
@@ -213,6 +219,56 @@ test("answers risk-driver questions from the receipt driver comparison", async (
   );
 });
 
+test("answers inspect-first questions from the recheck watchlist", async () => {
+  const receiptSnapshot = loadFixtureAccount("demo-safe-eth-long");
+  const currentSnapshot = {
+    ...receiptSnapshot,
+    positions: receiptSnapshot.positions.map((position) => ({
+      ...position,
+      mark_price_usd: 2_200,
+      funding_8h_bps_user_perspective:
+        position.funding_8h_bps_user_perspective + 8,
+      open_interest_usd: (position.open_interest_usd ?? 0) + 100_000_000,
+    })),
+  } satisfies normalized_account_snapshot;
+  const context = await buildAssistantContext({
+    receiptSnapshot,
+    currentSnapshot,
+  });
+  const response = answerReceiptRiskQuestion({
+    context,
+    question: "What should I inspect first?",
+  });
+
+  assert.match(response.answer, /High-attention receipt recheck cues/i);
+  assert.match(response.answer, /Counts:/);
+  assert.match(response.answer, /ETH-PERP/);
+  assert.match(response.answer, /Review:/);
+  assert.match(response.answer, /not a trading recommendation/i);
+  assert.ok(
+    response.citations.includes("receipt_recheck_watchlist.high_count"),
+  );
+  assert.ok(
+    response.citations.some((citation) =>
+      citation.startsWith("receipt_recheck_watchlist.items."),
+    ),
+  );
+});
+
+test("explains when the watchlist has no ranked items", async () => {
+  const context = await buildAssistantContext();
+  const response = answerReceiptRiskQuestion({
+    context,
+    question: "Show the recheck watchlist priority",
+  });
+
+  assert.match(response.answer, /No ranked watchlist items/);
+  assert.match(response.answer, /not a trading recommendation/i);
+  assert.ok(
+    response.citations.includes("receipt_recheck_watchlist.summary"),
+  );
+});
+
 test("answers market-specific driver drilldown questions", async () => {
   const context = await buildAssistantContext();
   const response = answerReceiptRiskQuestion({
@@ -284,6 +340,10 @@ test("suggestions include account history only when context exists", async () =>
 
   assert.equal(
     withoutHistory.some((suggestion) => suggestion.id === "drivers"),
+    true,
+  );
+  assert.equal(
+    withoutHistory.some((suggestion) => suggestion.id === "watchlist"),
     true,
   );
   assert.equal(
