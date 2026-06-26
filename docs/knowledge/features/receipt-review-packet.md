@@ -38,6 +38,8 @@ recipient to inspect every panel manually.
   counted as a watchlist cue.
 - Includes loaded volatility-buffer context when the reviewer has fetched public
   24h market history on the receipt page.
+- Includes compact local recheck-history trend context when saved browser-local
+  history rows exist.
 - Limits watchlist and market-context rows to five items each for a readable
   first packet.
 - Renders a `Review packet` panel with copy-to-clipboard and read-only markdown.
@@ -54,4 +56,6 @@ recipient to inspect every panel manually.
 - [[receipt-market-regime]] supplies the compact current-environment read.
 - [[receipt-market-regime-drilldown]] supplies the row-level explanation for the
   account-level regime label.
+- [[receipt-review-packet-history-summary]] adds the latest-versus-oldest local
+  recheck trend to the packet.
 - [[portable-receipt-bundle]] remains the full verification/export artifact.

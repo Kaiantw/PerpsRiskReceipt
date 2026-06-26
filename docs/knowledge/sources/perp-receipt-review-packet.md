@@ -8,6 +8,8 @@
 - Coinbase liquidation-risk guide: https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
 - CME Group open interest primer: https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
 - W3C data minimization: https://www.w3.org/TR/vc-data-model-2.0/
+- Binance Academy trading journal guide: https://www.binance.com/en/academy/articles/what-is-a-trading-journal-and-how-to-use-one
+- eCFR designated contract market recordkeeping/risk controls: https://www.ecfr.gov/current/title-17/chapter-I/part-38
 
 ## takeaways
 
@@ -20,10 +22,13 @@
   packet is still user-controlled disclosure and should be copied intentionally.
 - Watchlist and market-context rows should be capped so the first version stays
   readable for recruiter or teammate review.
+- Local recheck-history trends belong in the packet as compact reflection
+  context, not as raw history rows or a full account journal.
 
 ## linked feature ideas
 
 - [[../features/receipt-review-packet]]
+- [[../features/receipt-review-packet-history-summary]]
 - [[../features/receipt-recheck-watchlist]]
 - [[../features/receipt-assistant-watchlist-citations]]
 - [[../features/portable-receipt-bundle]]

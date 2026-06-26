@@ -30,6 +30,7 @@
 - configurable recheck thresholds are local UI sensitivity settings and are not saved, synced, or protocol-official.
 - receipt volatility buffer uses public 24-hour candle history and listed liquidation distance only; it is not exact liquidation monitoring, order-book depth analysis, a forecast, or advice.
 - receipt review packet is a markdown communication summary, not a full private snapshot, encrypted share, access-controlled artifact, or hash-recomputable portable bundle.
+- receipt review packet local-history context is a compact trend summary only; it does not export raw history rows, sync history, or prove exact account-history state.
 - receipt account-value context uses the nearest sampled Hyperliquid portfolio point, so the visible sample gap matters for interpretation.
 - receipt change summary is heuristic and prioritizes review cues; it is not a trading recommendation or exact risk monitor.
 - receipt risk assistant is deterministic local explanation logic over visible receipt/recheck fields, not a connected LLM or financial adviser.

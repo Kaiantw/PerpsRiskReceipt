@@ -42,60 +42,57 @@
 - Post-t9 receipt market regime drilldown is complete.
 - Post-t9 local receipt recheck history is complete.
 - Post-t9 receipt assistant recheck-history answer is complete.
+- Post-t9 receipt review packet local-history summary is complete.
 
 ## current repo state
 
 - Repository path: `/Users/kaia/src/PerpsRiskReceipt`.
 - Branch: `main`.
 - Remote tracking: `main` tracks `origin/main`.
-- Baseline before this slice: `5e911de`.
-- Current work adds a history-aware receipt assistant answer for local Hyperliquid receipt recheck history.
-- `src/lib/receipts/receipt-recheck-history.ts` now derives a compact trend summary from saved local rows: no history, single check, risk higher, risk lower, or risk unchanged.
-- The trend compares latest versus oldest saved risk score, latest/oldest risk labels, latest/oldest regime labels, most repeated focus market, latest watchlist counts, and how many rows included loaded 24h volatility context.
-- The local receipt page shows the same trend headline and summary inside `Local recheck history`.
-- The receipt assistant receives the trend summary, exposes a `Rechecks` quick prompt when history exists, and answers local-history questions with `receipt_recheck_history.*` citations.
-- Explicit local/recheck-history questions are routed separately from sampled account-value history questions.
-- No saved receipt, snapshot hash, normalized snapshot type, live Hyperliquid endpoint, risk formula, EAS flow, backend store, LLM API, dependency, wallet/RPC flow, trading endpoint, alerting system, or full-snapshot archive was added.
+- Baseline before this slice: `2094c33`.
+- Current work adds compact browser-local recheck-history trend context to the copyable receipt review packet.
+- `src/lib/receipts/receipt-review-packet.ts` now accepts an optional recheck-history summary and renders a `local recheck history` markdown section when saved browser-local rows exist.
+- The packet section includes trend label, headline, compact summary, saved-check count, latest/oldest risk, risk-score delta, regime movement, repeated focus market, latest watchlist counts, volatility-loaded coverage, capped review points, and a local-only privacy note.
+- `src/app/receipt/local/[id]/live-recheck-panel.tsx` now passes the current browser-local history summary into the packet builder.
+- The packet does not export raw local history rows, raw history ids, full private snapshots, or any new hash-changing receipt state.
+- No snapshot hash, normalized snapshot type, live Hyperliquid endpoint, risk formula, EAS flow, backend store, LLM API, dependency, wallet/RPC flow, trading endpoint, alerting system, raw-history export, or full-snapshot archive was added.
 
 ## files changed
 
-- `src/lib/receipts/receipt-recheck-history.ts`: added compact history trend summary types and builder.
-- `src/lib/receipts/receipt-recheck-history.test.ts`: added empty, single-row, and multi-row trend tests.
-- `src/lib/assistant/receipt-risk-assistant.ts`: added optional recheck-history summary context, answer builder, routing, citations, and `Rechecks` suggestion.
-- `src/lib/assistant/receipt-risk-assistant.test.ts`: added local-history answer, empty-history answer, and suggestion coverage.
-- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: passes the history summary into the assistant and renders the trend summary in the history panel.
-- `docs/knowledge/features/receipt-assistant-recheck-history.md`: new implemented feature note.
-- `docs/knowledge/sources/perp-receipt-assistant-recheck-history.md`: new source-backed assumptions note.
-- `docs/knowledge/features/receipt-recheck-history.md`: links the new assistant-history feature.
-- `docs/knowledge/sources/perp-receipt-recheck-history.md`: links the new assistant-history source/feature.
-- `docs/knowledge/index.md`: links the new feature/source and updates the related backlog.
-- `docs/source-notes.md`: records sources and assumptions for assistant recheck-history answers.
-- `docs/known-limitations.md`: records compact local-history assistant limits.
-- `README.md`: documents the new history-aware assistant read.
-- `docs/demo-script.md`: adds the `Rechecks` assistant prompt to the walkthrough and resume bullet.
+- `src/lib/receipts/receipt-review-packet.ts`: added optional local recheck-history summary rendering in the markdown packet.
+- `src/lib/receipts/receipt-review-packet.test.ts`: added packet coverage for compact local-history inclusion and raw row-id exclusion.
+- `src/app/receipt/local/[id]/live-recheck-panel.tsx`: passes the local recheck-history summary into the packet builder.
+- `docs/knowledge/features/receipt-review-packet-history-summary.md`: new implemented feature note.
+- `docs/knowledge/sources/perp-receipt-review-packet-history-summary.md`: new source-backed assumptions note.
+- `docs/knowledge/features/receipt-review-packet.md`: links the new packet-history feature/source.
+- `docs/knowledge/sources/perp-receipt-review-packet.md`: records source-backed packet-history assumptions.
+- `docs/knowledge/index.md`: links the new feature/source and updates the related idea graph.
+- `docs/source-notes.md`: records sources and assumptions for the review packet local-history section.
+- `docs/known-limitations.md`: records compact packet-history limits.
+- `README.md`: documents the packet's local-history trend context.
+- `docs/demo-script.md`: adds the packet local-history trend to the walkthrough and resume bullet.
 - `docs/ai-build-log.md`: records this feature slice.
 - `docs/session-handoff.md`: this handoff.
 
 ## tests/checks run
 
-- `node --test src/lib/receipts/receipt-recheck-history.test.ts src/lib/assistant/receipt-risk-assistant.test.ts` passed: 24 tests, 24 passing.
-- `npm test` passed: 148 tests, 148 passing.
+- `npm test` passed: 149 tests, 149 passing.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
 - `npm run build` passed and listed `/receipt/local/[id]`, `/receipt/import`, `/api/hyperliquid/market-history`, and the existing receipt/API routes.
 - `git diff --check` passed.
-- Browser verification used `http://localhost:3000/receipt/import`, imported a generated full portable Hyperliquid-shaped bundle for `/receipt/local/rr_78b061a0af37c810`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `One local recheck is saved.` and the `Rechecks` assistant prompt, clicked `Recheck live account` again, confirmed `Local recheck risk score is unchanged across 2 saved checks.`, `Saved checks 2`, repeated `ETH-PERP` focus, local/no-advice caveats, clicked `Rechecks`, confirmed the answer included `Risk-score delta: 0.`, `receipt_recheck_history.risk_score_delta`, `receipt_recheck_history.volatility_loaded_count`, no-alert/no-trade-recommendation language, and zero browser console errors.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a generated full portable Hyperliquid-shaped bundle for `/receipt/local/rr_78b061a0af37c810`, confirmed `Hash verified`, cleared existing local history, clicked `Recheck live account` twice, confirmed `Local recheck risk score is unchanged across 2 saved checks.`, confirmed the review packet contained `## local recheck history`, `trend: risk unchanged`, `saved checks: 2`, `risk-score delta: 0`, and the compact browser-local note, clicked `Copy markdown`, confirmed the clipboard contained the same history fields, confirmed raw test ids were not copied, and saw zero browser console errors.
 
 ## blockers
 
 - No hard blocker for this feature slice.
-- Local recheck-history assistant answers are compact browser-local review context only.
-- They are not synced, exported, encrypted, a full private-snapshot archive, a precise account-history import, a live alert feed, exact liquidation monitoring, protocol-official risk attribution, or trading advice.
+- Review packet local-history context is compact browser-local review context only.
+- It is not synced, encrypted, a raw history export, a full private-snapshot archive, a precise account-history import, a live alert feed, exact liquidation monitoring, protocol-official risk attribution, or trading advice.
 - Live Hyperliquid reads still depend on API availability and response-shape stability.
 - Live receipts remain browser-local unless explicitly exported/imported.
 - EAS schema registration and attestation transactions are documented fallback steps only.
-- The local history trend does not yet feed the copyable review packet or a separate export.
+- The review packet still requires a full local receipt page context; redacted shares do not yet have a public-only packet mode.
 
 ## exact next recommended action
 
-Add an optional local-history section to the copyable receipt review packet so a reviewer can share the latest-versus-oldest local recheck trend without exporting full history rows or changing the saved receipt hash.
+Add a redacted/public review packet mode for redacted receipt shares using public market context, disclosed buckets, trend/watchlist context, and explicit hash-reference-only caveats so sharing can happen without exposing the full snapshot.

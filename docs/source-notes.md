@@ -132,6 +132,12 @@ use this file for external protocol assumptions.
   - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
   - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
   - https://www.w3.org/TR/vc-data-model-2.0/
+- docs checked on 2026-06-26 for receipt review packet local-history section:
+  - https://www.binance.com/en/academy/articles/what-is-a-trading-journal-and-how-to-use-one
+  - https://www.ecfr.gov/current/title-17/chapter-I/part-38
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://www.cmegroup.com/education/courses/things-to-know-before-trading-cme-futures/position-and-risk-management
+  - https://metamask.io/news/open-interest-perps-explained
 - docs checked on 2026-06-26 for configurable receipt recheck thresholds:
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
@@ -322,6 +328,9 @@ use this file for external protocol assumptions.
   - it includes the active review threshold profile so the copied markdown says what counted as meaningful movement.
   - it includes market-regime context after live recheck and volatility-buffer context only after the reviewer loads public 24h market history on the receipt page.
   - it includes per-market regime drilldown rows after live recheck so the account-level regime label has row-level evidence.
+  - it includes compact local recheck-history trend context when browser-local history rows exist.
+  - the local-history packet section exports the summary only: saved-check count, latest/oldest risk, risk-score delta, regime movement, repeated focus market, latest watchlist counts, volatility-loaded coverage, and capped review points.
+  - it does not export raw local history rows, full private snapshots, or a synced account journal.
   - the first version caps watchlist and market-context rows at five each for readability.
   - the packet is a communication summary only; a full portable receipt bundle remains required for another browser to recompute the snapshot hash.
 - receipt volatility buffer assumptions:

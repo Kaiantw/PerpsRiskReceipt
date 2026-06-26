@@ -575,6 +575,7 @@ function LiveRecheckResult({
     riskDriverComparison,
     marketRegime,
     marketRegimeDrilldown,
+    recheckHistorySummary,
     volatilityBuffer,
     watchlist: recheckWatchlist,
     watchlistAssistantResponse,

@@ -962,3 +962,24 @@ Review the trend wording for non-trader clarity and whether the `Rechecks` promp
 - Browser verification imported a generated full portable Hyperliquid-shaped bundle for `/receipt/local/rr_78b061a0af37c810`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `One local recheck is saved.` and the `Rechecks` assistant prompt, clicked `Recheck live account` again, confirmed `Local recheck risk score is unchanged across 2 saved checks.`, `Saved checks 2`, repeated `ETH-PERP` focus, local/no-advice caveats, clicked `Rechecks`, confirmed the answer included `Risk-score delta: 0.`, `receipt_recheck_history.risk_score_delta`, `receipt_recheck_history.volatility_loaded_count`, no-alert/no-trade-recommendation language, and zero browser console errors.
 ### remaining risks:
 Assistant recheck-history answers inherit the local-history limits. They are browser-local, compact, capped, not synced, not exported, not full-snapshot archives, not precise account history, not live alerts, not protocol-official risk attribution, and not advice about what a trader should do next.
+
+### task id: post-t9 receipt review packet local-history summary
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added the compact browser-local receipt recheck-history trend to the copyable review packet so repeated live checks can be shared as a bounded latest-versus-oldest summary without exporting raw local history rows or full private snapshots.
+### output accepted:
+`buildReceiptReviewPacket` now accepts an optional `recheckHistorySummary` and renders a `local recheck history` markdown section when saved local rows exist. The section includes trend label, headline, summary, saved-check count, latest and oldest risk score, risk-score delta, regime movement, repeated focus market, latest watchlist counts, volatility-loaded coverage, capped review points, and an explicit compact/local-only privacy note. The local receipt page passes the current recheck-history summary into the packet builder. Packet tests cover inclusion of the compact summary and exclusion of raw row ids. README, demo script, source notes, known limitations, and the knowledge graph now document the feature and its source-backed assumptions.
+### output rejected or changed:
+No new endpoint, dependency, backend sync, database, export format, LLM API, wallet/RPC flow, trading/exchange endpoint, alert feed, raw-history export, full private-snapshot export, exact Hyperliquid liquidation formula, or protocol-official risk claim was added. A small formatter indentation slip was fixed before verification.
+### human review notes:
+Review whether the packet should include the local-history section after one saved row or only after two saved checks. Review whether the current section is too verbose for copy/paste sharing. Review whether a later redacted/public packet mode should include a reduced version of this trend without requiring a full portable receipt bundle.
+### tests/checks run:
+- `npm test` passed: 149 tests, 149 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]`, `/receipt/import`, `/api/hyperliquid/market-history`, and the existing receipt/API routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a generated full portable Hyperliquid-shaped bundle for `/receipt/local/rr_78b061a0af37c810`, confirmed `Hash verified`, cleared existing local history, clicked `Recheck live account` twice, confirmed `Local recheck risk score is unchanged across 2 saved checks.`, confirmed the review packet contained `## local recheck history`, `trend: risk unchanged`, `saved checks: 2`, `risk-score delta: 0`, and the compact browser-local note, clicked `Copy markdown`, confirmed the clipboard contained the same history fields, confirmed raw test ids were not copied, and saw zero browser console errors.
+### remaining risks:
+The packet history section is a compact browser-local trend summary only. It is not synced, encrypted, a raw history export, a full private-snapshot archive, a precise account-history import, a live alert feed, exact liquidation monitoring, protocol-official risk attribution, or advice about what a trader should do next.

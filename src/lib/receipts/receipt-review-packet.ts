@@ -27,6 +27,9 @@ import type {
   receipt_recheck_watchlist,
 } from "./receipt-recheck-watchlist.ts";
 import type {
+  receipt_recheck_history_summary,
+} from "./receipt-recheck-history.ts";
+import type {
   receipt_volatility_buffer,
   receipt_volatility_buffer_row,
 } from "./receipt-volatility-buffer.ts";
@@ -46,6 +49,7 @@ export function buildReceiptReviewPacket(input: {
   marketRegime?: receipt_market_regime | null;
   marketRegimeDrilldown?: receipt_market_regime_drilldown | null;
   receipt: risk_receipt;
+  recheckHistorySummary?: receipt_recheck_history_summary | null;
   riskDriverComparison: receipt_risk_driver_comparison;
   volatilityBuffer?: receipt_volatility_buffer | null;
   watchlist: receipt_recheck_watchlist;
@@ -73,6 +77,7 @@ export function buildReceiptReviewPacket(input: {
     `- changed positions: ${input.comparison.changed_position_count}`,
     `- largest comparable mark move: ${input.comparison.max_abs_mark_price_change_percent.toFixed(2)}%`,
     "",
+    ...formatRecheckHistorySection(input.recheckHistorySummary ?? null),
     ...formatMarketRegimeSection(input.marketRegime ?? null),
     ...formatMarketRegimeDrilldownSection(
       input.marketRegimeDrilldown ?? null,
@@ -141,6 +146,18 @@ function formatSignedNullableNumber(value: number | null) {
   return `${value > 0 ? "+" : "-"}${Math.abs(value).toFixed(2)}`;
 }
 
+function formatSignedRiskScoreDelta(value: number | null) {
+  if (value === null) {
+    return "n/a";
+  }
+
+  if (value === 0) {
+    return "0";
+  }
+
+  return `${value > 0 ? "+" : "-"}${Math.abs(value)}`;
+}
+
 function formatSignedPercentFromBps(value: number | null) {
   if (value === null) {
     return "n/a";
@@ -183,6 +200,38 @@ function formatWatchlistItems(items: receipt_recheck_watch_item[]) {
     `  - detail: ${item.detail}`,
     ...item.review_points.map((point) => `  - review: ${point}`),
   ]);
+}
+
+function formatRecheckHistorySection(
+  historySummary: receipt_recheck_history_summary | null,
+) {
+  if (!historySummary || historySummary.entry_count === 0) {
+    return [];
+  }
+
+  const repeatedFocusMarket = historySummary.most_repeated_focus_market
+    ? `${historySummary.most_repeated_focus_market} (${historySummary.most_repeated_focus_market_count}/${historySummary.entry_count} saved checks)`
+    : "n/a";
+
+  return [
+    "## local recheck history",
+    `- trend: ${historySummary.label.replaceAll("_", " ")}`,
+    `- headline: ${historySummary.headline}`,
+    `- summary: ${historySummary.summary}`,
+    `- saved checks: ${historySummary.entry_count}`,
+    `- latest risk: ${formatNullableRiskScore(historySummary.latest_risk_score, historySummary.latest_risk_label)}`,
+    `- oldest risk: ${formatNullableRiskScore(historySummary.oldest_risk_score, historySummary.oldest_risk_label)}`,
+    `- risk-score delta: ${formatSignedRiskScoreDelta(historySummary.risk_score_delta)}`,
+    `- regime: ${historySummary.oldest_regime_label ?? "n/a"} -> ${historySummary.latest_regime_label ?? "n/a"}`,
+    `- repeated focus market: ${repeatedFocusMarket}`,
+    `- latest watchlist counts: ${historySummary.latest_watchlist_high_count} high, ${historySummary.latest_watchlist_watch_count} watch, ${historySummary.latest_watchlist_info_count} info`,
+    `- volatility context: loaded in ${historySummary.volatility_loaded_count} of ${historySummary.entry_count} saved rows`,
+    ...historySummary.review_points
+      .slice(0, 4)
+      .map((point) => `- review: ${point}`),
+    "- note: compact browser-local trend only; full history rows and full private snapshots are not included in this packet.",
+    "",
+  ];
 }
 
 function formatVolatilityBufferSection(
@@ -325,6 +374,17 @@ function formatNullableMultiple(value: number | null) {
   }
 
   return `${value.toFixed(2)}x`;
+}
+
+function formatNullableRiskScore(
+  score: number | null,
+  label: string | null,
+) {
+  if (score === null) {
+    return "n/a";
+  }
+
+  return `${score} (${label ?? "n/a"})`;
 }
 
 function formatPlainNumber(value: number) {

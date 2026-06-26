@@ -10,6 +10,11 @@ import { createRiskReceipt } from "./receipt.ts";
 import { buildReceiptChangeSummary } from "./receipt-change-summary.ts";
 import { buildReceiptMarketRegime } from "./receipt-market-regime.ts";
 import { buildReceiptMarketRegimeDrilldown } from "./receipt-market-regime-drilldown.ts";
+import {
+  buildReceiptRecheckHistorySummary,
+  type receipt_recheck_history_entry,
+  type receipt_recheck_history_summary,
+} from "./receipt-recheck-history.ts";
 import { compareReceiptRiskDrivers } from "./receipt-risk-driver-comparison.ts";
 import { buildReceiptRecheckWatchlist } from "./receipt-recheck-watchlist.ts";
 import { buildReceiptReviewPacket } from "./receipt-review-packet.ts";
@@ -54,6 +59,7 @@ const ethHistory = {
 async function buildPacket(input?: {
   currentSnapshot?: normalized_account_snapshot;
   receiptSnapshot?: normalized_account_snapshot;
+  recheckHistorySummary?: receipt_recheck_history_summary;
   withVolatilityBuffer?: boolean;
 }) {
   const receiptSnapshot =
@@ -122,6 +128,7 @@ async function buildPacket(input?: {
     marketContext,
     marketRegime,
     marketRegimeDrilldown,
+    recheckHistorySummary: input?.recheckHistorySummary ?? null,
     changeSummary,
     riskDriverComparison,
     volatilityBuffer,
@@ -129,6 +136,57 @@ async function buildPacket(input?: {
     watchlistAssistantResponse,
     hashVerified: true,
   });
+}
+
+function buildHistoryEntry(input: {
+  currentRiskLabel?: receipt_recheck_history_entry["current_risk_label"];
+  currentRiskScore: number;
+  focusMarket?: string;
+  id: string;
+  marketRegimeLabel?: receipt_recheck_history_entry["market_regime_label"];
+  marketRegimeSeverity?: receipt_recheck_history_entry["market_regime_severity"];
+  recheckedAtIso: string;
+  topCue?: string;
+  volatilityLoaded?: boolean;
+  watchlistHighCount?: number;
+}) {
+  return {
+    id: input.id,
+    receipt_id: "rr_packet_history",
+    rechecked_at_iso: input.recheckedAtIso,
+    current_data_time_iso: input.recheckedAtIso,
+    current_freshness: "live",
+    comparison_status: "market_moved",
+    comparison_headline: "Saved packet recheck row",
+    changed_position_count: 0,
+    max_abs_mark_price_change_percent: 4.2,
+    current_risk_score: input.currentRiskScore,
+    current_risk_label: input.currentRiskLabel ?? "medium",
+    current_account_value_usd: 10_000,
+    current_margin_usage_bps: 4_200,
+    current_total_notional_usd: 25_000,
+    current_min_liquidation_distance_bps: 850,
+    current_daily_funding_usd: 18,
+    market_regime_label: input.marketRegimeLabel ?? "active",
+    market_regime_severity: input.marketRegimeSeverity ?? "watch",
+    market_regime_focus_market: input.focusMarket ?? "ETH-PERP",
+    market_regime_high_count: 1,
+    market_regime_watch_count: 1,
+    market_regime_info_count: 0,
+    watchlist_label: "watch_items_loaded",
+    watchlist_high_count: input.watchlistHighCount ?? 0,
+    watchlist_watch_count: 1,
+    watchlist_info_count: 0,
+    watchlist_item_count: 1,
+    top_drilldown_market: input.focusMarket ?? "ETH-PERP",
+    top_drilldown_severity: input.marketRegimeSeverity ?? "watch",
+    top_drilldown_primary_cue:
+      input.topCue ?? "Listed buffer tightened on the latest recheck",
+    top_drilldown_summary: "Compact row summary for packet test.",
+    top_drilldown_current_liquidation_distance_bps: 850,
+    top_drilldown_current_funding_burden_bps: 6,
+    volatility_loaded: input.volatilityLoaded ?? false,
+  } satisfies receipt_recheck_history_entry;
 }
 
 test("builds a copyable markdown packet with receipt, watchlist, assistant, and market context", async () => {
@@ -176,12 +234,52 @@ test("builds a copyable markdown packet with receipt, watchlist, assistant, and 
   assert.match(packet.markdown, /mark:/);
 });
 
+test("includes compact local recheck history when a summary is provided", async () => {
+  const recheckHistorySummary = buildReceiptRecheckHistorySummary([
+    buildHistoryEntry({
+      currentRiskScore: 34,
+      currentRiskLabel: "medium",
+      id: "older",
+      marketRegimeLabel: "active",
+      marketRegimeSeverity: "watch",
+      recheckedAtIso: "2026-06-26T00:01:00.000Z",
+    }),
+    buildHistoryEntry({
+      currentRiskScore: 72,
+      currentRiskLabel: "high",
+      id: "newer",
+      marketRegimeLabel: "stress",
+      marketRegimeSeverity: "high",
+      recheckedAtIso: "2026-06-26T00:03:00.000Z",
+      topCue: "Public 24h range exceeds current buffer",
+      volatilityLoaded: true,
+      watchlistHighCount: 2,
+    }),
+  ]);
+  const packet = await buildPacket({ recheckHistorySummary });
+
+  assert.match(packet.markdown, /## local recheck history/);
+  assert.match(packet.markdown, /trend: risk higher/);
+  assert.match(packet.markdown, /saved checks: 2/);
+  assert.match(packet.markdown, /latest risk: 72 \(high\)/);
+  assert.match(packet.markdown, /oldest risk: 34 \(medium\)/);
+  assert.match(packet.markdown, /risk-score delta: \+38/);
+  assert.match(packet.markdown, /regime: active -> stress/);
+  assert.match(packet.markdown, /repeated focus market: ETH-PERP \(2\/2 saved checks\)/);
+  assert.match(packet.markdown, /latest watchlist counts: 2 high, 1 watch, 0 info/);
+  assert.match(packet.markdown, /volatility context: loaded in 1 of 2 saved rows/);
+  assert.match(packet.markdown, /compact browser-local trend only/);
+  assert.doesNotMatch(packet.markdown, /newer/);
+  assert.doesNotMatch(packet.markdown, /older/);
+});
+
 test("keeps the packet descriptive and points to full bundles for hash recomputation", async () => {
   const packet = await buildPacket();
 
   assert.match(packet.markdown, /No trading, order placement/);
   assert.match(packet.markdown, /not Hyperliquid official risk calculations/);
   assert.match(packet.markdown, /Use a full portable receipt bundle/);
+  assert.doesNotMatch(packet.markdown, /## local recheck history/);
   assert.doesNotMatch(packet.markdown, /should close/i);
   assert.doesNotMatch(packet.markdown, /should increase/i);
 });

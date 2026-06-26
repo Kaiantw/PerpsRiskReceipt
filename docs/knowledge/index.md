@@ -19,6 +19,7 @@ informed it and forward to related feature ideas.
 - [[sources/perp-receipt-recheck-watchlist]] - source notes for ranking full-receipt saved/current review cues after live recheck.
 - [[sources/perp-receipt-assistant-watchlist-citations]] - source notes for assistant answers that cite ranked recheck watchlist items.
 - [[sources/perp-receipt-review-packet]] - source notes for copyable markdown receipt review packets after live recheck.
+- [[sources/perp-receipt-review-packet-history-summary]] - source notes for adding compact local recheck-history trends to review packets.
 - [[sources/perp-configurable-recheck-thresholds]] - source notes for local threshold controls over live receipt review cues.
 - [[sources/perp-volatility-buffer]] - source notes for comparing current listed buffers with public 24h volatility.
 - [[sources/perp-volatility-watchlist]] - source notes for ranking loaded volatility-buffer rows in the recheck watchlist.
@@ -54,6 +55,7 @@ informed it and forward to related feature ideas.
 - [[features/receipt-recheck-watchlist]] - ranked review cues from full saved/current receipt recheck context.
 - [[features/receipt-assistant-watchlist-citations]] - receipt assistant inspect-first answers from ranked watchlist cues.
 - [[features/receipt-review-packet]] - copyable markdown summary of receipt hash, recheck, watchlist, assistant, driver, and market context.
+- [[features/receipt-review-packet-history-summary]] - compact local recheck-history trend inside the copyable review packet.
 - [[features/configurable-recheck-thresholds]] - local threshold controls for what counts as meaningful current-market movement.
 - [[features/receipt-volatility-buffer]] - compares current listed liquidation buffer with public 24h range and ATR-style movement.
 - [[features/receipt-volatility-watchlist]] - feeds loaded volatility-buffer cues into the recheck watchlist, assistant, and packet.
@@ -93,6 +95,6 @@ informed it and forward to related feature ideas.
   controls if accounts have many open markets.
 - [[features/receipt-recheck-history]] could later support optional export if
   reviewers want to discuss several checks outside the current browser.
-- [[features/receipt-assistant-recheck-history]] could later feed
-  [[features/receipt-review-packet]] if local history trends become part of the
-  shareable review artifact.
+- [[features/receipt-review-packet-history-summary]] could later add a redacted
+  packet mode if local history trends should be shared without full receipt
+  context.
