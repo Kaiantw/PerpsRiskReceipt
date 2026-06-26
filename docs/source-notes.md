@@ -125,6 +125,13 @@ use this file for external protocol assumptions.
   - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
   - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
   - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
+- docs checked on 2026-06-26 for receipt review packet:
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+  - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices
+  - https://www.coinbase.com/learn/perpetual-futures/key-strategies-to-avoid-liquidations-in-perpetual-futures
+  - https://www.cmegroup.com/education/courses/introduction-to-futures/open-interest
+  - https://www.w3.org/TR/vc-data-model-2.0/
 - implemented endpoint:
   - `POST https://api.hyperliquid.xyz/info`
 - request bodies:
@@ -256,6 +263,12 @@ use this file for external protocol assumptions.
   - informational cues include lower driver score, material open-interest movement, and missing market-context rows.
   - open interest is displayed as participation context only, not as a standalone direction signal.
   - the watchlist is a review checklist only; it is not Hyperliquid's official risk engine or a trading recommendation.
+- receipt review packet assumptions:
+  - the packet is deterministic markdown built from already-loaded local receipt recheck context.
+  - it does not call a new endpoint, change the receipt model, or store packet state.
+  - it includes a truncated account identifier, full snapshot hash, hash verification state, receipt change summary, risk-driver comparison, watchlist cues, assistant watchlist answer, assistant citations, and market-context rows.
+  - the first version caps watchlist and market-context rows at five each for readability.
+  - the packet is a communication summary only; a full portable receipt bundle remains required for another browser to recompute the snapshot hash.
 
 ## eas
 

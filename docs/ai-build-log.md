@@ -785,3 +785,25 @@ Review the keyword routing for `priority`, `attention`, `urgent`, `inspect first
 - Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Recheck watchlist`, `high attention`, `Position state changed since receipt`, `Receipt risk assistant`, and the `Watchlist` quick prompt, clicked `Watchlist`, confirmed `High-attention receipt recheck cues are available.`, `Counts:`, `receipt_recheck_watchlist.high_count`, `receipt_recheck_watchlist.items.`, the no-trade-recommendation caveat, and zero browser console errors.
 ### remaining risks:
 Assistant watchlist answers inherit the heuristic watchlist limits. They rank inspect-first review cues from local saved/current fields, but they are not an LLM, not Hyperliquid's official risk engine, not exact liquidation or funding settlement monitoring, and not advice about what a trader should do next.
+
+### task id: post-t9 receipt review packet
+### codex mode:
+product iteration + implementation
+### delegated work:
+Added a copyable markdown review packet for local receipt live rechecks, aimed at recruiter, teammate, or issue-review workflows where a concise summary is more useful than a full JSON bundle.
+### output accepted:
+Added `src/lib/receipts/receipt-review-packet.ts` to build deterministic markdown from the receipt, hash verification state, live recheck comparison, receipt change summary, risk-driver comparison, recheck watchlist, watchlist assistant answer, assistant citations, and market-context rows. Added tests that verify the packet includes the receipt hash, risk-driver summary, watchlist, assistant read, citations, market context, no-advice language, and full-bundle caveat. Added a `Review packet` panel after the receipt assistant with copy-to-clipboard and read-only markdown. Updated the package test script, source notes, limitations, knowledge graph, README, demo script, and this handoff.
+### output rejected or changed:
+No new endpoint, dependency, backend store, data model, LLM call, wallet/RPC flow, encrypted share, access-control layer, or trading behavior was added. The packet is markdown communication output, not a full portable receipt bundle or cryptographic proof.
+### human review notes:
+Review whether the packet should stay summary-only with a truncated account identifier, whether the first version's five watchlist/market-row cap is the right size, and whether later redacted/full packet modes would be useful.
+### tests/checks run:
+- `node --test src/lib/receipts/receipt-review-packet.test.ts` passed: 2 tests, 2 passing.
+- `npm test` passed: 123 tests, 123 passing.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed and listed `/receipt/local/[id]` plus the existing API and receipt routes.
+- `git diff --check` passed.
+- Browser verification used `http://localhost:3000/receipt/import`, imported a full portable bundle for `/receipt/local/rr_eefebf1fdff91326`, confirmed `Hash verified`, clicked `Recheck live account`, confirmed `Review packet`, `Copy markdown`, markdown sections for `snapshot hash`, `recheck watchlist`, `assistant read`, `market context`, and the full-bundle caveat, clicked `Copy markdown`, confirmed `Review packet copied.`, read clipboard markdown containing `# Review packet for`, `receipt_recheck_watchlist.high_count`, `## limitations`, and confirmed zero browser console errors.
+### remaining risks:
+The review packet is a communication summary only. It is not encrypted, access-controlled, a full private snapshot, a redacted proof, a hash-recomputable bundle, Hyperliquid's official risk engine, exact liquidation/funding settlement monitoring, or advice about what a trader should do next.

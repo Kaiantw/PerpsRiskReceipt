@@ -31,6 +31,8 @@ instead of forcing a reviewer to scan every panel manually.
 ## related ideas
 
 - [[receipt-recheck-watchlist]] remains the source of ranked review cues.
+- [[receipt-review-packet]] embeds the same inspect-first assistant answer into a
+  copyable markdown artifact.
 - [[receipt-assistant-market-context-fusion]] handles named-market follow-up
   questions after the watchlist identifies a market.
 - [[redacted-market-watchlist]] could later get a redacted-share assistant that

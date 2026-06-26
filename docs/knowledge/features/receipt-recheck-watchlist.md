@@ -38,5 +38,7 @@ rank concrete review cues and show what deserves attention first.
   about a named market after the watchlist identifies it.
 - [[receipt-assistant-watchlist-citations]] lets the assistant answer
   inspect-first questions from these ranked items.
+- [[receipt-review-packet]] packages the top watchlist cues into a copyable
+  markdown summary.
 - [[receipt-risk-driver-comparison]] and [[mark-price-context]] remain the
   underlying sources of truth.

@@ -3,6 +3,10 @@
 import { useState } from "react";
 
 import {
+  answerReceiptRiskQuestion,
+  type receipt_risk_assistant_context,
+} from "@/lib/assistant/receipt-risk-assistant.ts";
+import {
   formatPercentFromBps,
   formatSignedBps,
   formatSignedUsd,
@@ -40,6 +44,10 @@ import {
   type receipt_recheck_watchlist,
   type receipt_recheck_watchlist_label,
 } from "@/lib/receipts/receipt-recheck-watchlist.ts";
+import {
+  buildReceiptReviewPacket,
+  type receipt_review_packet,
+} from "@/lib/receipts/receipt-review-packet.ts";
 import { compareSnapshots } from "@/lib/receipts/snapshot-comparison.ts";
 import { ReceiptRiskAssistantPanel } from "./receipt-risk-assistant-panel.tsx";
 
@@ -315,6 +323,30 @@ function LiveRecheckResult({
     marketContext,
     accountValueContext: receiptAccountValueContext,
   });
+  const assistantContext: receipt_risk_assistant_context = {
+    receipt,
+    comparison,
+    marketContext,
+    changeSummary,
+    riskDriverComparison,
+    recheckWatchlist,
+    accountValueContext: receiptAccountValueContext,
+    hashVerified,
+  };
+  const watchlistAssistantResponse = answerReceiptRiskQuestion({
+    context: assistantContext,
+    question: "What should I inspect first in the recheck watchlist?",
+  });
+  const reviewPacket = buildReceiptReviewPacket({
+    receipt,
+    comparison,
+    marketContext,
+    changeSummary,
+    riskDriverComparison,
+    watchlist: recheckWatchlist,
+    watchlistAssistantResponse,
+    hashVerified,
+  });
   const assistantKey = [
     receipt.id,
     comparison.status,
@@ -359,18 +391,10 @@ function LiveRecheckResult({
       <ReceiptRiskDriverComparisonResult comparison={riskDriverComparison} />
       <ReceiptRecheckWatchlistResult watchlist={recheckWatchlist} />
       <ReceiptRiskAssistantPanel
-        context={{
-          receipt,
-          comparison,
-          marketContext,
-          changeSummary,
-          riskDriverComparison,
-          recheckWatchlist,
-          accountValueContext: receiptAccountValueContext,
-          hashVerified,
-        }}
+        context={assistantContext}
         key={assistantKey}
       />
+      <ReceiptReviewPacketResult packet={reviewPacket} />
       <MarketContextResult context={marketContext} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -459,6 +483,68 @@ function LiveRecheckResult({
         </div>
       )}
     </div>
+  );
+}
+
+function ReceiptReviewPacketResult({
+  packet,
+}: {
+  packet: receipt_review_packet;
+}) {
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">(
+    "idle",
+  );
+
+  async function copyPacket() {
+    try {
+      await navigator.clipboard.writeText(packet.markdown);
+      setCopyState("copied");
+    } catch {
+      setCopyState("error");
+    }
+  }
+
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-stone-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Review packet</h3>
+          <p className="mt-1 text-sm font-medium text-stone-800">
+            {packet.title}
+          </p>
+          <p className="mt-1 text-sm text-stone-600">{packet.summary}</p>
+        </div>
+        <button
+          className="inline-flex min-h-10 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-semibold text-white"
+          onClick={copyPacket}
+          type="button"
+        >
+          Copy markdown
+        </button>
+      </div>
+
+      {copyState === "copied" ? (
+        <p className="border-b border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
+          Review packet copied.
+        </p>
+      ) : null}
+      {copyState === "error" ? (
+        <p className="border-b border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900">
+          Clipboard copy failed. Select and copy the markdown below.
+        </p>
+      ) : null}
+
+      <textarea
+        className="h-72 w-full resize-y border-0 bg-stone-50 p-4 font-mono text-xs leading-5 text-stone-950 outline-none"
+        readOnly
+        value={packet.markdown}
+      />
+
+      <p className="border-t border-stone-200 px-4 py-3 text-xs text-stone-500">
+        This packet is a copyable review summary. Use the full portable receipt
+        bundle when another browser needs to recompute the snapshot hash.
+      </p>
+    </section>
   );
 }
 
